@@ -23,3 +23,36 @@ export function RequireRole({ role }: { role: AccountRole }) {
   if (!auth.roles.includes(role)) return <Navigate to={routes.forbidden} replace />
   return <Outlet />
 }
+
+export function RequireCustomerOnboarding() {
+  const auth = useAuth()
+  if (auth.status !== 'authenticated') return <Navigate to={routes.auth.login} replace />
+  if (!auth.roles.includes('CUSTOMER') && !auth.roles.includes('USER')) return <Navigate to={routes.forbidden} replace />
+  if (!auth.customer?.profileCompleted) return <Navigate to={routes.customer.onboarding} replace />
+  return <Outlet />
+}
+
+export function RequireVerifiedCustomer() {
+  const auth = useAuth()
+  if (auth.status !== 'authenticated') return <Navigate to={routes.auth.login} replace />
+  if (!auth.roles.includes('CUSTOMER') && !auth.roles.includes('USER')) return <Navigate to={routes.forbidden} replace />
+  if (!auth.customer?.emailVerified) return <Navigate to={routes.auth.verifyEmail} replace />
+  return <Outlet />
+}
+
+export function RequireProviderOnboarding() {
+  const auth = useAuth()
+  if (auth.status !== 'authenticated') return <Navigate to={routes.auth.login} replace />
+  if (!auth.roles.includes('PROVIDER')) return <Navigate to={routes.forbidden} replace />
+  if (!auth.customer?.emailVerified) return <Navigate to={routes.auth.verifyEmail} replace />
+  return <Outlet />
+}
+
+export function RequireCompletedProvider() {
+  const auth = useAuth()
+  if (auth.status !== 'authenticated') return <Navigate to={routes.auth.login} replace />
+  if (!auth.roles.includes('PROVIDER')) return <Navigate to={routes.forbidden} replace />
+  if (!auth.customer?.emailVerified) return <Navigate to={routes.auth.verifyEmail} replace />
+  if (!auth.customer.profileCompleted) return <Navigate to={routes.onboarding.provider} replace />
+  return <Outlet />
+}

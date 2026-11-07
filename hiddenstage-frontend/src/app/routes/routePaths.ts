@@ -2,6 +2,7 @@ export const routes = {
   home: '/',
   authBase: '/auth',
   appBase: '/app',
+  onboarding: { customer: '/onboarding/customer', provider: '/onboarding/provider' },
   services: '/services',
   serviceCategory: '/services/:categorySlug',
   providers: '/providers',
@@ -21,20 +22,32 @@ export const routes = {
     resetPassword: '/auth/reset-password',
   },
   customer: {
-    home: '/app/customer',
-    requests: '/app/customer/requests',
-    newRequest: '/app/customer/requests/new',
-    requestDetail: '/app/customer/requests/:requestId',
+    home: '/app',
+    onboarding: '/app/customer/onboarding',
+    requests: '/app/events',
+    newRequest: '/app/events/new',
+    requestDetail: '/app/events/:eventId',
+    requestEdit: '/app/events/:eventId/edit',
+    legacyHome: '/app/customer',
+    legacyRequests: '/app/customer/requests',
+    legacyNewRequest: '/app/customer/requests/new',
+    legacyRequestDetail: '/app/customer/requests/:requestId',
     quotes: '/app/customer/quotes',
     commitments: '/app/customer/commitments',
   },
   provider: {
     home: '/app/provider',
     profile: '/app/provider/profile',
+    services: '/app/provider/services',
     coverage: '/app/provider/coverage',
     requests: '/app/provider/requests',
     quotes: '/app/provider/quotes',
+    quoteForEvent: '/app/provider/quotes/:eventId',
     commitments: '/app/provider/commitments',
+  },
+  marketplace: {
+    providersForEvent: '/app/events/:eventId/providers',
+    quotesForEvent: '/app/events/:eventId/quotes',
   },
   business: {
     home: '/app/business',
@@ -64,12 +77,15 @@ export const routeTitles: Record<string, string> = {
   [routes.privacy]: 'Privacy draft',
   [routes.terms]: 'Terms draft',
   [routes.customer.home]: 'Your events',
-  [routes.customer.requests]: 'Event requests',
-  [routes.customer.newRequest]: 'Start an event request',
+  [routes.customer.requestEdit]: 'Edit event request',
+  [routes.customer.onboarding]: 'Complete your customer profile',
+  [routes.customer.newRequest]: 'Create an event request',
+  [routes.customer.requests]: 'My events',
   [routes.customer.quotes]: 'Quotes',
   [routes.customer.commitments]: 'Commitments',
   [routes.provider.home]: 'Provider workspace',
   [routes.provider.profile]: 'Your profile',
+  [routes.provider.services]: 'Services you offer',
   [routes.provider.coverage]: 'Service coverage',
   [routes.provider.requests]: 'Request inbox',
   [routes.provider.quotes]: 'Your quotes',
@@ -90,4 +106,24 @@ export function serviceCategoryPath(categorySlug: string) {
 
 export function providerDetailPath(providerId: string) {
   return routes.providerDetail.replace(':providerId', encodeURIComponent(providerId))
+}
+
+export function customerEventPath(eventId: string) {
+  return routes.customer.requestDetail.replace(':eventId', encodeURIComponent(eventId))
+}
+
+export function customerEventEditPath(eventId: string) {
+  return routes.customer.requestEdit.replace(':eventId', encodeURIComponent(eventId))
+}
+
+export function eventProvidersPath(eventId: string) {
+  return routes.marketplace.providersForEvent.replace(':eventId', encodeURIComponent(eventId))
+}
+
+export function eventQuotesPath(eventId: string) {
+  return routes.marketplace.quotesForEvent.replace(':eventId', encodeURIComponent(eventId))
+}
+
+export function providerQuotePath(eventId: string) {
+  return routes.provider.quoteForEvent.replace(':eventId', encodeURIComponent(eventId))
 }

@@ -2,6 +2,10 @@
 
 **Updated:** 2026-11-03
 
+## Current workspace note — 2026-11-05
+
+The historical recovery findings below describe the state when that inspection was performed and are no longer the current frontend state. The active `hiddenstage-frontend` now contains the public site, authentication and onboarding previews, customer event workflow, and the provider/marketplace UI checkpoint. Provider and marketplace interactions remain browser-demo-only; see [frontend implementation status](../hiddenstage-frontend/docs/IMPLEMENTATION_STATUS.md) and [API integration plan](../hiddenstage-frontend/docs/API_INTEGRATION_PLAN.md) for current verification and backend blockers.
+
 ## Current checkpoint
 
 Recovery inspection is complete. No verified HiddenStage application feature is present in the active workspace. `hiddenstage-frontend` is a React/TypeScript/Vite starter directory without Git metadata; `hiddenstage-backend` is absent. The frontend still renders the default Vite counter and links.

@@ -10,9 +10,10 @@ export const workspaceConfig: Record<WorkspaceAudience, WorkspaceSettings> = {
     { href: routes.customer.quotes, label: 'Quotes', icon: '▤' }, { href: routes.customer.commitments, label: 'Commitments', icon: '◇' },
   ] },
   provider: { title: 'Your workspace', eyebrow: 'PROFESSIONAL', home: routes.provider.home, items: [
-    { href: routes.provider.home, label: 'Overview', icon: '◫' }, { href: routes.provider.requests, label: 'Request inbox', icon: '⌕' },
+    { href: routes.provider.home, label: 'Overview', icon: '◫' }, { href: routes.provider.requests, label: 'Invitations', icon: '⌕' },
     { href: routes.provider.quotes, label: 'Quotes', icon: '▤' }, { href: routes.provider.profile, label: 'Profile', icon: '◉' },
     { href: routes.provider.coverage, label: 'Service coverage', icon: '◎' }, { href: routes.provider.commitments, label: 'Commitments', icon: '◇' },
+    { href: routes.provider.services, label: 'Services', icon: '✳' },
   ] },
   business: { title: 'Business workspace', eyebrow: 'BUSINESS', home: routes.business.home, items: [
     { href: routes.business.home, label: 'Overview', icon: '◫' }, { href: routes.business.profile, label: 'Business profile', icon: '▣' },

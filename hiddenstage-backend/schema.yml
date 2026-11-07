@@ -1,0 +1,3373 @@
+openapi: 3.0.3
+info:
+  title: HiddenStage API
+  version: 1.0.0
+  description: Marketplace API for event requests, provider discovery, invitations,
+    quotations and commercial commitments. All monetary values are integer paise (BIGINT).
+    Amounts are never floating point.
+paths:
+  /api/v1/health/:
+    get:
+      operationId: health_retrieve
+      description: Service and database health.
+      tags:
+      - health
+      responses:
+        '200':
+          description: No response body
+  /api/v1/auth/csrf/:
+    get:
+      operationId: auth_csrf_retrieve
+      description: Return and set a CSRF token.
+      tags:
+      - auth
+      responses:
+        '200':
+          description: No response body
+  /api/v1/auth/register/:
+    post:
+      operationId: auth_register_create
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+  /api/v1/auth/login/:
+    post:
+      operationId: auth_login_create
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+  /api/v1/auth/logout/:
+    post:
+      operationId: auth_logout_create
+      tags:
+      - auth
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: Signed out.
+  /api/v1/auth/me/:
+    get:
+      operationId: auth_me_retrieve
+      tags:
+      - auth
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+  /api/v1/auth/email/verify/:
+    post:
+      operationId: auth_email_verify_create
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+  /api/v1/auth/email/resend/:
+    post:
+      operationId: auth_email_resend_create
+      tags:
+      - auth
+      security:
+      - cookieAuth: []
+      responses:
+        '202':
+          description: No response body
+  /api/v1/auth/password/reset/:
+    post:
+      operationId: auth_password_reset_create
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailOnlyRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EmailOnlyRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EmailOnlyRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '202':
+          description: No response body
+  /api/v1/auth/password/reset/confirm/:
+    post:
+      operationId: auth_password_reset_confirm_create
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetConfirmRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PasswordResetConfirmRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PasswordResetConfirmRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v1/catalog/categories/:
+    get:
+      operationId: catalog_categories_list
+      description: Public taxonomy used by event requirements and provider onboarding.
+      tags:
+      - catalog
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ServiceCategory'
+          description: ''
+  /api/v1/me/customer-profile/:
+    get:
+      operationId: me_customer_profile_retrieve
+      tags:
+      - me
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerProfile'
+          description: ''
+    put:
+      operationId: me_customer_profile_update
+      tags:
+      - me
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerProfileRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CustomerProfileRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CustomerProfileRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerProfile'
+          description: ''
+    patch:
+      operationId: me_customer_profile_partial_update
+      tags:
+      - me
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCustomerProfileRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCustomerProfileRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCustomerProfileRequest'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerProfile'
+          description: ''
+  /api/v1/me/provider-profile/:
+    get:
+      operationId: me_provider_profile_retrieve
+      tags:
+      - me
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProviderProfile'
+          description: ''
+    put:
+      operationId: me_provider_profile_update
+      tags:
+      - me
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProviderProfileRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProviderProfileRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProviderProfileRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProviderProfile'
+          description: ''
+    patch:
+      operationId: me_provider_profile_partial_update
+      tags:
+      - me
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedProviderProfileRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedProviderProfileRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedProviderProfileRequest'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProviderProfile'
+          description: ''
+  /api/v1/me/provider-services/:
+    get:
+      operationId: me_provider_services_list
+      tags:
+      - me
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProviderService'
+          description: ''
+    post:
+      operationId: me_provider_services_create
+      tags:
+      - me
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProviderServiceRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProviderServiceRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProviderServiceRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProviderService'
+          description: ''
+  /api/v1/me/provider-services/{id}/:
+    get:
+      operationId: me_provider_services_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - me
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProviderService'
+          description: ''
+    put:
+      operationId: me_provider_services_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - me
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProviderServiceRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProviderServiceRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProviderServiceRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProviderService'
+          description: ''
+    patch:
+      operationId: me_provider_services_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - me
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedProviderServiceRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedProviderServiceRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedProviderServiceRequest'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProviderService'
+          description: ''
+    delete:
+      operationId: me_provider_services_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - me
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/me/provider-coverage/:
+    get:
+      operationId: me_provider_coverage_list
+      tags:
+      - me
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProviderCoverage'
+          description: ''
+    post:
+      operationId: me_provider_coverage_create
+      tags:
+      - me
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProviderCoverageRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProviderCoverageRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProviderCoverageRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProviderCoverage'
+          description: ''
+  /api/v1/me/provider-coverage/{id}/:
+    get:
+      operationId: me_provider_coverage_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - me
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProviderCoverage'
+          description: ''
+    put:
+      operationId: me_provider_coverage_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - me
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProviderCoverageRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProviderCoverageRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProviderCoverageRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProviderCoverage'
+          description: ''
+    patch:
+      operationId: me_provider_coverage_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - me
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedProviderCoverageRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedProviderCoverageRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedProviderCoverageRequest'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProviderCoverage'
+          description: ''
+    delete:
+      operationId: me_provider_coverage_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - me
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/events/:
+    get:
+      operationId: events_list
+      tags:
+      - events
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EventList'
+          description: ''
+    post:
+      operationId: events_create
+      tags:
+      - events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EventWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EventWriteRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+          description: ''
+  /api/v1/events/{id}/:
+    get:
+      operationId: events_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - events
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+          description: ''
+    patch:
+      operationId: events_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedEventWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedEventWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedEventWriteRequest'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+          description: ''
+    delete:
+      operationId: events_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - events
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: Draft deleted.
+  /api/v1/events/{id}/submit/:
+    post:
+      operationId: events_submit_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - events
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+          description: ''
+  /api/v1/events/{id}/withdraw/:
+    post:
+      operationId: events_withdraw_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - events
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+          description: ''
+  /api/v1/events/{event_pk}/requirements/:
+    get:
+      operationId: events_requirements_list
+      parameters:
+      - in: path
+        name: event_pk
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - events
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ServiceRequirement'
+          description: ''
+    post:
+      operationId: events_requirements_create
+      parameters:
+      - in: path
+        name: event_pk
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServiceRequirementRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ServiceRequirementRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ServiceRequirementRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceRequirement'
+          description: ''
+  /api/v1/events/{event_pk}/requirements/{id}/:
+    get:
+      operationId: events_requirements_retrieve
+      parameters:
+      - in: path
+        name: event_pk
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - events
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceRequirement'
+          description: ''
+    put:
+      operationId: events_requirements_update
+      parameters:
+      - in: path
+        name: event_pk
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServiceRequirementRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ServiceRequirementRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ServiceRequirementRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceRequirement'
+          description: ''
+    patch:
+      operationId: events_requirements_partial_update
+      parameters:
+      - in: path
+        name: event_pk
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedServiceRequirementRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedServiceRequirementRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedServiceRequirementRequest'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceRequirement'
+          description: ''
+    delete:
+      operationId: events_requirements_destroy
+      parameters:
+      - in: path
+        name: event_pk
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - events
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/events/{event_pk}/attachments/:
+    get:
+      operationId: events_attachments_list
+      description: Private upload. Widget stores files under MEDIA_ROOT, never a public
+        path.
+      parameters:
+      - in: path
+        name: event_pk
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - events
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EventAttachment'
+          description: ''
+    post:
+      operationId: events_attachments_create
+      description: Private upload. Widget stores files under MEDIA_ROOT, never a public
+        path.
+      parameters:
+      - in: path
+        name: event_pk
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - events
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventAttachment'
+          description: ''
+  /api/v1/events/{event_pk}/attachments/{id}/download/:
+    get:
+      operationId: events_attachments_download_retrieve
+      parameters:
+      - in: path
+        name: event_pk
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - events
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          description: File stream.
+  /api/v1/events/{event_pk}/attachments/{id}/:
+    delete:
+      operationId: events_attachments_destroy
+      parameters:
+      - in: path
+        name: event_pk
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - events
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: Deleted.
+  /api/v1/providers/:
+    get:
+      operationId: providers_list
+      description: Customer-only discovery of eligible providers. No ranking is inferred.
+      parameters:
+      - in: query
+        name: category
+        schema:
+          type: string
+          pattern: ^[-a-zA-Z0-9_]+$
+      - in: query
+        name: city
+        schema:
+          type: string
+          maxLength: 80
+      - in: query
+        name: pin_code
+        schema:
+          type: string
+          maxLength: 10
+      - in: query
+        name: state
+        schema:
+          type: string
+          maxLength: 80
+      tags:
+      - providers
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProviderMatch'
+          description: ''
+  /api/v1/providers/{id}/:
+    get:
+      operationId: providers_retrieve
+      description: Provider card for a signed-in customer. Contact detail is limited.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - providers
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProviderDetail'
+          description: ''
+  /api/v1/events/{event_pk}/invitations/:
+    get:
+      operationId: events_invitations_list
+      parameters:
+      - in: path
+        name: event_pk
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - events
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Invitation'
+          description: ''
+    post:
+      operationId: events_invitations_create
+      parameters:
+      - in: path
+        name: event_pk
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InvitationCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InvitationCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InvitationCreateRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Invitation'
+          description: ''
+  /api/v1/events/{event_pk}/invitations/{id}/withdraw/:
+    post:
+      operationId: events_invitations_withdraw_create
+      parameters:
+      - in: path
+        name: event_pk
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - events
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Invitation'
+          description: ''
+  /api/v1/provider/invitations/:
+    get:
+      operationId: provider_invitations_list
+      tags:
+      - provider
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProviderInvitation'
+          description: ''
+  /api/v1/provider/invitations/{id}/accept/:
+    post:
+      operationId: provider_invitations_accept_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - provider
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Invitation'
+          description: ''
+  /api/v1/provider/invitations/{id}/decline/:
+    post:
+      operationId: provider_invitations_decline_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - provider
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Invitation'
+          description: ''
+  /api/v1/provider/quotations/:
+    get:
+      operationId: provider_quotations_list
+      tags:
+      - provider
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Quotation'
+          description: ''
+    post:
+      operationId: provider_quotations_create
+      tags:
+      - provider
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuotationCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/QuotationCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/QuotationCreateRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Quotation'
+          description: ''
+  /api/v1/provider/quotations/{id}/:
+    get:
+      operationId: provider_quotations_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - provider
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Quotation'
+          description: ''
+  /api/v1/provider/quotations/{id}/revisions/:
+    post:
+      operationId: provider_quotations_revisions_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - provider
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuotationRevision'
+          description: ''
+  /api/v1/provider/quotations/{id}/revisions/{revision_pk}/:
+    get:
+      operationId: provider_quotations_revisions_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: revision_pk
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - provider
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuotationRevision'
+          description: ''
+    patch:
+      operationId: provider_quotations_revisions_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: revision_pk
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - provider
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedRevisionWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedRevisionWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedRevisionWriteRequest'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuotationRevision'
+          description: ''
+  /api/v1/provider/quotations/{id}/revisions/{revision_pk}/submit/:
+    post:
+      operationId: provider_quotations_revisions_submit_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: revision_pk
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - provider
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuotationRevision'
+          description: ''
+  /api/v1/provider/quotations/{id}/withdraw/:
+    post:
+      operationId: provider_quotations_withdraw_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - provider
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Quotation'
+          description: ''
+  /api/v1/events/{event_pk}/quotations/:
+    get:
+      operationId: events_quotations_list
+      description: 'Customer comparison view: every quotation received for one owned
+        event.'
+      parameters:
+      - in: path
+        name: event_pk
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - events
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Quotation'
+          description: ''
+  /api/v1/quotations/{id}/acceptance/:
+    post:
+      operationId: quotations_acceptance_create
+      description: Customer accepts a submitted revision, in whole packages or single
+        lines.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - quotations
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AcceptanceRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AcceptanceRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AcceptanceRequestRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Commitment'
+          description: ''
+  /api/v1/commitments/:
+    get:
+      operationId: commitments_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - commitments
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCommitmentList'
+          description: ''
+  /api/v1/provider/commitments/:
+    get:
+      operationId: provider_commitments_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - provider
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCommitmentList'
+          description: ''
+  /api/v1/commitments/{id}/:
+    get:
+      operationId: commitments_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - commitments
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommitmentDetail'
+          description: ''
+  /api/v1/commitments/{id}/release/:
+    post:
+      operationId: commitments_release_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - commitments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReleaseRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ReleaseRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ReleaseRequestRequest'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommitmentDetail'
+          description: ''
+components:
+  schemas:
+    AcceptanceRequestRequest:
+      type: object
+      properties:
+        revision_id:
+          type: string
+          format: uuid
+        package_keys:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 40
+        requirement_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+      required:
+      - revision_id
+    Commitment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        event:
+          type: string
+          format: uuid
+          readOnly: true
+        event_name:
+          type: string
+          readOnly: true
+        event_date:
+          type: string
+          format: date
+          readOnly: true
+        customer:
+          type: string
+          format: uuid
+          readOnly: true
+        provider:
+          type: string
+          format: uuid
+          readOnly: true
+        provider_display_name:
+          type: string
+          readOnly: true
+        quotation:
+          type: string
+          format: uuid
+          readOnly: true
+        quotation_revision:
+          type: integer
+          readOnly: true
+        status:
+          enum:
+          - ACTIVE
+          - RELEASED
+          type: string
+          description: |-
+            * `ACTIVE` - Active
+            * `RELEASED` - Released
+          x-spec-enum-id: 52d6c8817244df95
+          readOnly: true
+        total_paise:
+          type: integer
+          readOnly: true
+          description: Amount in integer paise (INR 1 = 100 paise).
+        accepted_at:
+          type: string
+          format: date-time
+          readOnly: true
+        released_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        release_reason:
+          type: string
+          readOnly: true
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/CommitmentLine'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - accepted_at
+      - created_at
+      - customer
+      - event
+      - event_date
+      - event_name
+      - id
+      - lines
+      - provider
+      - provider_display_name
+      - quotation
+      - quotation_revision
+      - release_reason
+      - released_at
+      - status
+      - total_paise
+    CommitmentAudit:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        action:
+          enum:
+          - ACCEPTED
+          - RELEASED
+          type: string
+          description: |-
+            * `ACCEPTED` - Accepted
+            * `RELEASED` - Released
+          x-spec-enum-id: 1a3c7f7e86401961
+          readOnly: true
+        actor_email:
+          type: string
+          readOnly: true
+        note:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - action
+      - actor_email
+      - created_at
+      - id
+      - note
+    CommitmentDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        event:
+          type: string
+          format: uuid
+          readOnly: true
+        event_name:
+          type: string
+          readOnly: true
+        event_date:
+          type: string
+          format: date
+          readOnly: true
+        customer:
+          type: string
+          format: uuid
+          readOnly: true
+        provider:
+          type: string
+          format: uuid
+          readOnly: true
+        provider_display_name:
+          type: string
+          readOnly: true
+        quotation:
+          type: string
+          format: uuid
+          readOnly: true
+        quotation_revision:
+          type: integer
+          readOnly: true
+        status:
+          enum:
+          - ACTIVE
+          - RELEASED
+          type: string
+          description: |-
+            * `ACTIVE` - Active
+            * `RELEASED` - Released
+          x-spec-enum-id: 52d6c8817244df95
+          readOnly: true
+        total_paise:
+          type: integer
+          readOnly: true
+          description: Amount in integer paise (INR 1 = 100 paise).
+        accepted_at:
+          type: string
+          format: date-time
+          readOnly: true
+        released_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        release_reason:
+          type: string
+          readOnly: true
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/CommitmentLine'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        audit_entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/CommitmentAudit'
+          readOnly: true
+      required:
+      - accepted_at
+      - audit_entries
+      - created_at
+      - customer
+      - event
+      - event_date
+      - event_name
+      - id
+      - lines
+      - provider
+      - provider_display_name
+      - quotation
+      - quotation_revision
+      - release_reason
+      - released_at
+      - status
+      - total_paise
+    CommitmentLine:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        requirement:
+          type: string
+          format: uuid
+          readOnly: true
+        requirement_title:
+          type: string
+          readOnly: true
+        package_key:
+          type: string
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        amount_paise:
+          type: integer
+          readOnly: true
+          description: Amount in integer paise (INR 1 = 100 paise).
+      required:
+      - amount_paise
+      - id
+      - package_key
+      - requirement
+      - requirement_title
+      - title
+    CustomerProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        full_name:
+          type: string
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+        phone:
+          type: string
+          readOnly: true
+        pin_code:
+          type: string
+          maxLength: 6
+        locality:
+          type: string
+          maxLength: 120
+        city:
+          type: string
+          maxLength: 80
+        state:
+          type: string
+          maxLength: 80
+        completed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - city
+      - completed_at
+      - created_at
+      - email
+      - full_name
+      - id
+      - locality
+      - phone
+      - pin_code
+      - state
+      - updated_at
+    CustomerProfileRequest:
+      type: object
+      properties:
+        pin_code:
+          type: string
+          minLength: 1
+          maxLength: 6
+        locality:
+          type: string
+          minLength: 1
+          maxLength: 120
+        city:
+          type: string
+          minLength: 1
+          maxLength: 80
+        state:
+          type: string
+          minLength: 1
+          maxLength: 80
+      required:
+      - city
+      - locality
+      - pin_code
+      - state
+    EmailOnlyRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+          maxLength: 254
+      required:
+      - email
+    Event:
+      type: object
+      description: Read representation. Money is integer paise; times are Asia/Kolkata
+        aware.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        event_type:
+          type: string
+          readOnly: true
+        description:
+          type: string
+          readOnly: true
+        event_date:
+          type: string
+          format: date
+          readOnly: true
+        start_time:
+          type: string
+          format: time
+          readOnly: true
+        end_time:
+          type: string
+          format: time
+          readOnly: true
+        guest_count:
+          type: integer
+          readOnly: true
+        pin_code:
+          type: string
+          readOnly: true
+        locality:
+          type: string
+          readOnly: true
+        city:
+          type: string
+          readOnly: true
+        state:
+          type: string
+          readOnly: true
+        venue_name:
+          type: string
+          readOnly: true
+        venue_address:
+          type: string
+          readOnly: true
+        status:
+          enum:
+          - DRAFT
+          - SUBMITTED
+          - WITHDRAWN
+          - CLOSED
+          type: string
+          description: |-
+            * `DRAFT` - Draft
+            * `SUBMITTED` - Submitted
+            * `WITHDRAWN` - Withdrawn
+            * `CLOSED` - Closed
+          x-spec-enum-id: 35f7c9672084efbd
+          readOnly: true
+        submitted_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        withdrawn_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        closed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        requirements:
+          type: array
+          items:
+            $ref: '#/components/schemas/ServiceRequirement'
+          readOnly: true
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/EventAttachment'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - attachments
+      - city
+      - closed_at
+      - created_at
+      - description
+      - end_time
+      - event_date
+      - event_type
+      - guest_count
+      - id
+      - locality
+      - name
+      - pin_code
+      - requirements
+      - start_time
+      - state
+      - status
+      - submitted_at
+      - updated_at
+      - venue_address
+      - venue_name
+      - withdrawn_at
+    EventAttachment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        original_name:
+          type: string
+          readOnly: true
+        content_type:
+          type: string
+          readOnly: true
+        size_bytes:
+          type: integer
+          readOnly: true
+        scan_status:
+          enum:
+          - PENDING
+          - CLEAN
+          - REJECTED
+          - SKIPPED
+          type: string
+          description: |-
+            * `PENDING` - Scan pending
+            * `CLEAN` - Clean
+            * `REJECTED` - Rejected
+            * `SKIPPED` - Scanner not configured
+          x-spec-enum-id: ca6cb3282647f725
+          readOnly: true
+        download_url:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - content_type
+      - created_at
+      - download_url
+      - id
+      - original_name
+      - scan_status
+      - size_bytes
+    EventList:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        event_type:
+          type: string
+          readOnly: true
+        event_date:
+          type: string
+          format: date
+          readOnly: true
+        start_time:
+          type: string
+          format: time
+          readOnly: true
+        end_time:
+          type: string
+          format: time
+          readOnly: true
+        city:
+          type: string
+          readOnly: true
+        pin_code:
+          type: string
+          readOnly: true
+        status:
+          enum:
+          - DRAFT
+          - SUBMITTED
+          - WITHDRAWN
+          - CLOSED
+          type: string
+          description: |-
+            * `DRAFT` - Draft
+            * `SUBMITTED` - Submitted
+            * `WITHDRAWN` - Withdrawn
+            * `CLOSED` - Closed
+          x-spec-enum-id: 35f7c9672084efbd
+          readOnly: true
+        requirement_count:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - city
+      - created_at
+      - end_time
+      - event_date
+      - event_type
+      - id
+      - name
+      - pin_code
+      - requirement_count
+      - start_time
+      - status
+      - updated_at
+    EventRequirementInputRequest:
+      type: object
+      properties:
+        category:
+          type: string
+          minLength: 1
+          pattern: ^[-a-zA-Z0-9_]+$
+        title:
+          type: string
+          minLength: 1
+          maxLength: 150
+        description:
+          type: string
+          default: ''
+        budget_paise:
+          type: integer
+          minimum: 0
+          nullable: true
+        instructions:
+          type: string
+          default: ''
+      required:
+      - category
+      - title
+    EventWriteRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        event_type:
+          type: string
+          minLength: 1
+          maxLength: 60
+        description:
+          type: string
+        event_date:
+          type: string
+          format: date
+        start_time:
+          type: string
+          format: time
+        end_time:
+          type: string
+          format: time
+        guest_count:
+          type: integer
+          maximum: 2147483647
+          minimum: 1
+        pin_code:
+          type: string
+          minLength: 1
+          maxLength: 6
+        locality:
+          type: string
+          minLength: 1
+          maxLength: 120
+        city:
+          type: string
+          minLength: 1
+          maxLength: 80
+        state:
+          type: string
+          minLength: 1
+          maxLength: 80
+        venue_name:
+          type: string
+          maxLength: 200
+        venue_address:
+          type: string
+        status:
+          enum:
+          - DRAFT
+          - SUBMITTED
+          type: string
+          description: |-
+            * `DRAFT` - DRAFT
+            * `SUBMITTED` - SUBMITTED
+          x-spec-enum-id: 2670a712e70bfc44
+          default: DRAFT
+        requirements:
+          type: array
+          items:
+            $ref: '#/components/schemas/EventRequirementInputRequest'
+      required:
+      - city
+      - end_time
+      - event_date
+      - event_type
+      - guest_count
+      - locality
+      - name
+      - pin_code
+      - start_time
+      - state
+    Invitation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        event:
+          type: string
+          format: uuid
+          readOnly: true
+        event_name:
+          type: string
+          readOnly: true
+        provider:
+          type: string
+          format: uuid
+          readOnly: true
+        provider_display_name:
+          type: string
+          readOnly: true
+        requirement:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        requirement_title:
+          type: string
+          readOnly: true
+        message:
+          type: string
+          readOnly: true
+        status:
+          enum:
+          - PENDING
+          - ACCEPTED
+          - DECLINED
+          - WITHDRAWN
+          - EXPIRED
+          type: string
+          description: |-
+            * `PENDING` - Pending
+            * `ACCEPTED` - Accepted
+            * `DECLINED` - Declined
+            * `WITHDRAWN` - Withdrawn
+            * `EXPIRED` - Expired
+          x-spec-enum-id: e9bb20dabeac738d
+          readOnly: true
+          default: PENDING
+        expires_at:
+          type: string
+          format: date-time
+          readOnly: true
+        responded_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - event
+      - event_name
+      - expires_at
+      - id
+      - message
+      - provider
+      - provider_display_name
+      - requirement
+      - requirement_title
+      - responded_at
+      - status
+    InvitationCreateRequest:
+      type: object
+      properties:
+        provider_id:
+          type: string
+          format: uuid
+        requirement_id:
+          type: string
+          format: uuid
+          nullable: true
+        message:
+          type: string
+          default: ''
+          maxLength: 2000
+      required:
+      - provider_id
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+          maxLength: 254
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+          maxLength: 128
+      required:
+      - email
+      - password
+    PaginatedCommitmentList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Commitment'
+    PasswordResetConfirmRequest:
+      type: object
+      properties:
+        token:
+          type: string
+          minLength: 1
+          maxLength: 200
+        new_password:
+          type: string
+          writeOnly: true
+          minLength: 1
+          maxLength: 128
+      required:
+      - new_password
+      - token
+    PatchedCustomerProfileRequest:
+      type: object
+      properties:
+        pin_code:
+          type: string
+          minLength: 1
+          maxLength: 6
+        locality:
+          type: string
+          minLength: 1
+          maxLength: 120
+        city:
+          type: string
+          minLength: 1
+          maxLength: 80
+        state:
+          type: string
+          minLength: 1
+          maxLength: 80
+    PatchedEventWriteRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        event_type:
+          type: string
+          minLength: 1
+          maxLength: 60
+        description:
+          type: string
+        event_date:
+          type: string
+          format: date
+        start_time:
+          type: string
+          format: time
+        end_time:
+          type: string
+          format: time
+        guest_count:
+          type: integer
+          maximum: 2147483647
+          minimum: 1
+        pin_code:
+          type: string
+          minLength: 1
+          maxLength: 6
+        locality:
+          type: string
+          minLength: 1
+          maxLength: 120
+        city:
+          type: string
+          minLength: 1
+          maxLength: 80
+        state:
+          type: string
+          minLength: 1
+          maxLength: 80
+        venue_name:
+          type: string
+          maxLength: 200
+        venue_address:
+          type: string
+        status:
+          enum:
+          - DRAFT
+          - SUBMITTED
+          type: string
+          description: |-
+            * `DRAFT` - DRAFT
+            * `SUBMITTED` - SUBMITTED
+          x-spec-enum-id: 2670a712e70bfc44
+          default: DRAFT
+        requirements:
+          type: array
+          items:
+            $ref: '#/components/schemas/EventRequirementInputRequest'
+    PatchedProviderCoverageRequest:
+      type: object
+      properties:
+        pin_code:
+          type: string
+          minLength: 1
+          maxLength: 6
+        locality:
+          type: string
+          minLength: 1
+          maxLength: 120
+        city:
+          type: string
+          minLength: 1
+          maxLength: 80
+        state:
+          type: string
+          minLength: 1
+          maxLength: 80
+    PatchedProviderProfileRequest:
+      type: object
+      properties:
+        display_name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        description:
+          type: string
+        contact:
+          type: string
+          minLength: 1
+          maxLength: 120
+        categories:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            pattern: ^[-a-zA-Z0-9_]+$
+          writeOnly: true
+        coverage:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProviderCoverageRequest'
+    PatchedProviderServiceRequest:
+      type: object
+      properties:
+        category:
+          type: string
+          minLength: 1
+        title:
+          type: string
+          maxLength: 150
+        description:
+          type: string
+        base_price_paise:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+          description: Amount in integer paise (INR 1 = 100 paise).
+        is_active:
+          type: boolean
+    PatchedRevisionWriteRequest:
+      type: object
+      properties:
+        notes:
+          type: string
+          maxLength: 4000
+        valid_until:
+          type: string
+          format: date
+          nullable: true
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/QuotationItemInputRequest'
+    PatchedServiceRequirementRequest:
+      type: object
+      properties:
+        category:
+          type: string
+          minLength: 1
+        title:
+          type: string
+          minLength: 1
+          maxLength: 150
+        description:
+          type: string
+        budget_paise:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+          description: Amount in integer paise (INR 1 = 100 paise).
+        instructions:
+          type: string
+    ProviderCoverage:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        pin_code:
+          type: string
+          maxLength: 6
+        locality:
+          type: string
+          maxLength: 120
+        city:
+          type: string
+          maxLength: 80
+        state:
+          type: string
+          maxLength: 80
+      required:
+      - city
+      - id
+      - locality
+      - pin_code
+      - state
+    ProviderCoverageRequest:
+      type: object
+      properties:
+        pin_code:
+          type: string
+          minLength: 1
+          maxLength: 6
+        locality:
+          type: string
+          minLength: 1
+          maxLength: 120
+        city:
+          type: string
+          minLength: 1
+          maxLength: 80
+        state:
+          type: string
+          minLength: 1
+          maxLength: 80
+      required:
+      - city
+      - locality
+      - pin_code
+      - state
+    ProviderDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        display_name:
+          type: string
+        description:
+          type: string
+        contact:
+          type: string
+        verification_status:
+          type: string
+        categories:
+          type: array
+          items:
+            type: string
+        coverage:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProviderCoverage'
+      required:
+      - categories
+      - contact
+      - coverage
+      - description
+      - display_name
+      - id
+      - verification_status
+    ProviderInvitation:
+      type: object
+      description: 'Provider inbox: includes the event summary needed to decide.'
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        event:
+          type: string
+          format: uuid
+          readOnly: true
+        event_name:
+          type: string
+          readOnly: true
+        provider:
+          type: string
+          format: uuid
+          readOnly: true
+        provider_display_name:
+          type: string
+          readOnly: true
+        requirement:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        requirement_title:
+          type: string
+          readOnly: true
+        message:
+          type: string
+          readOnly: true
+        status:
+          enum:
+          - PENDING
+          - ACCEPTED
+          - DECLINED
+          - WITHDRAWN
+          - EXPIRED
+          type: string
+          description: |-
+            * `PENDING` - Pending
+            * `ACCEPTED` - Accepted
+            * `DECLINED` - Declined
+            * `WITHDRAWN` - Withdrawn
+            * `EXPIRED` - Expired
+          x-spec-enum-id: e9bb20dabeac738d
+          readOnly: true
+          default: PENDING
+        expires_at:
+          type: string
+          format: date-time
+          readOnly: true
+        responded_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        event_detail:
+          type: string
+          readOnly: true
+      required:
+      - created_at
+      - event
+      - event_detail
+      - event_name
+      - expires_at
+      - id
+      - message
+      - provider
+      - provider_display_name
+      - requirement
+      - requirement_title
+      - responded_at
+      - status
+    ProviderMatch:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        display_name:
+          type: string
+        description:
+          type: string
+        verification_status:
+          type: string
+        categories:
+          type: array
+          items:
+            type: string
+        matching_coverage:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProviderCoverage'
+        exact_pin_match:
+          type: boolean
+        already_invited:
+          type: boolean
+      required:
+      - already_invited
+      - categories
+      - description
+      - display_name
+      - exact_pin_match
+      - id
+      - matching_coverage
+      - verification_status
+    ProviderProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        display_name:
+          type: string
+          maxLength: 150
+        description:
+          type: string
+        contact:
+          type: string
+          maxLength: 120
+        coverage:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProviderCoverage'
+        services:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProviderService'
+          readOnly: true
+        verification_status:
+          type: string
+          readOnly: true
+        completed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - completed_at
+      - contact
+      - created_at
+      - display_name
+      - id
+      - services
+      - updated_at
+      - verification_status
+    ProviderProfileRequest:
+      type: object
+      properties:
+        display_name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        description:
+          type: string
+        contact:
+          type: string
+          minLength: 1
+          maxLength: 120
+        categories:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            pattern: ^[-a-zA-Z0-9_]+$
+          writeOnly: true
+        coverage:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProviderCoverageRequest'
+      required:
+      - contact
+      - display_name
+    ProviderService:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        category:
+          type: string
+        category_name:
+          type: string
+          readOnly: true
+        title:
+          type: string
+          maxLength: 150
+        description:
+          type: string
+        base_price_paise:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+          description: Amount in integer paise (INR 1 = 100 paise).
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - category
+      - category_name
+      - created_at
+      - id
+      - updated_at
+    ProviderServiceRequest:
+      type: object
+      properties:
+        category:
+          type: string
+          minLength: 1
+        title:
+          type: string
+          maxLength: 150
+        description:
+          type: string
+        base_price_paise:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+          description: Amount in integer paise (INR 1 = 100 paise).
+        is_active:
+          type: boolean
+      required:
+      - category
+    Quotation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        event:
+          type: string
+          format: uuid
+          readOnly: true
+        event_name:
+          type: string
+          readOnly: true
+        provider:
+          type: string
+          format: uuid
+          readOnly: true
+        provider_display_name:
+          type: string
+          readOnly: true
+        status:
+          enum:
+          - OPEN
+          - WITHDRAWN
+          type: string
+          description: |-
+            * `OPEN` - Open
+            * `WITHDRAWN` - Withdrawn
+          x-spec-enum-id: 4f72394a676507e2
+          readOnly: true
+        current_revision:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        revisions:
+          type: array
+          items:
+            $ref: '#/components/schemas/QuotationRevision'
+          readOnly: true
+      required:
+      - created_at
+      - current_revision
+      - event
+      - event_name
+      - id
+      - provider
+      - provider_display_name
+      - revisions
+      - status
+      - updated_at
+    QuotationCreateRequest:
+      type: object
+      properties:
+        event:
+          type: string
+          format: uuid
+      required:
+      - event
+    QuotationItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        requirement:
+          type: string
+          format: uuid
+          readOnly: true
+        requirement_title:
+          type: string
+          readOnly: true
+        kind:
+          enum:
+          - LINE
+          - PACKAGE
+          type: string
+          description: |-
+            * `LINE` - Service line
+            * `PACKAGE` - Package line
+          x-spec-enum-id: cc23bb2623aed0d9
+          readOnly: true
+        package_key:
+          type: string
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        description:
+          type: string
+          readOnly: true
+        amount_paise:
+          type: integer
+          readOnly: true
+          description: Amount in integer paise (INR 1 = 100 paise).
+        position:
+          type: integer
+          readOnly: true
+      required:
+      - amount_paise
+      - description
+      - id
+      - kind
+      - package_key
+      - position
+      - requirement
+      - requirement_title
+      - title
+    QuotationItemInputRequest:
+      type: object
+      properties:
+        requirement_id:
+          type: string
+          format: uuid
+        kind:
+          enum:
+          - LINE
+          - PACKAGE
+          type: string
+          description: |-
+            * `LINE` - Service line
+            * `PACKAGE` - Package line
+          x-spec-enum-id: cc23bb2623aed0d9
+          default: LINE
+        package_key:
+          type: string
+          default: ''
+          maxLength: 40
+        title:
+          type: string
+          minLength: 1
+          maxLength: 150
+        description:
+          type: string
+          default: ''
+        amount_paise:
+          type: integer
+          minimum: 1
+      required:
+      - amount_paise
+      - requirement_id
+      - title
+    QuotationRevision:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        revision_number:
+          type: integer
+          readOnly: true
+        status:
+          enum:
+          - DRAFT
+          - SUBMITTED
+          - SUPERSEDED
+          - WITHDRAWN
+          - EXPIRED
+          type: string
+          description: |-
+            * `DRAFT` - Draft
+            * `SUBMITTED` - Submitted
+            * `SUPERSEDED` - Superseded
+            * `WITHDRAWN` - Withdrawn
+            * `EXPIRED` - Expired
+          x-spec-enum-id: b637e9d341aa09fa
+          readOnly: true
+        notes:
+          type: string
+          readOnly: true
+        valid_until:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+        total_paise:
+          type: integer
+          readOnly: true
+          description: Amount in integer paise (INR 1 = 100 paise).
+        submitted_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        is_acceptance_eligible:
+          type: boolean
+          readOnly: true
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/QuotationItem'
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - is_acceptance_eligible
+      - items
+      - notes
+      - revision_number
+      - status
+      - submitted_at
+      - total_paise
+      - valid_until
+    RegisterRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+          maxLength: 254
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+          maxLength: 128
+        full_name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        phone:
+          type: string
+          maxLength: 20
+        role:
+          enum:
+          - CUSTOMER
+          - PROVIDER
+          type: string
+          description: |-
+            * `CUSTOMER` - Customer
+            * `PROVIDER` - Provider
+          x-spec-enum-id: b2ca29060dbb7784
+          default: CUSTOMER
+        accept_terms:
+          type: boolean
+      required:
+      - accept_terms
+      - email
+      - full_name
+      - password
+    ReleaseRequestRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          maxLength: 1000
+    ServiceCategory:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        code:
+          type: string
+          readOnly: true
+          pattern: ^[-a-zA-Z0-9_]+$
+        name:
+          type: string
+          readOnly: true
+        description:
+          type: string
+          readOnly: true
+        sort_order:
+          type: integer
+          readOnly: true
+      required:
+      - code
+      - description
+      - id
+      - name
+      - sort_order
+    ServiceRequirement:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        category:
+          type: string
+        category_detail:
+          allOf:
+          - $ref: '#/components/schemas/ServiceCategory'
+          readOnly: true
+        title:
+          type: string
+          maxLength: 150
+        description:
+          type: string
+        budget_paise:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+          description: Amount in integer paise (INR 1 = 100 paise).
+        instructions:
+          type: string
+        status:
+          enum:
+          - OPEN
+          - COMMITTED
+          - CANCELLED
+          type: string
+          description: |-
+            * `OPEN` - Open
+            * `COMMITTED` - Committed
+            * `CANCELLED` - Cancelled
+          x-spec-enum-id: 53cf4f33853b27ba
+          readOnly: true
+        position:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - category
+      - category_detail
+      - created_at
+      - id
+      - position
+      - status
+      - title
+      - updated_at
+    ServiceRequirementRequest:
+      type: object
+      properties:
+        category:
+          type: string
+          minLength: 1
+        title:
+          type: string
+          minLength: 1
+          maxLength: 150
+        description:
+          type: string
+        budget_paise:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+          description: Amount in integer paise (INR 1 = 100 paise).
+        instructions:
+          type: string
+      required:
+      - category
+      - title
+    TokenRequest:
+      type: object
+      properties:
+        token:
+          type: string
+          minLength: 1
+          maxLength: 200
+      required:
+      - token
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+        full_name:
+          type: string
+          readOnly: true
+        phone:
+          type: string
+          readOnly: true
+        role:
+          enum:
+          - CUSTOMER
+          - PROVIDER
+          type: string
+          description: |-
+            * `CUSTOMER` - Customer
+            * `PROVIDER` - Provider
+          x-spec-enum-id: b2ca29060dbb7784
+          readOnly: true
+        email_verified:
+          type: boolean
+          readOnly: true
+        email_verified_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        profile_completed:
+          type: boolean
+          readOnly: true
+        terms_accepted_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        date_joined:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - date_joined
+      - email
+      - email_verified
+      - email_verified_at
+      - full_name
+      - id
+      - phone
+      - profile_completed
+      - role
+      - terms_accepted_at
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: hs_sessionid

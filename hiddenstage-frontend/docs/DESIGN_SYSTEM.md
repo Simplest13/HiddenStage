@@ -10,7 +10,7 @@ Homepage service labels are illustrative placeholders only; they are not an appr
 
 Defined in `src/index.css`:
 
-- Canvas `#ebe3cf`, paper `#f7f3e9`, ink `#24231f`, accent `#8b4d32`.
+- Official palette: deep burgundy `#710927`, antique gold `#B58C4F`, warm walnut `#92643E`, champagne cream `#D9C3A6`, midnight indigo `#2D2C4A`. Semantic canvas/paper/ink and status tokens are centralized in `src/index.css`.
 - Supporting colors for muted text, borders, sage, success, warning, and error states.
 - Four-pixel spacing scale from `--space-1` through `--space-24`.
 - Small, medium, large, extra-large, and pill radii.

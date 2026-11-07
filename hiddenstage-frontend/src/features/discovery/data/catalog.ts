@@ -5,7 +5,10 @@ export const serviceCategories: ServiceCategory[] = [
   { slug: 'food-and-drink', name: 'Food & drink', description: 'Thoughtful menus, drinks, and service for the table.', sampleOffering: 'Seasonal menus and event catering' },
   { slug: 'music-and-performance', name: 'Music & performance', description: 'A sound or performance that gives the day its rhythm.', sampleOffering: 'Live acoustic sets and event music' },
   { slug: 'photography', name: 'Photography', description: 'A considered eye for the moments you want to keep.', sampleOffering: 'Event and portrait photography' },
+  { slug: 'videography', name: 'Videography', description: 'Moving images to help revisit the day.', sampleOffering: 'Event films and highlight edits' },
   { slug: 'decor-and-styling', name: 'Decor & styling', description: 'A setting shaped around your occasion and point of view.', sampleOffering: 'Tablescapes and floral styling' },
+  { slug: 'dj-and-sound', name: 'DJ & sound', description: 'Sound and music shaped around the gathering.', sampleOffering: 'DJ sets and event sound support' },
+  { slug: 'event-hosting', name: 'Event hosting', description: 'A host to guide guests through the occasion.', sampleOffering: 'Event hosting and announcements' },
   { slug: 'planning', name: 'Planning', description: 'A steady hand to bring the many details together.', sampleOffering: 'Event planning and coordination' },
 ]
 
