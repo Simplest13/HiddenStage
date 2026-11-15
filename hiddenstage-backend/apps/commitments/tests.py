@@ -8,7 +8,7 @@ import threading
 from datetime import timedelta
 
 from django.db import DatabaseError, IntegrityError, close_old_connections, connections, transaction
-from django.test import TestCase, TransactionTestCase
+from django.test import TestCase, TransactionTestCase, override_settings
 from django.utils import timezone
 from rest_framework.test import APIClient
 
@@ -107,6 +107,7 @@ class SimpleAcceptanceTests(AcceptanceSetup):
         )
         self.assertEqual(response.status_code, 403)
 
+    @override_settings(EMAIL_VERIFICATION_REQUIRED=True)
     def test_unverified_customer_cannot_accept(self):
         unverified = make_customer("unverified@example.com", verified=False)
         event = make_event(unverified)
@@ -390,3 +391,38 @@ class ConcurrentAcceptanceTests(TransactionTestCase):
         published = release_commitment(actor=self.customer, commitment_id=commitment.id, reason="test")
         self.assertEqual(published.status, CommitmentStatus.RELEASED)
         self.assertEqual(CommitmentAudit.objects.filter(action="RELEASED").count(), 1)
+
+@override_settings(EMAIL_VERIFICATION_REQUIRED=False)
+class AcceptanceVerificationSwitchTests(TestCase):
+    """Acceptance still enforces every other rule with verification switched off."""
+
+    def _accept(self, customer, provider):
+        event = make_event(customer)
+        invite_and_accept(event, provider)
+        quotation = submitted_quotation(provider, event)
+        revision = quotation.revisions.get()
+        client = APIClient()
+        client.force_authenticate(customer)
+        return client.post(
+            ACCEPT.format(quotation.id),
+            {
+                "revision_id": str(revision.id),
+                "requirement_ids": [str(event.requirements.first().id)],
+            },
+            format="json",
+        )
+
+    def test_an_unverified_customer_may_accept_when_verification_is_disabled(self):
+        customer = make_customer("accept-off@example.com", verified=False)
+        provider = make_provider("accept-off-provider@example.com")
+        response = self._accept(customer, provider)
+        self.assertEqual(response.status_code, 201, response.content)
+        self.assertIsNone(customer.email_verified_at)
+
+    @override_settings(EMAIL_VERIFICATION_REQUIRED=True)
+    def test_the_gate_still_applies_when_verification_is_required(self):
+        customer = make_customer("accept-on@example.com", verified=False)
+        provider = make_provider("accept-on-provider@example.com")
+        response = self._accept(customer, provider)
+        self.assertEqual(response.status_code, 400, response.content)
+

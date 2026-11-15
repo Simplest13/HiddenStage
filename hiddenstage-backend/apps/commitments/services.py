@@ -15,6 +15,7 @@ from django.db import IntegrityError, transaction
 from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
+from apps.accounts.policy import verification_satisfied
 from apps.commitments.models import (
     Commitment,
     CommitmentAction,
@@ -114,7 +115,7 @@ def accept_quotation(
     )
     if quotation is None or quotation.event.customer_id != actor.id:
         raise PermissionDenied("This quotation is not available to your account.")
-    if not actor.email_verified:
+    if not verification_satisfied(actor):
         raise BusinessRuleViolation("Verify your email address before accepting a quotation.")
 
     event = quotation.event

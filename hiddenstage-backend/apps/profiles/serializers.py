@@ -117,6 +117,7 @@ class ProviderProfileSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "display_name",
+            "kind",
             "description",
             "contact",
             "categories",
@@ -238,6 +239,7 @@ class ProviderPublicSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "display_name",
+            "kind",
             "description",
             "verification_status",
             "categories",

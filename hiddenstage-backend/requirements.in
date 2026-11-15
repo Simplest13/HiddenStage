@@ -1,0 +1,13 @@
+# Top-level runtime dependencies (human-edited). Ranges only; the exact resolved
+# set lives in requirements.txt, which is what CI and production install.
+# Regenerate the lock with the command in docs/CI_PIPELINE_GUIDE.md.
+Django>=5.2,<5.3
+djangorestframework>=3.16,<3.17
+drf-spectacular>=0.28,<0.29
+psycopg[binary]>=3.2,<3.4
+django-cors-headers>=4.6,<5
+python-dotenv>=1.0,<2
+whitenoise>=6.8,<7
+django-storages[s3]>=1.14,<2
+# Gunicorn is POSIX-only; the marker keeps this file installable on Windows hosts.
+gunicorn>=23,<24 ; sys_platform != "win32"

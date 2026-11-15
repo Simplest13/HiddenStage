@@ -1,7 +1,36 @@
-Django>=5.2,<5.3
-djangorestframework>=3.16,<3.17
-drf-spectacular>=0.28,<0.29
-psycopg[binary]>=3.2,<3.3
-django-cors-headers>=4.6,<5
-python-dotenv>=1.0,<2
-gunicorn>=23,<24
+# Fully pinned runtime dependency set. Resolved from requirements.in in a clean
+# virtualenv, then verified by running the full backend suite on it.
+#   pip install -r requirements.txt
+# Regenerate after editing requirements.in - see docs/CI_PIPELINE_GUIDE.md.
+
+asgiref==3.13.0
+attrs==26.1.0
+boto3==1.44.3
+botocore==1.44.3
+Django==5.2.19
+django-cors-headers==4.9.0
+django-storages==1.14.6
+djangorestframework==3.16.1
+drf-spectacular==0.28.0
+inflection==0.5.1
+jmespath==1.1.0
+jsonschema==4.26.0
+jsonschema-specifications==2025.9.1
+psycopg==3.3.9
+psycopg-binary==3.3.9
+python-dateutil==2.9.0.post0
+python-dotenv==1.2.4
+PyYAML==6.0.3
+referencing==0.37.0
+rpds-py==2026.9.1
+s3transfer==0.19.3
+six==1.17.0
+sqlparse==0.6.1
+typing_extensions==4.16.0
+tzdata==2026.6
+uritemplate==4.2.0
+urllib3==2.8.0
+whitenoise==6.12.0
+
+# POSIX-only application server; the marker keeps Windows installs working.
+gunicorn==23.0.0 ; sys_platform != "win32"

@@ -103,6 +103,19 @@ class BusinessRepresentative(UUIDModel):
             raise ValidationError({"scopes": f"Unknown scope(s): {', '.join(sorted(unknown))}"})
 
 
+class ProviderKind(models.TextChoices):
+    """How a provider participates in the marketplace.
+
+    Both kinds are independent marketplace participants: they declare services,
+    coverage, receive matched opportunities and can quote customers directly.
+    ``MANAGER`` additionally coordinates a team and can recruit ``WORKER``
+    accounts. A worker is never owned by a manager.
+    """
+
+    MANAGER = "MANAGER", "Manager"
+    WORKER = "WORKER", "Independent worker"
+
+
 class VerificationStatus(models.TextChoices):
     UNVERIFIED = "UNVERIFIED", "Unverified"
     PENDING = "PENDING", "Pending review"
@@ -157,6 +170,9 @@ class ProviderProfile(UUIDModel):
         related_name="provider_profiles",
     )
     display_name = models.CharField(max_length=150)
+    kind = models.CharField(
+        max_length=20, choices=ProviderKind.choices, default=ProviderKind.MANAGER
+    )
     description = models.TextField(blank=True)
     contact = models.CharField(max_length=120)
     verification_status = models.CharField(
@@ -173,7 +189,11 @@ class ProviderProfile(UUIDModel):
                     verification_status__in=["UNVERIFIED", "PENDING", "VERIFIED", "REJECTED"]
                 ),
                 name="provider_verification_status_valid",
-            )
+            ),
+            models.CheckConstraint(
+                condition=models.Q(kind__in=["MANAGER", "WORKER"]),
+                name="provider_kind_valid",
+            ),
         ]
 
     def __str__(self):

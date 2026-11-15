@@ -3,7 +3,7 @@
 from datetime import timedelta
 
 from django.db import DatabaseError, transaction
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.utils import timezone
 from rest_framework.test import APIClient
 
@@ -28,8 +28,15 @@ class QuotationPermissionTests(TestCase):
         self.client = APIClient()
         self.client.force_authenticate(self.provider)
 
-    def test_quotation_requires_an_accepted_invitation(self):
+    def test_matched_provider_can_quote_without_an_invitation(self):
         response = self.client.post(QUOTATIONS, {"event": str(self.event.id)}, format="json")
+        self.assertEqual(response.status_code, 201, response.content)
+
+    def test_unmatched_provider_cannot_quote_without_an_invitation(self):
+        outsider = make_provider("chef@example.com", categories=("food-and-drink",))
+        client = APIClient()
+        client.force_authenticate(outsider)
+        response = client.post(QUOTATIONS, {"event": str(self.event.id)}, format="json")
         self.assertEqual(response.status_code, 403, response.content)
 
     def test_customer_cannot_use_provider_quotation_endpoints(self):
@@ -191,7 +198,7 @@ class QuotationLifecycleTests(TestCase):
         self.assertEqual(first.status, RevisionStatus.SUPERSEDED)
         self.assertEqual(first.total_paise, 1_500_000)  # quoted history preserved
         quotation.refresh_from_db()
-        self.assertEqual(quotation.current_revision_id, new_revision.data["id"])
+        self.assertEqual(str(quotation.current_revision_id), new_revision.data["id"])
 
     def test_customer_comparison_sees_all_quotations(self):
         submitted_quotation(self.provider, self.event)
@@ -205,3 +212,24 @@ class QuotationLifecycleTests(TestCase):
         self.assertEqual(response.status_code, 200, response.content)
         rows = response.data["results"] if isinstance(response.data, dict) else response.data
         self.assertEqual(len(rows), 2)
+
+@override_settings(EMAIL_VERIFICATION_REQUIRED=False)
+class QuotationVerificationSwitchTests(TestCase):
+    def _quote(self, provider, event):
+        client = APIClient()
+        client.force_authenticate(provider)
+        return client.post(QUOTATIONS, {"event": str(event.id)}, format="json")
+
+    def test_an_unverified_provider_may_quote_when_verification_is_disabled(self):
+        customer = make_customer("quote-off@example.com")
+        provider = make_provider("quote-off-provider@example.com", verified=False)
+        response = self._quote(provider, make_event(customer))
+        self.assertEqual(response.status_code, 201, response.content)
+
+    @override_settings(EMAIL_VERIFICATION_REQUIRED=True)
+    def test_the_gate_still_applies_when_verification_is_required(self):
+        customer = make_customer("quote-on@example.com")
+        provider = make_provider("quote-on-provider@example.com", verified=False)
+        response = self._quote(provider, make_event(customer))
+        self.assertEqual(response.status_code, 400, response.content)
+

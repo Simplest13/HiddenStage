@@ -7,6 +7,7 @@ from django.db import IntegrityError, transaction
 from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
+from apps.accounts.policy import verification_satisfied
 from apps.core.exceptions import BusinessRuleViolation, Conflict
 from apps.events.models import EventStatus, RequirementStatus
 from apps.invitations.models import Invitation, InvitationStatus
@@ -27,7 +28,7 @@ def create_invitation(*, customer, event, provider_user, requirement=None, messa
         raise PermissionDenied("This event is not available to your account.")
     if event.status != EventStatus.SUBMITTED:
         raise BusinessRuleViolation("Only a submitted event can be invited to providers.")
-    if not customer.email_verified:
+    if not verification_satisfied(customer):
         raise BusinessRuleViolation("Verify your email address before inviting providers.")
     if provider_user.id == customer.id:
         raise ValidationError({"provider_id": "You cannot invite yourself."})

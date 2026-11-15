@@ -39,7 +39,7 @@ class ProviderQuotationListCreateView(generics.ListCreateAPIView):
     pagination_class = None
 
     def get_queryset(self):
-        mark_expired_revisions(QuotationRevision.objects.filter(provider=self.request.user))
+        mark_expired_revisions(QuotationRevision.objects.filter(quotation__provider=self.request.user))
         return (
             Quotation.objects.filter(provider=self.request.user)
             .select_related("event", "provider")

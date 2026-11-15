@@ -5,18 +5,20 @@ import { PublicLayout } from '../../layouts/PublicLayout'
 import { AuthenticationLayout } from '../../layouts/AuthenticationLayout'
 import { WorkspaceLayout } from '../../layouts/WorkspaceLayout'
 import { routes } from '../routes/routePaths'
-import { RequireAuthentication, RequireCustomerOnboarding, RequireRole, RequireVerifiedCustomer, RequireProviderOnboarding, RequireCompletedProvider } from './RouteGuards'
+import { RequireAuthentication, RequireCustomerOnboarding, RequireVerifiedCustomer, RequireProviderOnboarding, RequireCompletedProvider } from './RouteGuards'
 import { Spinner } from '../../shared/ui/feedback'
 
 const PublicPages = lazy(() => import('../../features/public/PublicPages'))
 const AuthPages = lazy(() => import('../../features/auth/AuthPages'))
-const WorkspacePages = lazy(() => import('../../features/workspaces/WorkspacePages'))
 const ProviderPages = lazy(() => import('../../features/provider/ProviderPages'))
-const MarketplacePages = lazy(() => import('../../features/provider/ProviderPages'))
+const NetworkPages = lazy(() => import('../../features/network/NetworkPages'))
 const OnboardingPages = lazy(() => import('../../features/onboarding/OnboardingPage'))
 const ProviderOnboardingPage = lazy(() => import('../../features/onboarding/ProviderOnboardingPage'))
 const CustomerPages = lazy(() => import('../../features/customer/CustomerPages'))
+const QuotesPage = lazy(() => import('../../features/customer/QuotesPage'))
+const CommitmentsPage = lazy(() => import('../../features/customer/CommitmentsPage'))
 const EventPages = lazy(() => import('../../features/events/EventPages'))
+const EventWorkspace = lazy(() => import('../../features/events/EventWorkspacePage'))
 const SystemPages = lazy(() => import('../../features/system/SystemPages'))
 const LegacyEventRedirect = lazy(() => import('../../features/events/LegacyEventRedirect'))
 const relativePath = (parentPath: string, fullPath: string) => fullPath.slice(parentPath.length).replace(/^\/+/, '')
@@ -61,12 +63,13 @@ const protectedChildren: RouteObject[] = [
     { index: true, element: lazyPage(CustomerPages), handle: { page: 'customerHome' } },
     { path: relativePath(routes.appBase, routes.customer.requests), element: lazyPage(CustomerPages), handle: { page: 'customerRequests' } },
     { path: relativePath(routes.appBase, routes.customer.newRequest), element: lazyPage(EventPages), handle: { page: 'eventCreate' } },
-    { path: relativePath(routes.appBase, routes.customer.requestDetail), element: lazyPage(EventPages), handle: { page: 'eventDetail' } },
+    { path: relativePath(routes.appBase, routes.customer.requestDetail), element: lazyPage(EventWorkspace), handle: { page: 'eventDetail' } },
     { path: relativePath(routes.appBase, routes.customer.requestEdit), element: lazyPage(EventPages), handle: { page: 'eventEdit' } },
-    { path: relativePath(routes.appBase, routes.marketplace.providersForEvent), element: lazyPage(MarketplacePages), handle: { page: 'eventProviderDiscovery' } },
-    { path: relativePath(routes.appBase, routes.marketplace.quotesForEvent), element: lazyPage(MarketplacePages), handle: { page: 'customerEventQuotes' } },
-    { path: relativePath(routes.customer.home, routes.customer.quotes), element: lazyPage(MarketplacePages), handle: { page: 'customerQuotes' } },
-    { path: relativePath(routes.customer.home, routes.customer.commitments), element: lazyPage(MarketplacePages), handle: { page: 'customerCommitments' } },
+    { path: relativePath(routes.appBase, routes.marketplace.providersForEvent), element: lazyPage(EventWorkspace), handle: { page: 'eventProviderDiscovery' } },
+    { path: relativePath(routes.appBase, routes.marketplace.quotesForEvent), element: lazyPage(EventWorkspace), handle: { page: 'customerEventQuotes' } },
+    { path: relativePath(routes.customer.home, routes.customer.quotes), element: lazyPage(QuotesPage), handle: { page: 'customerQuotes' } },
+    { path: relativePath(routes.customer.home, routes.customer.commitments), element: lazyPage(CommitmentsPage), handle: { page: 'customerCommitments' } },
+    { path: 'settings', element: lazyPage(CustomerPages), handle: { page: 'customerSettings' } },
     ] },
     { path: 'customer', children: [
       { index: true, element: <Navigate to={routes.customer.home} replace /> },
@@ -82,25 +85,22 @@ const protectedChildren: RouteObject[] = [
     { path: relativePath(routes.provider.home, routes.provider.profile), element: lazyPage(ProviderPages), handle: { page: 'providerProfile' } },
     { path: relativePath(routes.provider.home, routes.provider.services), element: lazyPage(ProviderPages), handle: { page: 'providerServices' } },
     { path: relativePath(routes.provider.home, routes.provider.coverage), element: lazyPage(ProviderPages), handle: { page: 'providerCoverage' } },
+    { path: relativePath(routes.provider.home, routes.provider.opportunities), element: lazyPage(ProviderPages), handle: { page: 'providerOpportunities' } },
+    { path: relativePath(routes.provider.home, routes.provider.network), element: lazyPage(NetworkPages), handle: { page: 'network' } },
+    { path: relativePath(routes.provider.home, routes.provider.networkDiscover), element: lazyPage(NetworkPages), handle: { page: 'networkDiscover' } },
+    { path: relativePath(routes.provider.home, routes.provider.assignments), element: lazyPage(NetworkPages), handle: { page: 'assignments' } },
+    { path: relativePath(routes.provider.home, routes.provider.assignmentDetail), element: lazyPage(NetworkPages), handle: { page: 'assignmentDetail' } },
     { path: relativePath(routes.provider.home, routes.provider.requests), element: lazyPage(ProviderPages), handle: { page: 'providerRequests' } },
     { path: relativePath(routes.provider.home, routes.provider.quotes), element: lazyPage(ProviderPages), handle: { page: 'providerQuotes' } },
     { path: relativePath(routes.provider.home, routes.provider.quoteForEvent), element: lazyPage(ProviderPages), handle: { page: 'providerQuoteEditor' } },
     { path: relativePath(routes.provider.home, routes.provider.commitments), element: lazyPage(ProviderPages), handle: { page: 'providerCommitments' } },
   ] }] },
-  { path: relativePath(routes.appBase, routes.business.home), element: <WorkspaceLayout audience="business" />, children: [
-    { index: true, element: lazyPage(WorkspacePages), handle: { page: 'businessHome' } },
-    { path: relativePath(routes.business.home, routes.business.profile), element: lazyPage(WorkspacePages), handle: { page: 'businessProfile' } },
-    { path: relativePath(routes.business.home, routes.business.representatives), element: lazyPage(WorkspacePages), handle: { page: 'businessRepresentatives' } },
-    { path: relativePath(routes.business.home, routes.business.verification), element: lazyPage(WorkspacePages), handle: { page: 'businessVerification' } },
-  ] },
-  { element: <RequireRole role="ADMIN" />, children: [
-    { path: relativePath(routes.appBase, routes.admin.home), element: <WorkspaceLayout audience="admin" />, children: [
-      { index: true, element: lazyPage(WorkspacePages), handle: { page: 'adminHome' } },
-      { path: relativePath(routes.admin.home, routes.admin.businesses), element: lazyPage(WorkspacePages), handle: { page: 'adminBusinesses' } },
-      { path: relativePath(routes.admin.home, routes.admin.reviews), element: lazyPage(WorkspacePages), handle: { page: 'adminReviews' } },
-      { path: relativePath(routes.admin.home, routes.admin.audit), element: lazyPage(WorkspacePages), handle: { page: 'adminAudit' } },
-    ] },
-  ] },
+  // Business and administration workspaces have no backend in this release; the URLs
+  // stay reserved but resolve to the forbidden page instead of demo data.
+  { path: relativePath(routes.appBase, routes.business.home), element: <Navigate to={routes.forbidden} replace /> },
+  { path: `${relativePath(routes.appBase, routes.business.home)}/*`, element: <Navigate to={routes.forbidden} replace /> },
+  { path: relativePath(routes.appBase, routes.admin.home), element: <Navigate to={routes.forbidden} replace /> },
+  { path: `${relativePath(routes.appBase, routes.admin.home)}/*`, element: <Navigate to={routes.forbidden} replace /> },
 ]
 
 export const routeConfig: RouteObject[] = [

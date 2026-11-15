@@ -24,3 +24,8 @@ test-results
 *.njsproj
 *.sln
 *.sw?
+
+# Playwright browser-QA output
+e2e-artifacts/
+test-results/
+playwright-report/

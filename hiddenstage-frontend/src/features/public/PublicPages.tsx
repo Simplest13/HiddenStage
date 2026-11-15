@@ -19,11 +19,30 @@ const categoryGroups = [
   { id: 'styling', label: 'Styling & planning', slugs: ['decor-and-styling', 'planning'] },
 ]
 
-const steps = [
+const organiserSteps = [
+  { number: '01', title: 'Tell us about your event', body: 'Describe the occasion you have in mind and when it is taking place.' },
+  { number: '02', title: 'Describe your requirements', body: 'Share the service categories and location details for your event.' },
+  { number: '03', title: 'Receive tailored quotes', body: 'Get proposals from suppliers who are suitable for your request.' },
+  { number: '04', title: 'Compare and communicate', body: 'Review quotes side by side and message the suppliers you are considering.' },
+  { number: '05', title: 'Make your choice', body: 'Select the supplier that best fits your event and confirm the booking.' },
+  { number: '06', title: 'Enjoy your event', body: 'Your chosen supplier delivers the experience, and you track the details in one place.' },
+]
+
+const supplierSteps = [
+  { number: '01', title: 'Join the platform', body: 'Create a professional account and set up your business profile.' },
+  { number: '02', title: 'List your services', body: 'Describe what you offer, your pricing, and the areas you cover.' },
+  { number: '03', title: 'Discover opportunities', body: 'Browse event requests that match your services and location.' },
+  { number: '04', title: 'Review and respond', body: 'Read each request and submit a quotation when it fits your business.' },
+  { number: '05', title: 'Communicate with customers', body: 'Answer questions, refine your quote, and build trust with organisers.' },
+  { number: '06', title: 'Win and deliver work', body: 'Get hired for matching events and deliver the experience your customers expect.' },
+]
+
+const homeSteps = [
   { number: '01', title: 'Share your event', body: 'Tell us what you’re planning, when it’s happening, and which services you need. It takes a few minutes.' },
   { number: '02', title: 'Compare quotes', body: 'Review proposals from relevant professionals, compare what’s included, and ask questions before you decide.' },
   { number: '03', title: 'Choose your suppliers', body: 'Confirm the people you want to work with and keep every decision together in your workspace.' },
 ]
+
 
 function CategoryTile({ slug, index }: { slug: string; index: number }) {
   const category = serviceCategories.find((item) => item.slug === slug)
@@ -134,7 +153,7 @@ function HomePage() {
           </div>
         </div>
         <ol className="steps-grid">
-          {steps.map((step) => <li key={step.number}>
+          {homeSteps.map((step) => <li key={step.number}>
             <span className="steps-grid__number">{step.number}</span>
             <h3>{step.title}</h3>
             <p>{step.body}</p>
@@ -241,25 +260,45 @@ function HowItWorksPage() {
     <PageHero eyebrow="How HiddenStage works" title="From first thought to a day that feels like yours." intro="A clear, considered route from the occasion you have in mind to the professionals who can bring it together." />
     <section className="section section--paper">
       <div className="wrap">
-        <div className="how-columns">
-          {steps.map((step) => <article key={step.number}>
-            <span className="steps-grid__number">{step.number}</span>
-            <h2>{step.title}</h2>
-            <p>{step.body}</p>
-          </article>)}
+        <div className="how-steps">
+          <div className="how-steps__section how-steps__section--organiser">
+            <div className="how-steps__heading"><span className="eyebrow">I&#39;m organising an event</span><h2>Organiser journey</h2></div>
+            <ol className="how-steps__list">
+              {organiserSteps.map((step) => <li key={step.number} className="how-steps__row">
+                <span className="how-steps__number">{step.number}</span>
+                <span className="how-steps__text">
+                  <span className="how-steps__title">{step.title}</span>
+                  <span className="how-steps__body">{step.body}</span>
+                </span>
+              </li>)}
+            </ol>
+          </div>
+          <div className="how-steps__divider" aria-hidden="true" />
+          <div className="how-steps__section how-steps__section--supplier">
+            <div className="how-steps__heading"><span className="eyebrow">I&#39;m an event supplier</span><h2>Supplier journey</h2></div>
+            <ol className="how-steps__list">
+              {supplierSteps.map((step) => <li key={step.number} className="how-steps__row">
+                <span className="how-steps__number">{step.number}</span>
+                <span className="how-steps__text">
+                  <span className="how-steps__title">{step.title}</span>
+                  <span className="how-steps__body">{step.body}</span>
+                </span>
+              </li>)}
+            </ol>
+          </div>
         </div>
-        <div className="how-note"><Badge tone="warning">Demo preview</Badge><p>The current preview supports browsing demo content and local event requests. It does not submit enquiries to real providers or take payments.</p></div>
+        <div className="how-note"><Badge tone="warning">Preview release</Badge><p>Requests, invitations, quotations and commitments are stored in your workspace. HiddenStage does not take payments or create bookings in this release.</p></div>
       </div>
     </section>
     <section className="section">
       <div className="wrap faq-layout">
-        <div><span className="eyebrow">Questions, answered</span><h2 className="faq-layout__title">A little more clarity before you begin</h2><p>Everything below reflects what this preview actually does.</p></div>
+        <div><span className="eyebrow">Questions, answered</span><h2 className="faq-layout__title">A little more clarity before you begin</h2><p>Everything below reflects how HiddenStage works today.</p></div>
         <div className="faq-list">
           {[
-            ['Is HiddenStage free for organisers?', 'Yes. Requesting quotes and comparing proposals is free. In this preview nothing is charged and no payment flow is active.'],
+            ['Is HiddenStage free for organisers?', 'Yes. Requesting quotes and comparing proposals is free. HiddenStage does not process payments in this release.'],
             ['How are professionals matched to my event?', 'Matching uses the service categories in your request and the coverage locations a professional explicitly sets. Nearby areas are not assumed.'],
             ['Can I change my request after sending it?', 'An event can be edited while it is a draft. Once invitations are outstanding, the details lock so professionals are quoting the same brief.'],
-            ['What happens after I accept a quote?', 'Acceptance records a commitment with the agreed lines. In this preview no payment or real booking is created.'],
+            ['What happens after I accept a quote?', 'Acceptance records a commitment with the agreed services and price. It is not a booking or a payment.'],
           ].map(([question, answer]) => <details key={question}><summary>{question}</summary><p>{answer}</p></details>)}
         </div>
       </div>

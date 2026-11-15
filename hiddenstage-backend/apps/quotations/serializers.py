@@ -47,6 +47,7 @@ class QuotationRevisionSerializer(serializers.ModelSerializer):
 class QuotationSerializer(serializers.ModelSerializer):
     revisions = QuotationRevisionSerializer(many=True, read_only=True)
     provider_display_name = serializers.SerializerMethodField()
+    provider_profile_id = serializers.SerializerMethodField()
     event_name = serializers.CharField(source="event.name", read_only=True)
 
     class Meta:
@@ -57,6 +58,7 @@ class QuotationSerializer(serializers.ModelSerializer):
             "event_name",
             "provider",
             "provider_display_name",
+            "provider_profile_id",
             "status",
             "current_revision",
             "created_at",
@@ -73,6 +75,10 @@ class QuotationSerializer(serializers.ModelSerializer):
         )
         return profile.display_name if profile else obj.provider.full_name
 
+    def get_provider_profile_id(self, obj) -> str | None:
+        profile = getattr(obj.provider, "provider_profile", None)
+        return str(profile.id) if profile else None
+
 
 class QuotationItemInputSerializer(serializers.Serializer):
     requirement_id = serializers.UUIDField()
@@ -85,11 +91,12 @@ class QuotationItemInputSerializer(serializers.Serializer):
     amount_paise = serializers.IntegerField(min_value=1)
 
     def validate(self, attrs):
-        if attrs["kind"] == ItemKind.PACKAGE and not attrs.get("package_key"):
+        kind = attrs.get("kind") or ItemKind.LINE
+        if kind == ItemKind.PACKAGE and not attrs.get("package_key"):
             raise serializers.ValidationError(
                 {"package_key": "Package items require a package key."}
             )
-        if attrs["kind"] == ItemKind.LINE and attrs.get("package_key"):
+        if kind == ItemKind.LINE and attrs.get("package_key"):
             raise serializers.ValidationError(
                 {"package_key": "Service lines cannot carry a package key."}
             )

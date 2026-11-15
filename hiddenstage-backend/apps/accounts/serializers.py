@@ -4,12 +4,17 @@ from django.utils import timezone
 from rest_framework import serializers
 
 from apps.accounts.models import User, UserRole, normalize_email_address
+from apps.accounts.policy import verification_required
 from apps.core.validators import normalize_phone, normalize_text, validate_indian_mobile
 
 
 class UserSerializer(serializers.ModelSerializer):
     email_verified = serializers.BooleanField(read_only=True)
     profile_completed = serializers.BooleanField(read_only=True)
+    # Deployment policy, not per-account state: the SPA cannot choose between the
+    # verify screen and the workspace unless it knows whether an unverified
+    # account is actually barred.
+    email_verification_required = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -21,11 +26,15 @@ class UserSerializer(serializers.ModelSerializer):
             "role",
             "email_verified",
             "email_verified_at",
+            "email_verification_required",
             "profile_completed",
             "terms_accepted_at",
             "date_joined",
         ]
         read_only_fields = fields
+
+    def get_email_verification_required(self, obj) -> bool:
+        return verification_required()
 
 
 class RegisterSerializer(serializers.Serializer):

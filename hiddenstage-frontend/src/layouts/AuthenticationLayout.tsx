@@ -31,7 +31,7 @@ export function AuthenticationLayout() {
         <Outlet />
         <p className="auth-card__switch">{isLogin ? 'New to HiddenStage?' : 'Already have an account?'} <Link to={isLogin ? routes.auth.register : routes.auth.login}>{isLogin ? 'Create an account' : 'Log in'}</Link></p>
       </section>
-      <p className="auth-layout__note">Demo preview — no email is sent and no payment is taken.</p>
+      <p className="auth-layout__note">Email verification and secure sessions protect your account.</p>
     </section>
   </main>
 }

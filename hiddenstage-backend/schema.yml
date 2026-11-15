@@ -1066,6 +1066,23 @@ paths:
                 items:
                   $ref: '#/components/schemas/ProviderMatch'
           description: ''
+  /api/v1/provider/opportunities/:
+    get:
+      operationId: provider_opportunities_list
+      description: Matched public requests a provider can quote without an invitation.
+      tags:
+      - provider
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProviderOpportunity'
+          description: ''
   /api/v1/providers/{id}/:
     get:
       operationId: providers_retrieve
@@ -1590,6 +1607,296 @@ paths:
               schema:
                 $ref: '#/components/schemas/CommitmentDetail'
           description: ''
+  /api/v1/network/workers/:
+    get:
+      operationId: network_workers_list
+      tags:
+      - network
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WorkerDiscovery'
+          description: ''
+  /api/v1/network/workers/{user_id}/:
+    get:
+      operationId: network_worker_retrieve
+      parameters:
+      - in: path
+        name: user_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - network
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkerDiscovery'
+          description: ''
+  /api/v1/network/invitations/:
+    get:
+      operationId: network_invitations_list
+      tags:
+      - network
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NetworkInvitation'
+          description: ''
+    post:
+      operationId: network_invitation_create
+      tags:
+      - network
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NetworkInvitationCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/NetworkInvitationCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/NetworkInvitationCreateRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NetworkInvitation'
+          description: ''
+  /api/v1/network/invitations/{id}/{action}/:
+    post:
+      operationId: network_invitation_action
+      parameters:
+      - in: path
+        name: action
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - network
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NetworkInvitation'
+          description: ''
+  /api/v1/network/associations/:
+    get:
+      operationId: network_associations_list
+      tags:
+      - network
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NetworkAssociation'
+          description: ''
+  /api/v1/network/associations/{id}/end/:
+    post:
+      operationId: network_association_end
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - network
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NetworkAssociationEndRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/NetworkAssociationEndRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/NetworkAssociationEndRequest'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NetworkAssociation'
+          description: ''
+  /api/v1/assignments/availability/:
+    get:
+      operationId: network_availability
+      parameters:
+      - in: query
+        name: end_time
+        schema:
+          type: string
+          format: time
+        required: true
+      - in: query
+        name: event_date
+        schema:
+          type: string
+          format: date
+        required: true
+      - in: query
+        name: start_time
+        schema:
+          type: string
+          format: time
+        required: true
+      - in: query
+        name: worker_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - assignments
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AvailabilityResponse'
+          description: ''
+  /api/v1/assignments/:
+    get:
+      operationId: assignments_list
+      tags:
+      - assignments
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WorkerAssignment'
+          description: ''
+    post:
+      operationId: assignment_create
+      tags:
+      - assignments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignmentCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AssignmentCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AssignmentCreateRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkerAssignment'
+          description: ''
+  /api/v1/assignments/{id}/:
+    get:
+      operationId: assignment_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - assignments
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkerAssignment'
+          description: ''
+  /api/v1/assignments/{id}/{action}/:
+    post:
+      operationId: assignment_action
+      parameters:
+      - in: path
+        name: action
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - assignments
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignmentActionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AssignmentActionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AssignmentActionRequest'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkerAssignment'
+          description: ''
 components:
   schemas:
     AcceptanceRequestRequest:
@@ -1611,6 +1918,98 @@ components:
             format: uuid
       required:
       - revision_id
+    AssignmentActionRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          default: ''
+          maxLength: 2000
+        completion_notes:
+          type: string
+          default: ''
+          maxLength: 4000
+    AssignmentCreateRequest:
+      type: object
+      properties:
+        worker_id:
+          type: string
+          format: uuid
+        commitment_id:
+          type: string
+          format: uuid
+        role:
+          type: string
+          minLength: 1
+          maxLength: 120
+        task_description:
+          type: string
+          minLength: 1
+          maxLength: 4000
+        start_time:
+          type: string
+          format: time
+        end_time:
+          type: string
+          format: time
+        reporting_time:
+          type: string
+          format: time
+          nullable: true
+        location:
+          type: string
+          default: ''
+          maxLength: 1000
+        instructions:
+          type: string
+          default: ''
+          maxLength: 4000
+        compensation_paise:
+          type: integer
+          minimum: 0
+          nullable: true
+        response_deadline:
+          type: string
+          format: date-time
+          nullable: true
+        send:
+          type: boolean
+          default: true
+        replaces_id:
+          type: string
+          format: uuid
+          nullable: true
+      required:
+      - commitment_id
+      - end_time
+      - role
+      - start_time
+      - task_description
+      - worker_id
+    AvailabilityResponse:
+      type: object
+      description: 'Availability is privacy-safe: no other Manager''s event data is
+        returned.'
+      properties:
+        available:
+          type: boolean
+        conflict:
+          type: boolean
+        event_date:
+          type: string
+          format: date
+        start_time:
+          type: string
+          format: time
+        end_time:
+          type: string
+          format: time
+      required:
+      - available
+      - conflict
+      - end_time
+      - event_date
+      - start_time
     Commitment:
       type: object
       properties:
@@ -2383,6 +2782,204 @@ components:
       required:
       - email
       - password
+    NetworkAssociation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        manager:
+          type: string
+          format: uuid
+          readOnly: true
+        worker:
+          type: string
+          format: uuid
+          readOnly: true
+        counterpart_user_id:
+          type: string
+          format: uuid
+          nullable: true
+          readOnly: true
+        counterpart_profile:
+          allOf:
+          - $ref: '#/components/schemas/ProviderSummary'
+          nullable: true
+          readOnly: true
+        status:
+          enum:
+          - ACTIVE
+          - ENDED
+          type: string
+          description: |-
+            * `ACTIVE` - Active
+            * `ENDED` - Ended
+          x-spec-enum-id: 5cad49c1126bb333
+          readOnly: true
+          default: ACTIVE
+        associated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        ended_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        ended_reason:
+          type: string
+          readOnly: true
+        active_assignments:
+          type: integer
+          readOnly: true
+        completed_assignments:
+          type: integer
+          readOnly: true
+      required:
+      - active_assignments
+      - associated_at
+      - completed_assignments
+      - counterpart_profile
+      - counterpart_user_id
+      - ended_at
+      - ended_reason
+      - id
+      - manager
+      - status
+      - worker
+    NetworkAssociationEndRequest:
+      type: object
+      description: Body of `POST /network/associations/{id}/end/`.
+      properties:
+        reason:
+          type: string
+          default: ''
+          maxLength: 500
+    NetworkInvitation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        manager:
+          type: string
+          format: uuid
+          readOnly: true
+        manager_name:
+          type: string
+          readOnly: true
+        manager_profile:
+          allOf:
+          - $ref: '#/components/schemas/ProviderSummary'
+          nullable: true
+          readOnly: true
+        worker:
+          type: string
+          format: uuid
+          readOnly: true
+        worker_name:
+          type: string
+          readOnly: true
+        worker_profile:
+          allOf:
+          - $ref: '#/components/schemas/ProviderSummary'
+          nullable: true
+          readOnly: true
+        message:
+          type: string
+          readOnly: true
+        status:
+          enum:
+          - PENDING
+          - ACCEPTED
+          - DECLINED
+          - CANCELLED
+          - EXPIRED
+          type: string
+          description: |-
+            * `PENDING` - Pending
+            * `ACCEPTED` - Accepted
+            * `DECLINED` - Declined
+            * `CANCELLED` - Cancelled
+            * `EXPIRED` - Expired
+          x-spec-enum-id: 02025a18423df349
+          readOnly: true
+          default: PENDING
+        expires_at:
+          type: string
+          format: date-time
+          readOnly: true
+        responded_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - expires_at
+      - id
+      - manager
+      - manager_name
+      - manager_profile
+      - message
+      - responded_at
+      - status
+      - updated_at
+      - worker
+      - worker_name
+      - worker_profile
+    NetworkInvitationCreateRequest:
+      type: object
+      properties:
+        worker_id:
+          type: string
+          format: uuid
+        message:
+          type: string
+          default: ''
+          maxLength: 2000
+      required:
+      - worker_id
+    OpportunityRequirement:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        category:
+          type: string
+        category_name:
+          type: string
+        description:
+          type: string
+        instructions:
+          type: string
+        budget_paise:
+          type: integer
+          nullable: true
+        status:
+          type: string
+      required:
+      - budget_paise
+      - category
+      - category_name
+      - description
+      - id
+      - instructions
+      - status
+      - title
     PaginatedCommitmentList:
       type: object
       required:
@@ -2527,6 +3124,15 @@ components:
           type: string
           minLength: 1
           maxLength: 150
+        kind:
+          enum:
+          - MANAGER
+          - WORKER
+          type: string
+          description: |-
+            * `MANAGER` - Manager
+            * `WORKER` - Independent worker
+          x-spec-enum-id: c0b54955ffb0c5db
         description:
           type: string
         contact:
@@ -2656,6 +3262,8 @@ components:
           format: uuid
         display_name:
           type: string
+        kind:
+          type: string
         description:
           type: string
         contact:
@@ -2677,6 +3285,7 @@ components:
       - description
       - display_name
       - id
+      - kind
       - verification_status
     ProviderInvitation:
       type: object
@@ -2742,7 +3351,8 @@ components:
           format: date-time
           readOnly: true
         event_detail:
-          type: string
+          type: object
+          additionalProperties: {}
           readOnly: true
       required:
       - created_at
@@ -2764,7 +3374,12 @@ components:
         id:
           type: string
           format: uuid
+        user_id:
+          type: string
+          format: uuid
         display_name:
+          type: string
+        kind:
           type: string
         description:
           type: string
@@ -2789,8 +3404,70 @@ components:
       - display_name
       - exact_pin_match
       - id
+      - kind
       - matching_coverage
+      - user_id
       - verification_status
+    ProviderOpportunity:
+      type: object
+      description: A matched public request. Customer identity and exact venue are
+        never included.
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        event_type:
+          type: string
+        event_date:
+          type: string
+          format: date
+        start_time:
+          type: string
+          format: time
+        end_time:
+          type: string
+          format: time
+        guest_count:
+          type: integer
+        locality:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        requirements:
+          type: array
+          items:
+            $ref: '#/components/schemas/OpportunityRequirement'
+        invitation_status:
+          type: string
+          nullable: true
+        already_quoted:
+          type: boolean
+        quotation_status:
+          type: string
+          nullable: true
+        latest_revision_status:
+          type: string
+          nullable: true
+      required:
+      - already_quoted
+      - city
+      - end_time
+      - event_date
+      - event_type
+      - guest_count
+      - id
+      - invitation_status
+      - latest_revision_status
+      - locality
+      - name
+      - quotation_status
+      - requirements
+      - start_time
+      - state
     ProviderProfile:
       type: object
       properties:
@@ -2801,6 +3478,15 @@ components:
         display_name:
           type: string
           maxLength: 150
+        kind:
+          enum:
+          - MANAGER
+          - WORKER
+          type: string
+          description: |-
+            * `MANAGER` - Manager
+            * `WORKER` - Independent worker
+          x-spec-enum-id: c0b54955ffb0c5db
         description:
           type: string
         contact:
@@ -2847,6 +3533,15 @@ components:
           type: string
           minLength: 1
           maxLength: 150
+        kind:
+          enum:
+          - MANAGER
+          - WORKER
+          type: string
+          description: |-
+            * `MANAGER` - Manager
+            * `WORKER` - Independent worker
+          x-spec-enum-id: c0b54955ffb0c5db
         description:
           type: string
         contact:
@@ -2929,6 +3624,42 @@ components:
           type: boolean
       required:
       - category
+    ProviderSummary:
+      type: object
+      description: Public shape of a provider profile, safe to expose to a counterpart.
+      properties:
+        id:
+          type: string
+          format: uuid
+          nullable: true
+        user_id:
+          type: string
+          format: uuid
+        display_name:
+          type: string
+        kind:
+          type: string
+        description:
+          type: string
+        verification_status:
+          type: string
+        categories:
+          type: array
+          items:
+            type: string
+        coverage:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProviderCoverage'
+      required:
+      - categories
+      - coverage
+      - description
+      - display_name
+      - id
+      - kind
+      - user_id
+      - verification_status
     Quotation:
       type: object
       properties:
@@ -2949,6 +3680,10 @@ components:
           readOnly: true
         provider_display_name:
           type: string
+          readOnly: true
+        provider_profile_id:
+          type: string
+          nullable: true
           readOnly: true
         status:
           enum:
@@ -2986,6 +3721,7 @@ components:
       - id
       - provider
       - provider_display_name
+      - provider_profile_id
       - revisions
       - status
       - updated_at
@@ -3343,6 +4079,9 @@ components:
           format: date-time
           readOnly: true
           nullable: true
+        email_verification_required:
+          type: boolean
+          readOnly: true
         profile_completed:
           type: boolean
           readOnly: true
@@ -3358,6 +4097,7 @@ components:
       required:
       - date_joined
       - email
+      - email_verification_required
       - email_verified
       - email_verified_at
       - full_name
@@ -3366,6 +4106,252 @@ components:
       - profile_completed
       - role
       - terms_accepted_at
+    WorkerAssignment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        manager:
+          type: string
+          format: uuid
+          readOnly: true
+        manager_name:
+          type: string
+          readOnly: true
+        manager_profile:
+          allOf:
+          - $ref: '#/components/schemas/ProviderSummary'
+          nullable: true
+          readOnly: true
+        worker:
+          type: string
+          format: uuid
+          readOnly: true
+        worker_name:
+          type: string
+          readOnly: true
+        worker_profile:
+          allOf:
+          - $ref: '#/components/schemas/ProviderSummary'
+          nullable: true
+          readOnly: true
+        commitment:
+          type: string
+          format: uuid
+          readOnly: true
+        event:
+          type: string
+          format: uuid
+          readOnly: true
+        event_name:
+          type: string
+          readOnly: true
+        event_city:
+          type: string
+          readOnly: true
+        event_locality:
+          type: string
+          readOnly: true
+        role:
+          type: string
+          readOnly: true
+        task_description:
+          type: string
+          readOnly: true
+        instructions:
+          type: string
+          readOnly: true
+        event_date:
+          type: string
+          format: date
+          readOnly: true
+        start_time:
+          type: string
+          format: time
+          readOnly: true
+        end_time:
+          type: string
+          format: time
+          readOnly: true
+        reporting_time:
+          type: string
+          format: time
+          readOnly: true
+          nullable: true
+        location:
+          type: string
+          readOnly: true
+        compensation_paise:
+          type: integer
+          readOnly: true
+          nullable: true
+          description: Amount in integer paise (INR 1 = 100 paise).
+        response_deadline:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        status:
+          enum:
+          - DRAFT
+          - SENT
+          - ACCEPTED
+          - DECLINED
+          - IN_PROGRESS
+          - COMPLETED
+          - CANCELLED
+          - REASSIGNED
+          type: string
+          description: |-
+            * `DRAFT` - Draft
+            * `SENT` - Sent
+            * `ACCEPTED` - Accepted
+            * `DECLINED` - Declined
+            * `IN_PROGRESS` - In progress
+            * `COMPLETED` - Completed
+            * `CANCELLED` - Cancelled
+            * `REASSIGNED` - Reassigned
+          x-spec-enum-id: f1bec1a6d74224d4
+          readOnly: true
+        responded_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        accepted_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        started_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        completed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        cancelled_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        response_note:
+          type: string
+          readOnly: true
+        cancellation_reason:
+          type: string
+          readOnly: true
+        completion_notes:
+          type: string
+          readOnly: true
+        replaces:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        counterpart_contact:
+          type: string
+          nullable: true
+          readOnly: true
+        actions:
+          type: object
+          additionalProperties:
+            type: boolean
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - accepted_at
+      - actions
+      - cancellation_reason
+      - cancelled_at
+      - commitment
+      - compensation_paise
+      - completed_at
+      - completion_notes
+      - counterpart_contact
+      - created_at
+      - end_time
+      - event
+      - event_city
+      - event_date
+      - event_locality
+      - event_name
+      - id
+      - instructions
+      - location
+      - manager
+      - manager_name
+      - manager_profile
+      - replaces
+      - reporting_time
+      - responded_at
+      - response_deadline
+      - response_note
+      - role
+      - start_time
+      - started_at
+      - status
+      - task_description
+      - updated_at
+      - worker
+      - worker_name
+      - worker_profile
+    WorkerDiscovery:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        display_name:
+          type: string
+        description:
+          type: string
+        verification_status:
+          type: string
+        categories:
+          type: array
+          items:
+            type: string
+        coverage:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProviderCoverage'
+        relationship:
+          type: string
+        association_id:
+          type: string
+          format: uuid
+          nullable: true
+        invitation_id:
+          type: string
+          format: uuid
+          nullable: true
+      required:
+      - association_id
+      - categories
+      - coverage
+      - description
+      - display_name
+      - id
+      - invitation_id
+      - relationship
+      - user_id
+      - verification_status
   securitySchemes:
     cookieAuth:
       type: apiKey

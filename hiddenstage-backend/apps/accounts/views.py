@@ -21,6 +21,7 @@ from rest_framework.views import APIView
 
 from apps.accounts.emails import send_password_reset_email, send_verification_email
 from apps.accounts.models import EmailVerificationToken, PasswordResetToken, User
+from apps.accounts.policy import verification_required
 from apps.accounts.serializers import (
     EmailOnlySerializer,
     LoginSerializer,
@@ -57,16 +58,25 @@ class RegisterView(APIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
 
-        raw_token, _ = EmailVerificationToken.issue(
-            user, settings.EMAIL_VERIFICATION_TTL_HOURS
-        )
-        try:
-            send_verification_email(user, raw_token)
-        except Exception:  # pragma: no cover - delivery failure must not break signup
-            logger.exception("Verification email delivery failed for user %s", user.pk)
+        # When verification is switched off no token is issued and no mail is
+        # attempted, so registration has no runtime dependency on a transactional
+        # email provider. The token table, templates and the verify/resend
+        # endpoints all stay for when it is switched back on.
+        email_sent = False
+        if verification_required():
+            raw_token, _ = EmailVerificationToken.issue(
+                user, settings.EMAIL_VERIFICATION_TTL_HOURS
+            )
+            try:
+                send_verification_email(user, raw_token)
+                email_sent = True
+            except Exception:  # delivery failure must not break signup
+                logger.exception("Verification email delivery failed for user %s", user.pk)
 
         login(request, user, backend="apps.accounts.backends.EmailBackend")
-        return Response(UserSerializer(user).data, status=status.HTTP_201_CREATED)
+        payload = UserSerializer(user).data
+        payload["verification_email_sent"] = email_sent
+        return Response(payload, status=status.HTTP_201_CREATED)
 
 
 class LoginView(APIView):
@@ -130,17 +140,32 @@ class EmailResendView(APIView):
     @extend_schema(request=None, responses={202: None})
     def post(self, request):
         user = request.user
+        if not verification_required():
+            # Nothing to resend. Saying so reveals deployment configuration, not
+            # any account's verification state.
+            return Response(
+                {
+                    "detail": "Email verification is not required for this deployment.",
+                    "email_sent": False,
+                },
+                status=status.HTTP_202_ACCEPTED,
+            )
+        email_sent = False
         if not user.email_verified:
             raw_token, _ = EmailVerificationToken.issue(
                 user, settings.EMAIL_VERIFICATION_TTL_HOURS
             )
             try:
                 send_verification_email(user, raw_token)
-            except Exception:  # pragma: no cover
+                email_sent = True
+            except Exception:
                 logger.exception("Verification email delivery failed for user %s", user.pk)
         # Always the same response: resending never reveals verification state.
         return Response(
-            {"detail": "If verification is still required, a new email has been sent."},
+            {
+                "detail": "If verification is still required, a new email has been sent.",
+                "email_sent": email_sent,
+            },
             status=status.HTTP_202_ACCEPTED,
         )
 

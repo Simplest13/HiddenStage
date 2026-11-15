@@ -107,3 +107,22 @@
   .event-success__actions { width: 100%; flex-direction: column; }
   .event-success__actions .button { width: 100%; }
 }
+
+/* Phones: collapse the five wizard steps to a compact numbered progress bar
+   so every step stays visible instead of clipping off the viewport edge. */
+@media (max-width: 700px) {
+  .wizard-steps { overflow-x: visible; }
+  .wizard-steps li {
+    flex: 1 1 0;
+    min-width: 0;
+    justify-content: center;
+    gap: 0;
+    padding: 0.65rem 0.15rem;
+  }
+  .wizard-steps small { display: none; }
+  .wizard-steps b {
+    width: 1.45rem;
+    height: 1.45rem;
+    font-size: 0.68rem;
+  }
+}

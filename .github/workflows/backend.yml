@@ -1,0 +1,76 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'hiddenstage-backend/**'
+      - '.github/workflows/backend.yml'
+  pull_request:
+    paths:
+      - 'hiddenstage-backend/**'
+      - '.github/workflows/backend.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backend-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  django:
+    name: Django checks, schema and tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: hiddenstage-backend
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: hiddenstage_ci
+          POSTGRES_USER: hiddenstage
+          POSTGRES_PASSWORD: hiddenstage_ci_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U hiddenstage"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      # Test-only values. They are throwaway literals, never production secrets.
+      DJANGO_DEBUG: '1'
+      DJANGO_SECRET_KEY: 'ci-only-throwaway-key-never-used-outside-tests'
+      DJANGO_ALLOWED_HOSTS: 'localhost,127.0.0.1'
+      DJANGO_SECURE_SSL_REDIRECT: '0'
+      EMAIL_VERIFICATION_REQUIRED: '1'
+      POSTGRES_DB: hiddenstage_ci
+      POSTGRES_USER: hiddenstage
+      POSTGRES_PASSWORD: hiddenstage_ci_only
+      POSTGRES_HOST: 127.0.0.1
+      POSTGRES_PORT: '5432'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: hiddenstage-backend/requirements.txt
+      - name: Install pinned dependencies
+        run: pip install -r requirements.txt
+      - name: Django system checks
+        run: python manage.py check
+      - name: Migrations are consistent with the models
+        run: python manage.py makemigrations --check --dry-run
+      - name: Backend tests (isolated test database)
+        run: python manage.py test --parallel 1
+      - name: API schema generation and validation
+        run: python manage.py spectacular --file /tmp/schema.yml --validate
+      - name: Production static collection
+        env:
+          DJANGO_DEBUG: '0'
+        run: |
+          python manage.py collectstatic --noinput
+          test -f staticfiles/staticfiles.json

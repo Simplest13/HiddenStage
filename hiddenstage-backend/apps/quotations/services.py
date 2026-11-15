@@ -13,9 +13,12 @@ from django.db.models import Max
 from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
+from apps.accounts.policy import verification_satisfied
 from apps.core.exceptions import BusinessRuleViolation, Conflict
 from apps.events.models import EventStatus, RequirementStatus
 from apps.invitations.models import Invitation, InvitationStatus
+from apps.matching.services import provider_is_eligible_for_event
+from apps.profiles.models import ProviderProfile
 from apps.quotations.models import (
     ItemKind,
     Quotation,
@@ -44,13 +47,15 @@ def _lock_quotation_for_provider(quotation_id, actor) -> Quotation:
 def create_quotation(*, provider_user, event) -> Quotation:
     if event.status != EventStatus.SUBMITTED:
         raise BusinessRuleViolation("Only a submitted event can be quoted.")
-    if not provider_user.email_verified:
+    if not verification_satisfied(provider_user):
         raise BusinessRuleViolation("Verify your email address before preparing quotations.")
     has_accepted = Invitation.objects.filter(
         event=event, provider=provider_user, status=InvitationStatus.ACCEPTED
     ).exists()
-    if not has_accepted:
-        raise PermissionDenied("Accept the customer's invitation before preparing a quotation.")
+    if not has_accepted and not provider_is_eligible_for_event(provider_user, event):
+        raise PermissionDenied(
+            "This request does not match your declared services and coverage."
+        )
 
     existing = (
         Quotation.objects.select_for_update()
@@ -102,6 +107,12 @@ def update_draft_revision(*, revision_id, actor, notes=None, valid_until=UNSET, 
 
     if items is not None:
         event = revision.quotation.event
+        provider = (
+            ProviderProfile.objects.filter(user=actor)
+            .prefetch_related("services__category")
+            .first()
+        )
+        provider_categories = set(provider.declared_categories()) if provider else set()
         requirement_map = {
             requirement.id: requirement
             for requirement in event.requirements.filter(
@@ -122,6 +133,10 @@ def update_draft_revision(*, revision_id, actor, notes=None, valid_until=UNSET, 
             seen.add(requirement.id)
             if requirement.status != RequirementStatus.OPEN:
                 raise Conflict(f"Requirement '{requirement.title}' is no longer open.")
+            if requirement.category.code not in provider_categories:
+                raise ValidationError(
+                    {"items": "You can only price services you have declared on your profile."}
+                )
         revision.items.all().delete()
         QuotationItem.objects.bulk_create(
             [

@@ -8,9 +8,13 @@ export const workspaceConfig: Record<WorkspaceAudience, WorkspaceSettings> = {
   customer: { title: 'Your workspace', eyebrow: 'CUSTOMER', home: routes.customer.home, items: [
     { href: routes.customer.home, label: 'Overview', icon: '◫' }, { href: routes.customer.requests, label: 'Event requests', icon: '✳' },
     { href: routes.customer.quotes, label: 'Quotes', icon: '▤' }, { href: routes.customer.commitments, label: 'Commitments', icon: '◇' },
+    { href: routes.app.settings, label: 'Account settings', icon: '◉' },
   ] },
   provider: { title: 'Your workspace', eyebrow: 'PROFESSIONAL', home: routes.provider.home, items: [
-    { href: routes.provider.home, label: 'Overview', icon: '◫' }, { href: routes.provider.requests, label: 'Invitations', icon: '⌕' },
+    { href: routes.provider.home, label: 'Overview', icon: '◫' }, { href: routes.provider.opportunities, label: 'Opportunities', icon: '⌕' },
+    { href: routes.provider.requests, label: 'Invitations', icon: '✉' },
+    { href: routes.provider.network, label: 'My network', icon: '♧' },
+    { href: routes.provider.assignments, label: 'Assignments', icon: '▣' },
     { href: routes.provider.quotes, label: 'Quotes', icon: '▤' }, { href: routes.provider.profile, label: 'Profile', icon: '◉' },
     { href: routes.provider.coverage, label: 'Service coverage', icon: '◎' }, { href: routes.provider.commitments, label: 'Commitments', icon: '◇' },
     { href: routes.provider.services, label: 'Services', icon: '✳' },

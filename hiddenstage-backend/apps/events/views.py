@@ -7,6 +7,7 @@ from django.db.models import Count
 from django.http import FileResponse
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import generics, status
+from rest_framework.exceptions import ValidationError
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -30,6 +31,7 @@ from apps.events.services import (
     submit_event,
     withdraw_event,
 )
+from apps.profiles.models import ServiceCategory
 
 
 class EventListCreateView(generics.ListCreateAPIView):
@@ -94,10 +96,24 @@ class EventDetailView(APIView):
                 setattr(event, field, value)
             event.save()
             if requirements is not None:
+                codes = [requirement["category"] for requirement in requirements]
+                categories = {
+                    category.code: category
+                    for category in ServiceCategory.objects.filter(
+                        code__in=codes, is_active=True
+                    )
+                }
+                unknown = sorted(set(codes) - set(categories))
+                if unknown:
+                    raise ValidationError(
+                        {"requirements": f"Unknown service categories: {', '.join(unknown)}."}
+                    )
                 event.requirements.all().delete()
                 for position, requirement in enumerate(requirements):
+                    line = dict(requirement)
+                    category = categories[line.pop("category")]
                     ServiceRequirement.objects.create(
-                        event=event, position=position, **requirement
+                        event=event, position=position, category=category, **line
                     )
             if wants_submit:
                 event = submit_event(event)

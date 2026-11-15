@@ -43,6 +43,10 @@ class ServiceRequirementSerializer(serializers.ModelSerializer):
 
 class EventAttachmentSerializer(serializers.ModelSerializer):
     download_url = serializers.SerializerMethodField()
+    # Write-only on purpose: without it `save()` dropped the bytes and stored an
+    # empty file, and it must never be echoed back, because the raw storage name
+    # would bypass the authorising download view.
+    file = serializers.FileField(write_only=True, required=False)
 
     class Meta:
         model = EventAttachment
@@ -54,8 +58,17 @@ class EventAttachmentSerializer(serializers.ModelSerializer):
             "scan_status",
             "download_url",
             "created_at",
+            "file",
         ]
-        read_only_fields = fields
+        read_only_fields = [
+            "id",
+            "original_name",
+            "content_type",
+            "size_bytes",
+            "scan_status",
+            "download_url",
+            "created_at",
+        ]
 
     def get_download_url(self, obj) -> str:
         return f"/api/v1/events/{obj.event_id}/attachments/{obj.id}/download/"

@@ -5,7 +5,9 @@ from apps.profiles.serializers import ProviderCoverageSerializer
 
 class ProviderMatchSerializer(serializers.Serializer):
     id = serializers.UUIDField()
+    user_id = serializers.UUIDField()
     display_name = serializers.CharField()
+    kind = serializers.CharField()
     description = serializers.CharField()
     verification_status = serializers.CharField()
     categories = serializers.ListField(child=serializers.CharField())
@@ -17,11 +19,43 @@ class ProviderMatchSerializer(serializers.Serializer):
 class ProviderDetailSerializer(serializers.Serializer):
     id = serializers.UUIDField()
     display_name = serializers.CharField()
+    kind = serializers.CharField()
     description = serializers.CharField()
     contact = serializers.CharField()
     verification_status = serializers.CharField()
     categories = serializers.ListField(child=serializers.CharField())
     coverage = ProviderCoverageSerializer(many=True)
+
+
+class OpportunityRequirementSerializer(serializers.Serializer):
+    id = serializers.UUIDField()
+    title = serializers.CharField()
+    category = serializers.CharField()
+    category_name = serializers.CharField()
+    description = serializers.CharField()
+    instructions = serializers.CharField()
+    budget_paise = serializers.IntegerField(allow_null=True)
+    status = serializers.CharField()
+
+
+class ProviderOpportunitySerializer(serializers.Serializer):
+    """A matched public request. Customer identity and exact venue are never included."""
+
+    id = serializers.UUIDField()
+    name = serializers.CharField()
+    event_type = serializers.CharField()
+    event_date = serializers.DateField()
+    start_time = serializers.TimeField()
+    end_time = serializers.TimeField()
+    guest_count = serializers.IntegerField()
+    locality = serializers.CharField()
+    city = serializers.CharField()
+    state = serializers.CharField()
+    requirements = OpportunityRequirementSerializer(many=True)
+    invitation_status = serializers.CharField(allow_null=True)
+    already_quoted = serializers.BooleanField()
+    quotation_status = serializers.CharField(allow_null=True)
+    latest_revision_status = serializers.CharField(allow_null=True)
 
 
 class DiscoveryQuerySerializer(serializers.Serializer):

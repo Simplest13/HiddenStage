@@ -3,14 +3,15 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.core.permissions import IsCustomer
+from apps.core.permissions import IsCustomer, IsProvider
 from apps.events.services import get_owned_event
 from apps.matching.serializers import (
     DiscoveryQuerySerializer,
     ProviderDetailSerializer,
     ProviderMatchSerializer,
+    ProviderOpportunitySerializer,
 )
-from apps.matching.services import discover_providers
+from apps.matching.services import discover_providers, provider_opportunities
 from apps.profiles.models import ProviderProfile
 
 
@@ -42,7 +43,9 @@ class ProviderDiscoveryView(APIView):
         payload = [
             {
                 "id": item["provider"].id,
+                "user_id": item["provider"].user_id,
                 "display_name": item["provider"].display_name,
+                "kind": item["provider"].kind,
                 "description": item["provider"].description,
                 "verification_status": item["provider"].verification_status,
                 "categories": item["provider"].declared_categories(),
@@ -53,6 +56,17 @@ class ProviderDiscoveryView(APIView):
             for item in matches
         ]
         return Response(ProviderMatchSerializer(payload, many=True).data)
+
+
+class ProviderOpportunityListView(APIView):
+    """Matched public requests a provider can quote without an invitation."""
+
+    permission_classes = [IsProvider]
+
+    @extend_schema(responses={200: ProviderOpportunitySerializer(many=True)})
+    def get(self, request):
+        payload = provider_opportunities(request.user)
+        return Response(ProviderOpportunitySerializer(payload, many=True).data)
 
 
 class ProviderDetailView(APIView):
@@ -72,6 +86,7 @@ class ProviderDetailView(APIView):
         payload = {
             "id": provider.id,
             "display_name": provider.display_name,
+            "kind": provider.kind,
             "description": provider.description,
             "contact": provider.contact,
             "verification_status": provider.verification_status,

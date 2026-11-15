@@ -1,8 +1,9 @@
 """Transactional email composition.
 
-No email provider is approved yet, so delivery uses Django's configured backend
-(console in development). Templates are intentionally plain text and contain no
-HTML that could carry injected markup.
+Delivery uses Django's configured backend: Resend SMTP when RESEND_API_KEY is set,
+another SMTP relay configured through EMAIL_* variables, or the console backend in
+local development. Templates are intentionally plain text and contain no HTML that
+could carry injected markup.
 """
 
 import logging
@@ -19,7 +20,7 @@ def _frontend_link(path: str, token: str) -> str:
 
 
 def send_verification_email(user, raw_token: str) -> None:
-    link = _frontend_link("/verify-email", raw_token)
+    link = _frontend_link("/auth/verify-email", raw_token)
     send_mail(
         subject="Verify your HiddenStage email address",
         message=(
@@ -36,7 +37,7 @@ def send_verification_email(user, raw_token: str) -> None:
 
 
 def send_password_reset_email(user, raw_token: str) -> None:
-    link = _frontend_link("/reset-password", raw_token)
+    link = _frontend_link("/auth/reset-password", raw_token)
     send_mail(
         subject="Reset your HiddenStage password",
         message=(

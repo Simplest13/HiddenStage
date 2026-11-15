@@ -122,6 +122,229 @@ p { text-wrap: pretty; }
 .section-foot { display: flex; justify-content: center; margin-top: 1.75rem; }
 
 .hr { height: 1px; border: 0; margin: 0; background: var(--color-line); }
+/* How It Works — dual journey layout */
+.how-steps {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: var(--space-10);
+  align-items: stretch;
+}
+.how-steps__section {
+  flex: 1 1 50%;
+  min-width: 280px;
+}
+.how-steps__heading {
+  margin-bottom: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.how-steps__heading h2 {
+  font: 700 clamp(1.35rem, 2.2vw, 1.75rem)/1.2 var(--font-ui);
+  color: var(--color-burgundy);
+  text-wrap: balance;
+  margin: 0;
+}
+.how-steps__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.how-steps__row {
+  display: flex;
+  gap: var(--space-4);
+  align-items: flex-start;
+  padding: var(--space-4) 0;
+  border-bottom: 1px solid var(--color-line);
+}
+.how-steps__row:last-child {
+  border-bottom: 0;
+}
+.how-steps__number {
+  flex: 0 0 2.2rem;
+  height: 2.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-burgundy);
+  color: var(--color-champagne);
+  font: 700 0.9rem/1 var(--font-ui);
+  border-radius: var(--radius-pill);
+  letter-spacing: 0.02em;
+  margin-top: 0.05rem;
+}
+.how-steps__text {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.how-steps__title {
+  font: 700 clamp(0.95rem, 1.1vw, 1.05rem)/1.35 var(--font-ui);
+  color: var(--color-indigo);
+  text-wrap: balance;
+  margin: 0;
+}
+.how-steps__body {
+  font: 400 clamp(0.88rem, 1vw, 0.95rem)/1.55 var(--font-body);
+  color: var(--color-muted);
+  text-wrap: pretty;
+  margin: 0;
+}
+.how-steps__divider {
+  flex: 0 0 1px;
+  background: var(--color-line);
+  margin: 0 0.5rem;
+  align-self: stretch;
+}
+.how-note {
+  margin-top: var(--space-8);
+  padding: var(--space-4) var(--space-5);
+  background: var(--color-tint-strong);
+  border: 1px solid var(--color-line-strong);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  font-size: 0.9rem;
+  color: var(--color-ink);
+}
+.how-note p {
+  margin: 0;
+  color: var(--color-muted);
+}
+.how-note > .badge {
+  flex: 0 0 auto;
+  margin-top: 0.1rem;
+}
+
+/* Tablet: columns tighten from 1100px */
+@media (max-width: 1100px) {
+  .how-steps {
+    gap: var(--space-6);
+  }
+  .how-steps__section {
+    min-width: 260px;
+  }
+  .how-steps__row {
+    padding: var(--space-3) 0;
+    gap: var(--space-3);
+  }
+  .how-steps__number {
+    flex: 0 0 2rem;
+    height: 2rem;
+    font-size: 0.82rem;
+  }
+  .how-steps__title {
+    font-size: clamp(0.9rem, 1.05vw, 1rem);
+  }
+  .how-steps__body {
+    font-size: clamp(0.84rem, 0.95vw, 0.9rem);
+  }
+}
+
+/* Small tablet / large phone: narrower pills */
+@media (max-width: 820px) {
+  .how-steps {
+    gap: var(--space-5);
+  }
+  .how-steps__section {
+    min-width: 240px;
+  }
+  .how-steps__list {
+    gap: var(--space-3);
+  }
+  .how-steps__row {
+    padding: var(--space-2) 0;
+    gap: var(--space-3);
+  }
+  .how-steps__number {
+    flex: 0 0 1.75rem;
+    height: 1.75rem;
+    font-size: 0.75rem;
+  }
+  .how-steps__title {
+    font-size: 0.92rem;
+  }
+  .how-steps__body {
+    font-size: 0.84rem;
+    line-height: 1.45;
+  }
+}
+
+/* Phone: stack vertically */
+@media (max-width: 640px) {
+  .how-steps {
+    flex-direction: column;
+    gap: var(--space-5);
+  }
+  .how-steps__divider {
+    width: 100%;
+    height: 1px;
+    margin: 0 0 0 0;
+    background: var(--color-line);
+  }
+  .how-steps__section--supplier {
+    padding-top: 0;
+  }
+  .how-steps__row {
+    padding: var(--space-2) 0;
+  }
+  .how-steps__number {
+    flex: 0 0 1.6rem;
+    height: 1.6rem;
+    font-size: 0.72rem;
+  }
+  .how-steps__heading h2 {
+    font-size: 1.25rem;
+  }
+  .how-steps__title {
+    font-size: 0.9rem;
+  }
+  .how-steps__body {
+    font-size: 0.82rem;
+    line-height: 1.45;
+  }
+  .how-note {
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    font-size: 0.84rem;
+  }
+  .how-note > .badge {
+    align-self: flex-start;
+  }
+}
+
+/* Very small mobile */
+@media (max-width: 380px) {
+  .how-steps {
+    gap: var(--space-4);
+  }
+  .how-steps__row {
+    padding: var(--space-1) 0;
+    gap: var(--space-2);
+  }
+  .how-steps__number {
+    flex: 0 0 1.4rem;
+    height: 1.4rem;
+    font-size: 0.65rem;
+  }
+  .how-steps__title {
+    font-size: 0.85rem;
+  }
+  .how-steps__body {
+    font-size: 0.78rem;
+    line-height: 1.4;
+  }
+  .how-steps__heading h2 {
+    font-size: 1.15rem;
+  }
+}
 
 @media (max-width: 720px) {
   .wrap { width: calc(100% - 2rem); }
@@ -131,4 +354,92 @@ p { text-wrap: pretty; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}
+
+/* ======================================================================
+   Global responsive hardening
+   Applies to every screen (public, auth, workspace, system).
+   ====================================================================== */
+
+html { overflow-x: hidden; }
+img, svg, video, canvas { max-width: 100%; }
+h1, h2, h3, h4, p, li, dd, dt, summary, a { overflow-wrap: break-word; }
+.button { text-align: center; }
+
+/* Large tablet / small laptop — tighten the public header before it crowds */
+@media (max-width: 1040px) {
+  .site-header__inner { gap: 1rem; }
+  .site-nav { gap: 0.9rem; }
+  .site-nav > a { font-size: 0.82rem; }
+  .site-nav__actions { gap: 0.45rem; }
+  .topbar__links { gap: 0.9rem; }
+}
+
+/* Tablet portrait */
+@media (max-width: 900px) {
+  .section-head { gap: 1rem; }
+  .hero-collage { max-width: none; }
+  .provider-toolbar { flex-wrap: wrap; }
+  .provider-toolbar select { margin-left: 0; }
+}
+
+/* Large phone */
+@media (max-width: 620px) {
+  .section { padding: clamp(2rem, 6vw, 2.75rem) 0; }
+  .section-head h2 { font-size: clamp(1.4rem, 5vw, 1.7rem); }
+  .section-head p { font-size: 0.9rem; }
+  .final-cta { gap: 1.25rem; }
+  .final-cta__actions { width: 100%; }
+  .final-cta__actions .button { flex: 1 1 auto; }
+  .pro-cta__panel { min-height: 8rem; padding: 1.1rem; }
+  .pro-note { padding: 1.25rem; }
+  .contact-aside, .help-aside { padding: 1.15rem; }
+  .faq-layout p, .about-layout > div > p { font-size: 0.88rem; }
+}
+
+/* Phone */
+@media (max-width: 480px) {
+  .wrap { width: calc(100% - 2rem); }
+  .topbar__inner { min-height: 2rem; }
+  .topbar__links { gap: 0.6rem; }
+  .topbar__links a, .topbar__phone { font-size: 0.7rem; }
+  .site-header__inner { min-height: 4rem; }
+  .brand__word { font-size: 1rem; }
+  .brand__mark { width: 1.4rem; height: 1.2rem; }
+  .mobile-menu-button { width: 2.4rem; height: 2.4rem; }
+  .site-nav__actions .button { flex: 1 1 auto; }
+  .page-hero h1 { font-size: clamp(1.7rem, 7.5vw, 2.2rem); }
+  .page-hero p { font-size: 0.92rem; }
+  .hero-copy h1 { font-size: clamp(2rem, 10.5vw, 2.5rem); }
+  .hero-copy > p { font-size: 0.93rem; }
+  .hero-collage { grid-template-rows: 7rem 5.5rem; }
+  .final-cta { flex-direction: column; align-items: flex-start; }
+  .final-cta__actions .button { width: 100%; flex: 1 1 100%; }
+  .cat-tile__media { height: 6rem; }
+  .steps-grid li, .benefits-grid article { padding: 1.15rem; }
+  .pro-grid { gap: 0.75rem; }
+  .system-page { padding: 2rem 1rem; }
+  .auth-layout__panel { padding: 1.75rem 1rem; }
+  .auth-layout__top { width: 100%; }
+  .profile-hero__media { height: 7rem; font-size: 1.8rem; }
+  .profile-hero__actions { justify-items: stretch; width: 100%; }
+  .profile-hero__actions .button { width: 100%; }
+  .provider-quote-total { font-size: 1.25rem; }
+  .event-success { padding: 1.15rem; }
+  .table-scroll { margin-inline: -0.25rem; }
+}
+
+/* Very small phone */
+@media (max-width: 380px) {
+  .wrap { width: calc(100% - 1.75rem); }
+  .how-steps__section { min-width: 0; }
+  .hero-copy h1 { font-size: 1.9rem; }
+  .hero-collage { grid-template-columns: 1fr; grid-template-rows: 8rem 6rem; }
+  .hero-collage__tile--photo, .hero-collage__tile--music { display: none; }
+  .category-grid { grid-template-columns: 1fr; }
+  .cat-tile__body p { display: block; }
+  .benefits-grid, .steps-grid { gap: 0.75rem; }
+  .button { padding: 0.65rem 0.85rem; font-size: 0.82rem; }
+  .button--lg { min-height: 2.9rem; font-size: 0.86rem; }
+  .section-foot .button { width: 100%; }
 }

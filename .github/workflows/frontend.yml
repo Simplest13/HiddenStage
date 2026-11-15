@@ -1,0 +1,48 @@
+name: Frontend CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'hiddenstage-frontend/**'
+      - '.github/workflows/frontend.yml'
+  pull_request:
+    paths:
+      - 'hiddenstage-frontend/**'
+      - '.github/workflows/frontend.yml'
+
+# Read-only: this pipeline never writes to the repository or publishes a deployment.
+permissions:
+  contents: read
+
+concurrency:
+  group: frontend-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  vite:
+    name: Typecheck, lint, unit tests and production build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: hiddenstage-frontend
+    env:
+      # Build-time only. The real API URL is supplied per environment at deploy time.
+      VITE_API_BASE_URL: https://api.ci.invalid/api/v1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: hiddenstage-frontend/package-lock.json
+      - name: Install from the committed lockfile
+        run: npm ci
+      - name: TypeScript
+        run: npm run typecheck
+      - name: Lint
+        run: npm run lint
+      - name: Unit tests
+        run: npm test
+      - name: Production build
+        run: npm run build

@@ -5,10 +5,14 @@ readable CSRF cookie echoed in `X-CSRFToken`, `{"detail": ...}` errors, and emai
 verification as a gate for marketplace actions.
 """
 
-from django.test import TestCase
+from unittest.mock import patch
+
+from django.core import mail
+from django.test import TestCase, override_settings
 from rest_framework.test import APIClient
 
 from apps.accounts.models import EmailVerificationToken, User
+from apps.accounts.policy import verification_required, verification_satisfied
 from apps.core.testutils import PASSWORD, make_customer, make_provider
 
 REGISTER = "/api/v1/auth/register/"
@@ -23,6 +27,7 @@ class RegistrationTests(TestCase):
     def setUp(self):
         self.client = APIClient()
 
+    @override_settings(EMAIL_VERIFICATION_REQUIRED=True)
     def test_register_creates_unverified_customer(self):
         response = self.client.post(
             REGISTER,
@@ -71,6 +76,65 @@ class RegistrationTests(TestCase):
         )
         self.assertEqual(response.status_code, 400)
         self.assertIn("accept_terms", response.data)
+
+    @override_settings(
+        EMAIL_VERIFICATION_REQUIRED=True,
+        EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+        FRONTEND_BASE_URL="http://localhost:5195",
+    )
+    def test_registration_sends_a_working_verification_link(self):
+        response = self.client.post(
+            REGISTER,
+            {
+                "email": "emailed@example.com",
+                "password": "a-long-enough-passphrase",
+                "full_name": "Emailed User",
+                "accept_terms": True,
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, 201, response.content)
+        self.assertEqual(len(mail.outbox), 1)
+        message = mail.outbox[0]
+        self.assertEqual(message.to, ["emailed@example.com"])
+        self.assertIn(
+            "http://localhost:5195/auth/verify-email?token=",
+            message.body,
+        )
+
+    @override_settings(EMAIL_VERIFICATION_REQUIRED=True)
+    @patch("apps.accounts.views.send_verification_email", side_effect=RuntimeError)
+    def test_registration_reports_a_delivery_failure(self, _send):
+        response = self.client.post(
+            REGISTER,
+            {
+                "email": "undelivered@example.com",
+                "password": "a-long-enough-passphrase",
+                "full_name": "Undelivered User",
+                "accept_terms": True,
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, 201, response.content)
+        self.assertFalse(response.data["verification_email_sent"])
+
+    @override_settings(
+        EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+        FRONTEND_BASE_URL="http://localhost:5195",
+    )
+    def test_password_reset_email_uses_the_frontend_route(self):
+        make_customer("reset@example.com")
+        response = self.client.post(
+            "/api/v1/auth/password/reset/",
+            {"email": "reset@example.com"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 202, response.content)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn(
+            "http://localhost:5195/auth/reset-password?token=",
+            mail.outbox[0].body,
+        )
 
     def test_verification_token_is_single_use(self):
         user = make_customer("verify@example.com", verified=False)
@@ -146,7 +210,8 @@ class RolePermissionTests(TestCase):
     def test_category_catalogue_matches_frontend_slugs(self):
         response = APIClient().get("/api/v1/catalog/categories/")
         self.assertEqual(response.status_code, 200)
-        codes = {row["code"] for row in response.data["results"]}
+        rows = response.data["results"] if isinstance(response.data, dict) else response.data
+        codes = {row["code"] for row in rows}
         self.assertEqual(
             codes,
             {
@@ -161,3 +226,106 @@ class RolePermissionTests(TestCase):
                 "planning",
             },
         )
+
+class VerificationPolicyTests(TestCase):
+    """`EMAIL_VERIFICATION_REQUIRED` is a policy switch, not a data change."""
+
+    def test_the_requirement_is_a_boolean_setting(self):
+        self.assertIsInstance(verification_required(), bool)
+
+    @override_settings(EMAIL_VERIFICATION_REQUIRED=True)
+    def test_the_requirement_can_be_switched_on(self):
+        self.assertTrue(verification_required())
+
+    @override_settings(EMAIL_VERIFICATION_REQUIRED=True)
+    def test_an_unverified_account_is_barred_while_required(self):
+        user = make_customer("gate@example.com", verified=False)
+        self.assertFalse(verification_satisfied(user))
+
+    def test_a_verified_account_passes_while_required(self):
+        self.assertTrue(verification_satisfied(make_customer("ok@example.com")))
+
+    @override_settings(EMAIL_VERIFICATION_REQUIRED=False)
+    def test_switching_the_requirement_off_admits_unverified_accounts(self):
+        user = make_customer("gate-off@example.com", verified=False)
+        self.assertFalse(verification_required())
+        self.assertTrue(verification_satisfied(user))
+        # The recorded state is untouched: nobody is marked verified.
+        user.refresh_from_db()
+        self.assertIsNone(user.email_verified_at)
+        self.assertFalse(user.email_verified)
+
+    @override_settings(EMAIL_VERIFICATION_REQUIRED=True)
+    def test_anonymous_is_never_satisfied(self):
+        from django.contrib.auth.models import AnonymousUser
+
+        self.assertFalse(verification_satisfied(AnonymousUser()))
+
+
+@override_settings(
+    EMAIL_VERIFICATION_REQUIRED=False,
+    EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+)
+class VerificationDisabledRegistrationTests(TestCase):
+    """The launch configuration: register and sign in with no mail at all."""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.payload = {
+            "email": "launch@example.com",
+            "password": "a-long-enough-passphrase",
+            "full_name": "Launch User",
+            "accept_terms": True,
+        }
+
+    def test_registration_needs_no_email_and_issues_no_token(self):
+        response = self.client.post(REGISTER, self.payload, format="json")
+        self.assertEqual(response.status_code, 201, response.content)
+        self.assertFalse(response.data["email_verification_required"])
+        self.assertFalse(response.data["email_verified"])
+        self.assertFalse(response.data["verification_email_sent"])
+        self.assertEqual(len(mail.outbox), 0)
+        user = User.objects.get(email="launch@example.com")
+        self.assertEqual(EmailVerificationToken.objects.filter(user=user).count(), 0)
+        self.assertIsNone(user.email_verified_at)
+
+    def test_registration_signs_the_account_in_immediately(self):
+        self.assertEqual(self.client.post(REGISTER, self.payload, format="json").status_code, 201)
+        me = self.client.get(ME)
+        self.assertEqual(me.status_code, 200)
+        self.assertEqual(me.data["email"], "launch@example.com")
+        self.assertFalse(me.data["email_verified"])
+
+    def test_a_provider_can_register_without_verifying(self):
+        payload = dict(self.payload, email="provider-launch@example.com", role="PROVIDER")
+        response = self.client.post(REGISTER, payload, format="json")
+        self.assertEqual(response.status_code, 201, response.content)
+        self.assertEqual(response.data["role"], "PROVIDER")
+
+    def test_an_existing_unverified_account_can_sign_in(self):
+        make_customer("never-verified@example.com", verified=False)
+        response = APIClient().post(
+            LOGIN,
+            {"email": "never-verified@example.com", "password": PASSWORD},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertFalse(response.data["email_verified"])
+
+    def test_resend_reports_nothing_was_sent(self):
+        user = make_customer("resend-off@example.com", verified=False)
+        client = APIClient()
+        client.force_authenticate(user)
+        response = client.post("/api/v1/auth/email/resend/")
+        self.assertEqual(response.status_code, 202, response.content)
+        self.assertFalse(response.data["email_sent"])
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_the_verification_link_still_works_when_presented(self):
+        # The endpoint, token table and templates are untouched by the switch.
+        user = make_customer("still-works@example.com", verified=False)
+        raw_token, _ = EmailVerificationToken.issue(user, ttl_hours=24)
+        response = APIClient().post(VERIFY, {"token": raw_token}, format="json")
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertTrue(response.data["email_verified"])
+

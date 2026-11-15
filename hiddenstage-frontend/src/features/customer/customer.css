@@ -96,6 +96,19 @@
   .event-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
+/* Phones: compress the onboarding progress bar so both steps stay visible */
+@media (max-width: 560px) {
+  .step-progress span {
+    flex: 1 1 0;
+    min-width: 0;
+    gap: 0.3rem;
+    padding: 0.55rem 0.3rem 0.6rem;
+    font-size: 0.68rem;
+    white-space: normal;
+  }
+  .step-progress span small { font-size: 0.68rem; line-height: 1.2; }
+}
+
 @media (max-width: 700px) {
   .customer-page__heading { flex-direction: column; align-items: flex-start; }
   .customer-page__heading .button { width: 100%; }

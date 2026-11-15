@@ -42,6 +42,15 @@ def env_list(name: str, default: str = "") -> list[str]:
 
 DEBUG = env_bool("DJANGO_DEBUG", False)
 
+def _samesite(name: str) -> str:
+    """Cookie SameSite policy, validated: a typo here fails closed, not silently."""
+    value = os.environ.get(name, "Lax").strip().lower()
+    allowed = {"lax": "Lax", "strict": "Strict", "none": "None"}
+    if value not in allowed:
+        raise ImproperlyConfigured(f"{name} must be Lax, Strict or None.")
+    return allowed[value]
+
+
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "").strip()
 if not SECRET_KEY:
     if DEBUG:
@@ -49,9 +58,14 @@ if not SECRET_KEY:
     else:
         raise ImproperlyConfigured("DJANGO_SECRET_KEY must be set when DJANGO_DEBUG is off.")
 
-ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1")
+# A fresh clone runs with no configuration, so development falls back to loopback.
+# Production must name its hosts: a loopback-only list rejects every real request
+# with a 400 and reads as an outage, so an empty list fails at import instead.
+ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "" if not DEBUG else "localhost,127.0.0.1")
 if not DEBUG and not ALLOWED_HOSTS:
-    raise ImproperlyConfigured("DJANGO_ALLOWED_HOSTS must be set when DJANGO_DEBUG is off.")
+    raise ImproperlyConfigured(
+        "DJANGO_ALLOWED_HOSTS must list the public host names when DJANGO_DEBUG is off."
+    )
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -71,10 +85,14 @@ INSTALLED_APPS = [
     "apps.invitations",
     "apps.quotations",
     "apps.commitments",
+    "apps.network",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    # Serves STATIC_ROOT straight from the WSGI app, so Gunicorn needs no separate
+    # static host. Must sit directly after SecurityMiddleware.
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -147,6 +165,62 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_ROOT = Path(os.environ.get("MEDIA_ROOT", BASE_DIR / "private-media"))
 MEDIA_URL = "/private-media/"
 
+# ---- File storage (D-013: attachments stay private) --------------------------
+# `local` writes uploads to MEDIA_ROOT: correct for development and for a single
+# host with a persistent volume. `s3` points the same FileField at any
+# S3-compatible bucket (AWS S3, Cloudflare R2, Backblaze B2, MinIO) so uploads
+# survive redeploys on ephemeral hosts.
+#
+# Nothing above the storage layer changes: the model, the upload contract and the
+# download URL all keep working, because `download_url` points at the authorizing
+# API view rather than at the bucket. Credentials come only from the environment.
+MEDIA_STORAGE = os.environ.get("MEDIA_STORAGE", "local").strip().lower()
+if MEDIA_STORAGE not in {"local", "s3"}:
+    raise ImproperlyConfigured("MEDIA_STORAGE must be 'local' or 's3'.")
+
+_s3_options: dict[str, object] = {}
+if MEDIA_STORAGE == "s3":
+    _bucket = os.environ.get("AWS_STORAGE_BUCKET_NAME", "").strip()
+    if not _bucket:
+        raise ImproperlyConfigured(
+            "AWS_STORAGE_BUCKET_NAME must be set when MEDIA_STORAGE=s3."
+        )
+    _s3_options = {
+        "bucket_name": _bucket,
+        "region_name": os.environ.get("AWS_S3_REGION_NAME", "").strip() or None,
+        # Set for R2/MinIO/B2. Leave empty for AWS S3 itself.
+        "endpoint_url": os.environ.get("AWS_S3_ENDPOINT_URL", "").strip() or None,
+        "access_key": os.environ.get("AWS_ACCESS_KEY_ID", "").strip() or None,
+        "secret_key": os.environ.get("AWS_SECRET_ACCESS_KEY", "").strip() or None,
+        # Private by default: no ACL is applied and no signed URL is ever minted,
+        # so a leaked name cannot be turned into a readable link.
+        "default_acl": None,
+        "querystring_auth": False,
+        "file_overwrite": False,
+    }
+
+STORAGES = {
+    "default": (
+        {"BACKEND": "storages.backends.s3.S3Storage", "OPTIONS": _s3_options}
+        if MEDIA_STORAGE == "s3"
+        # No OPTIONS: FileSystemStorage reads MEDIA_ROOT/MEDIA_URL at access time,
+        # so override_settings(MEDIA_ROOT=...) in tests keeps working.
+        else {"BACKEND": "django.core.files.storage.FileSystemStorage"}
+    ),
+    "staticfiles": {
+        # Hashed, pre-compressed names in production; the plain storage in
+        # development so `runserver` needs no collectstatic step.
+        "BACKEND": (
+            "django.contrib.staticfiles.storage.StaticFilesStorage"
+            if DEBUG
+            else "whitenoise.storage.CompressedManifestStaticFilesStorage"
+        )
+    },
+}
+WHITENOISE_MAX_AGE = env_int("WHITENOISE_MAX_AGE", 31536000)
+# Development only: serve app static files without running collectstatic.
+WHITENOISE_USE_FINDERS = DEBUG
+
 ATTACHMENT_ALLOWED_CONTENT_TYPES = [
     "image/jpeg",
     "image/png",
@@ -163,12 +237,17 @@ SESSION_ENGINE = "django.contrib.sessions.backends.db"
 SESSION_COOKIE_NAME = "hs_sessionid"
 SESSION_COOKIE_AGE = env_int("SESSION_COOKIE_AGE", 60 * 60 * 24 * 14)
 SESSION_COOKIE_HTTPONLY = True
-SESSION_COOKIE_SAMESITE = "Lax"
+# "Lax" is correct when the SPA and the API share a registrable domain: app.example.com
+# calling api.example.com is same-site, so the cookie is still sent. A frontend on a
+# *different* site (my-app.vercel.app calling api.example.com) needs None, or the
+# browser withholds the cookie on cross-site XHR and every signed-in request looks
+# anonymous. None requires Secure, which is already on whenever DEBUG is off.
+SESSION_COOKIE_SAMESITE = _samesite("SESSION_COOKIE_SAMESITE")
 SESSION_COOKIE_SECURE = not DEBUG
 
 CSRF_COOKIE_NAME = "csrftoken"
 CSRF_COOKIE_HTTPONLY = False
-CSRF_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SAMESITE = _samesite("CSRF_COOKIE_SAMESITE")
 CSRF_COOKIE_SECURE = not DEBUG
 CSRF_TRUSTED_ORIGINS = env_list(
     "CSRF_TRUSTED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173"
@@ -177,6 +256,12 @@ CSRF_TRUSTED_ORIGINS = env_list(
 CORS_ALLOWED_ORIGINS = env_list(
     "CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173"
 )
+# A wildcard origin with credentials is both invalid per the CORS spec and a way to
+# leak session-authenticated responses. Refuse to boot with one in production.
+if not DEBUG and ("*" in CORS_ALLOWED_ORIGINS or "*" in CSRF_TRUSTED_ORIGINS):
+    raise ImproperlyConfigured(
+        "Wildcard CORS/CSRF origins are not allowed when DJANGO_DEBUG is off."
+    )
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_HEADERS = [
     "accept",
@@ -189,7 +274,10 @@ CORS_ALLOW_HEADERS = [
 ]
 
 # ---- Production transport security -------------------------------------------
-SECURE_SSL_REDIRECT = env_bool("DJANGO_SECURE_SSL_REDIRECT", False)
+# On by default in production: every cookie is Secure when DEBUG is off, so plain
+# HTTP would silently drop the session. Behind a TLS-terminating proxy the
+# SECURE_PROXY_SSL_HEADER below supplies the original scheme (no redirect loop).
+SECURE_SSL_REDIRECT = env_bool("DJANGO_SECURE_SSL_REDIRECT", not DEBUG)
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SECURE_HSTS_SECONDS = 0 if DEBUG else env_int("DJANGO_HSTS_SECONDS", 31536000)
 SECURE_HSTS_INCLUDE_SUBDOMAINS = not DEBUG
@@ -199,18 +287,50 @@ SECURE_REFERRER_POLICY = "same-origin"
 X_FRAME_OPTIONS = "DENY"
 
 # ---- Email ------------------------------------------------------------------
-# No transactional email provider has been approved. Development uses the console
-# backend; production must configure a real backend explicitly.
-EMAIL_BACKEND = os.environ.get(
-    "EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend"
+# Resend is the default transactional provider when RESEND_API_KEY is present.
+# Set EMAIL_BACKEND explicitly to use another SMTP relay or the console backend.
+RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "").strip()
+EMAIL_BACKEND = os.environ.get("EMAIL_BACKEND", "").strip()
+if not EMAIL_BACKEND:
+    EMAIL_BACKEND = (
+        "django.core.mail.backends.smtp.EmailBackend"
+        if RESEND_API_KEY
+        else "django.core.mail.backends.console.EmailBackend"
+    )
+EMAIL_HOST = os.environ.get("EMAIL_HOST", "").strip() or (
+    "smtp.resend.com" if RESEND_API_KEY else ""
 )
-DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "no-reply@hiddenstage.local")
+EMAIL_PORT = env_int("EMAIL_PORT", 587)
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "").strip() or (
+    "resend" if RESEND_API_KEY else ""
+)
+EMAIL_HOST_PASSWORD = (
+    os.environ.get("EMAIL_HOST_PASSWORD", "").strip() or RESEND_API_KEY
+)
+EMAIL_USE_TLS = env_bool("EMAIL_USE_TLS", True)
+EMAIL_USE_SSL = env_bool("EMAIL_USE_SSL", False)
+EMAIL_TIMEOUT = env_int("EMAIL_TIMEOUT", 15)
+DEFAULT_FROM_EMAIL = (
+    os.environ.get("DEFAULT_FROM_EMAIL", "").strip() or "no-reply@hiddenstage.local"
+)
+# Resend's onboarding sender works only for the account owner and is a development
+# fallback. Set DEFAULT_FROM_EMAIL to an address on a verified domain in production.
+if RESEND_API_KEY and DEFAULT_FROM_EMAIL == "no-reply@hiddenstage.local":
+    DEFAULT_FROM_EMAIL = "onboarding@resend.dev"
 # Used only to build links inside transactional emails.
 FRONTEND_BASE_URL = os.environ.get("FRONTEND_BASE_URL", "http://localhost:5173")
 
 # ---- Token lifetimes (implementation defaults pending product approval) ------
 EMAIL_VERIFICATION_TTL_HOURS = env_int("EMAIL_VERIFICATION_TTL_HOURS", 24)
 PASSWORD_RESET_TTL_HOURS = env_int("PASSWORD_RESET_TTL_HOURS", 1)
+
+# ---- Email verification requirement -----------------------------------------
+# Whether an account must have followed the emailed link before the verification-
+# gated marketplace actions (inviting, quoting, accepting, Manager/Worker network).
+# This governs the *requirement*, never the recorded state: email_verified_at still
+# holds exactly what was proven, so switching it off and on is lossless and nobody
+# is ever marked verified without following a link. Defaults to required.
+EMAIL_VERIFICATION_REQUIRED = env_bool("EMAIL_VERIFICATION_REQUIRED", True)
 
 # ---- Marketplace policy defaults (see docs/UNRESOLVED_DECISIONS.md) ----------
 INVITATION_TTL_DAYS = env_int("INVITATION_TTL_DAYS", 7)
