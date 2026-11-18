@@ -11,6 +11,8 @@ export type SessionUser = {
   emailVerificationRequired: boolean
   profileCompleted: boolean
   accountType: AccountRole
+  isStaff?: boolean
+  isSuperuser?: boolean
 }
 
 export type AuthState =

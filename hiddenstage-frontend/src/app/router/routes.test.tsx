@@ -74,4 +74,24 @@ describe('application routes', () => {
     renderRoute('/app/admin', customer)
     expect(await screen.findByText('This space is for an approved administrator.')).toBeInTheDocument()
   })
+
+  it('renders the administration workspace for a staff administrator', async () => {
+    renderRoute('/app/admin', {
+      status: 'authenticated',
+      roles: ['CUSTOMER'],
+      user: {
+        id: 'admin-1',
+        fullName: 'Platform Admin',
+        email: 'admin@hiddenstage.in',
+        phone: '',
+        emailVerified: true,
+        emailVerificationRequired: false,
+        profileCompleted: true,
+        accountType: 'CUSTOMER',
+        isStaff: true,
+        isSuperuser: true,
+      },
+    })
+    expect(await screen.findByRole('heading', { name: 'Platform Operations' })).toBeInTheDocument()
+  })
 })

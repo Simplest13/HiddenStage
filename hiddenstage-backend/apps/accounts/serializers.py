@@ -24,6 +24,8 @@ class UserSerializer(serializers.ModelSerializer):
             "full_name",
             "phone",
             "role",
+            "is_staff",
+            "is_superuser",
             "email_verified",
             "email_verified_at",
             "email_verification_required",

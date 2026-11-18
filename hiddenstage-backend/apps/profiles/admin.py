@@ -31,10 +31,19 @@ class ProviderServiceInline(admin.TabularInline):
 
 @admin.register(ProviderProfile)
 class ProviderProfileAdmin(admin.ModelAdmin):
-    list_display = ("display_name", "user", "verification_status", "completed_at")
-    list_filter = ("verification_status",)
+    list_display = ("display_name", "user", "kind", "verification_status", "completed_at")
+    list_filter = ("verification_status", "kind")
     search_fields = ("display_name", "user__email", "business__name")
+    actions = ["mark_verified", "mark_rejected"]
     inlines = [ProviderServiceInline, ProviderCoverageInline]
+
+    @admin.action(description="Mark selected providers as Verified")
+    def mark_verified(self, request, queryset):
+        queryset.update(verification_status="VERIFIED")
+
+    @admin.action(description="Mark selected providers as Rejected")
+    def mark_rejected(self, request, queryset):
+        queryset.update(verification_status="REJECTED")
 
 
 @admin.register(CustomerProfile)

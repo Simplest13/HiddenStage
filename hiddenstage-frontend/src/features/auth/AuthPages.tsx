@@ -9,6 +9,7 @@ import { isApiError } from '../../shared/api/client'
 type AuthPage = 'login' | 'register' | 'verifyEmail' | 'forgotPassword' | 'resetPassword'
 
 function destinationFor(user: SessionUser) {
+  if (user.isStaff) return routes.admin.home
   if (user.emailVerificationRequired && !user.emailVerified) return routes.auth.verifyEmail
   if (user.accountType === 'PROVIDER') return user.profileCompleted ? routes.provider.home : routes.onboarding.provider
   return user.profileCompleted ? routes.customer.home : routes.onboarding.customer

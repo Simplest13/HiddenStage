@@ -68,3 +68,11 @@ export function RequireCompletedProvider() {
   if (!auth.user.profileCompleted) return <Navigate to={routes.onboarding.provider} replace />
   return <Outlet />
 }
+
+export function RequireAdmin() {
+  const auth = useAuth()
+  if (auth.status === 'loading') return <Spinner label="Checking your session" />
+  if (auth.status !== 'authenticated') return <Navigate to={routes.auth.login} replace />
+  if (!auth.user.isStaff) return <Navigate to={routes.forbidden} replace />
+  return <Outlet />
+}

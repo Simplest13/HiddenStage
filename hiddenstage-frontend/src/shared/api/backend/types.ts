@@ -13,6 +13,8 @@ export type ApiUser = {
   full_name: string
   phone: string
   role: AccountRole
+  is_staff?: boolean
+  is_superuser?: boolean
   email_verified: boolean
   email_verification_required: boolean
   email_verified_at: string | null

@@ -17,6 +17,8 @@ export function toSessionUser(user: ApiUser): SessionUser {
     emailVerificationRequired: user.email_verification_required !== false,
     profileCompleted: user.profile_completed,
     accountType: user.role,
+    isStaff: Boolean(user.is_staff),
+    isSuperuser: Boolean(user.is_superuser),
   }
 }
 

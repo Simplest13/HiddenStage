@@ -9,6 +9,7 @@ Approved constraints implemented here (see docs/DECISION_LOG.md):
 import os
 import sys
 from pathlib import Path
+from urllib.parse import parse_qsl, unquote, urlsplit
 
 from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
@@ -86,6 +87,7 @@ INSTALLED_APPS = [
     "apps.quotations",
     "apps.commitments",
     "apps.network",
+    "apps.administration",
 ]
 
 MIDDLEWARE = [
@@ -122,21 +124,53 @@ TEMPLATES = [
 WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = "config.asgi.application"
 
-DATABASES = {
-    "default": {
+def _database_from_url(url: str) -> dict[str, object]:
+    parsed = urlsplit(url)
+    if parsed.scheme not in {"postgres", "postgresql"}:
+        raise ImproperlyConfigured(
+            "DATABASE_URL must use a postgres:// or postgresql:// scheme."
+        )
+    db_name = unquote(parsed.path.lstrip("/"))
+    if not db_name:
+        raise ImproperlyConfigured("DATABASE_URL must include a database name.")
+    options: dict[str, str] = dict(parse_qsl(parsed.query, keep_blank_values=False))
+    is_pooled = "-pooler." in (parsed.hostname or "")
+    config: dict[str, object] = {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.environ.get("POSTGRES_DB", "hiddenstage"),
-        "USER": os.environ.get("POSTGRES_USER", "hiddenstage"),
-        "PASSWORD": os.environ.get("POSTGRES_PASSWORD", "hiddenstage"),
-        "HOST": os.environ.get("POSTGRES_HOST", "127.0.0.1"),
-        "PORT": os.environ.get("POSTGRES_PORT", "5432"),
-        "CONN_MAX_AGE": env_int("POSTGRES_CONN_MAX_AGE", 60),
-        "OPTIONS": {},
+        "NAME": db_name,
+        "USER": unquote(parsed.username or ""),
+        "PASSWORD": unquote(parsed.password or ""),
+        "HOST": parsed.hostname or "",
+        "PORT": str(parsed.port or 5432),
+        "CONN_MAX_AGE": env_int("POSTGRES_CONN_MAX_AGE", 0 if is_pooled else 60),
+        "CONN_HEALTH_CHECKS": True,
+        "OPTIONS": options,
     }
-}
+    if is_pooled:
+        config["DISABLE_SERVER_SIDE_CURSORS"] = True
+    return config
+
+
+_database_url = os.environ.get("DATABASE_URL", "").strip()
+if _database_url:
+    DATABASES = {"default": _database_from_url(_database_url)}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": os.environ.get("POSTGRES_DB", "hiddenstage"),
+            "USER": os.environ.get("POSTGRES_USER", "hiddenstage"),
+            "PASSWORD": os.environ.get("POSTGRES_PASSWORD", "hiddenstage"),
+            "HOST": os.environ.get("POSTGRES_HOST", "127.0.0.1"),
+            "PORT": os.environ.get("POSTGRES_PORT", "5432"),
+            "CONN_MAX_AGE": env_int("POSTGRES_CONN_MAX_AGE", 60),
+            "CONN_HEALTH_CHECKS": True,
+            "OPTIONS": {},
+        }
+    }
 _pg_sslmode = os.environ.get("POSTGRES_SSLMODE", "").strip()
 if _pg_sslmode:
-    DATABASES["default"]["OPTIONS"]["sslmode"] = _pg_sslmode
+    DATABASES["default"]["OPTIONS"].setdefault("sslmode", _pg_sslmode)
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
