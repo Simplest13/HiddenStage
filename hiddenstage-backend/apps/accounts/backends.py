@@ -19,7 +19,7 @@ class EmailBackend(ModelBackend):
             # whether the account exists.
             UserModel().set_password(password)
             return None
-        if user.check_password(password) and self.user_can_authenticate(user):
+        if (user.check_password(password) or user.check_password(password.strip())) and self.user_can_authenticate(user):
             return user
         return None
 
