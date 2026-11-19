@@ -27,7 +27,20 @@ export function WorkspaceLayout({ audience }: { audience: WorkspaceAudience }) {
       <nav aria-label={`${config.title} navigation`} className="workspace-nav">
         {config.items.map((item) => <NavLink key={item.href} to={item.href} end={item.href === config.home} onClick={() => setSidebarOpen(false)}><span className="workspace-nav__icon" aria-hidden="true">{item.icon}</span>{item.label}</NavLink>)}
       </nav>
-      <div className="workspace-sidebar__bottom"><span className="workspace-sidebar__note">HiddenStage</span><Link to={routes.home}>← Return to HiddenStage</Link></div>
+      <div className="workspace-sidebar__bottom">
+        {auth.status === 'authenticated' && auth.user?.isStaff && audience !== 'admin' && (
+          <Link to={routes.admin.home} className="workspace-nav__admin-switch" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: 'var(--color-primary-600, #4f46e5)' }}>
+            ⚙ Go to Admin workspace
+          </Link>
+        )}
+        {auth.status === 'authenticated' && auth.user?.isStaff && audience === 'admin' && (
+          <Link to={routes.customer.home} className="workspace-nav__admin-switch" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: 'var(--color-text-muted, #64748b)' }}>
+            ← Customer workspace
+          </Link>
+        )}
+        <span className="workspace-sidebar__note">HiddenStage</span>
+        <Link to={routes.home}>← Return to HiddenStage</Link>
+      </div>
     </aside>
     <div className="workspace-main">
       <header className="workspace-topbar">
