@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react'
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
 import type { AccountRole, SessionUser } from '../auth/authTypes'
@@ -66,6 +67,21 @@ export function RequireCompletedProvider() {
   if (!auth.roles.includes('PROVIDER')) return <Navigate to={routes.forbidden} replace />
   if (verificationPending(auth.user)) return <Navigate to={routes.auth.verifyEmail} replace />
   if (!auth.user.profileCompleted) return <Navigate to={routes.onboarding.provider} replace />
+  return <Outlet />
+}
+
+const AdminLoginPage = lazy(() => import('../../features/admin/AdminLoginPage'))
+
+export function RequireAdminOrLogin() {
+  const auth = useAuth()
+  if (auth.status === 'loading') return <Spinner label="Checking your session" />
+  if (auth.status !== 'authenticated' || !auth.user.isStaff) {
+    return (
+      <Suspense fallback={<Spinner label="Loading administrator login" />}>
+        <AdminLoginPage />
+      </Suspense>
+    )
+  }
   return <Outlet />
 }
 

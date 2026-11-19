@@ -28,3 +28,102 @@
 .admin-modal h3 { margin: 0; font: 700 1.25rem var(--font-ui); color: var(--color-indigo); }
 .admin-modal-actions { display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 0.5rem; }
 
+/* Admin dedicated login screen */
+.admin-login-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  background: var(--color-paper, #f8fafc);
+}
+.admin-login-screen__container {
+  width: min(100%, 28rem);
+  display: grid;
+  gap: 1.25rem;
+}
+.admin-login-screen__header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.admin-login-card {
+  padding: 2rem 1.75rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+  border-radius: var(--radius-lg, 0.75rem);
+}
+.admin-login-card__title-row {
+  margin-bottom: 1.25rem;
+}
+.admin-login-card__title-row h2 {
+  margin: 0 0 0.4rem;
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: var(--color-ink, #0f172a);
+}
+.admin-login-card__subtitle {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--color-muted, #64748b);
+  line-height: 1.5;
+}
+.admin-login-warning {
+  padding: 0.75rem 0.9rem;
+  background: #fefce8;
+  border: 1px solid #fef08a;
+  border-radius: var(--radius-sm, 0.375rem);
+  color: #854d0e;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  margin-bottom: 1rem;
+}
+.admin-login-warning code {
+  font-weight: 600;
+  color: #713f12;
+}
+.admin-login-error {
+  padding: 0.65rem 0.85rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: var(--radius-sm, 0.375rem);
+  color: #991b1b;
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-bottom: 1rem;
+}
+.admin-login-form {
+  display: grid;
+  gap: 1rem;
+}
+.admin-login-helpers {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: -0.25rem;
+}
+.admin-login-fill-btn {
+  background: none;
+  border: none;
+  color: var(--color-primary-600, #4f46e5);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+.admin-login-fill-btn:hover {
+  text-decoration: underline;
+}
+.admin-login-card__footer {
+  margin-top: 1.5rem;
+  text-align: center;
+  font-size: 0.85rem;
+}
+.admin-login-card__footer a {
+  color: var(--color-muted, #64748b);
+  text-decoration: none;
+}
+.admin-login-card__footer a:hover {
+  color: var(--color-ink, #0f172a);
+  text-decoration: underline;
+}
+
+

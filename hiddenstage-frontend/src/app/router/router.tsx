@@ -5,7 +5,7 @@ import { PublicLayout } from '../../layouts/PublicLayout'
 import { AuthenticationLayout } from '../../layouts/AuthenticationLayout'
 import { WorkspaceLayout } from '../../layouts/WorkspaceLayout'
 import { routes } from '../routes/routePaths'
-import { RequireAuthentication, RequireCustomerOnboarding, RequireVerifiedCustomer, RequireProviderOnboarding, RequireCompletedProvider, RequireAdmin } from './RouteGuards'
+import { RequireAuthentication, RequireCustomerOnboarding, RequireVerifiedCustomer, RequireProviderOnboarding, RequireCompletedProvider, RequireAdmin, RequireAdminOrLogin } from './RouteGuards'
 import { Spinner } from '../../shared/ui/feedback'
 
 const PublicPages = lazy(() => import('../../features/public/PublicPages'))
@@ -21,6 +21,7 @@ const EventPages = lazy(() => import('../../features/events/EventPages'))
 const EventWorkspace = lazy(() => import('../../features/events/EventWorkspacePage'))
 const SystemPages = lazy(() => import('../../features/system/SystemPages'))
 const AdminPages = lazy(() => import('../../features/admin/AdminPages'))
+const AdminLoginPage = lazy(() => import('../../features/admin/AdminLoginPage'))
 const LegacyEventRedirect = lazy(() => import('../../features/events/LegacyEventRedirect'))
 const relativePath = (parentPath: string, fullPath: string) => fullPath.slice(parentPath.length).replace(/^\/+/, '')
 
@@ -99,17 +100,33 @@ const protectedChildren: RouteObject[] = [
   // Business workspace has no backend in this release; the URL stays reserved.
   { path: relativePath(routes.appBase, routes.business.home), element: <Navigate to={routes.forbidden} replace /> },
   { path: `${relativePath(routes.appBase, routes.business.home)}/*`, element: <Navigate to={routes.forbidden} replace /> },
-  { element: <RequireAdmin />, children: [{ path: relativePath(routes.appBase, routes.admin.home), element: <WorkspaceLayout audience="admin" />, children: [
+  { element: <RequireAdmin />, children: [{ path: relativePath(routes.appBase, routes.admin.legacyHome), element: <WorkspaceLayout audience="admin" />, children: [
     { index: true, element: lazyPage(AdminPages), handle: { page: 'adminOverview' } },
-    { path: relativePath(routes.admin.home, routes.admin.businesses), element: lazyPage(AdminPages), handle: { page: 'adminBusinesses' } },
-    { path: relativePath(routes.admin.home, routes.admin.reviews), element: lazyPage(AdminPages), handle: { page: 'adminReviews' } },
-    { path: relativePath(routes.admin.home, routes.admin.audit), element: lazyPage(AdminPages), handle: { page: 'adminAudit' } },
+    { path: relativePath(routes.admin.legacyHome, routes.admin.businesses), element: lazyPage(AdminPages), handle: { page: 'adminBusinesses' } },
+    { path: relativePath(routes.admin.legacyHome, routes.admin.reviews), element: lazyPage(AdminPages), handle: { page: 'adminReviews' } },
+    { path: relativePath(routes.admin.legacyHome, routes.admin.audit), element: lazyPage(AdminPages), handle: { page: 'adminAudit' } },
   ] }] },
 ]
 
 export const routeConfig: RouteObject[] = [
   { element: <PublicLayout />, children: publicChildren },
   { path: routes.authBase, element: <AuthenticationLayout />, children: authChildren },
+  { path: routes.admin.login, element: lazyPage(AdminLoginPage) },
+  {
+    path: routes.admin.home,
+    element: <RequireAdminOrLogin />,
+    children: [
+      {
+        element: <WorkspaceLayout audience="admin" />,
+        children: [
+          { index: true, element: lazyPage(AdminPages), handle: { page: 'adminOverview' } },
+          { path: relativePath(routes.admin.home, routes.admin.businesses), element: lazyPage(AdminPages), handle: { page: 'adminBusinesses' } },
+          { path: relativePath(routes.admin.home, routes.admin.reviews), element: lazyPage(AdminPages), handle: { page: 'adminReviews' } },
+          { path: relativePath(routes.admin.home, routes.admin.audit), element: lazyPage(AdminPages), handle: { page: 'adminAudit' } },
+        ],
+      },
+    ],
+  },
   { element: <RequireAuthentication />, children: [
     { path: routes.onboarding.customer, element: <RequireVerifiedCustomer />, children: [{ index: true, element: lazyPage(OnboardingPages), handle: { page: 'onboarding' } }] },
     { path: routes.onboarding.provider, element: <RequireProviderOnboarding />, children: [{ index: true, element: lazyPage(ProviderOnboardingPage) }] },
