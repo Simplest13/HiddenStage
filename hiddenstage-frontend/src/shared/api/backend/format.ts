@@ -57,6 +57,35 @@ export function formatTimeRange(start: string | null | undefined, end: string | 
   return `${formatTime(start)} – ${formatTime(end)}`
 }
 
+export function addDays(iso: string | null | undefined, days: number = 1): string {
+  if (!iso) return ''
+  const date = new Date(`${iso.slice(0, 10)}T00:00:00`)
+  if (Number.isNaN(date.getTime())) return iso
+  date.setDate(date.getDate() + days)
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
+export function formatEventSchedule(
+  eventDate: string | null | undefined,
+  startTime: string | null | undefined,
+  endTime: string | null | undefined,
+  endDate?: string | null | undefined
+): string {
+  if (!eventDate) return '—'
+  const isOvernight = Boolean(
+    (endDate && endDate > eventDate) ||
+    (startTime && endTime && endTime <= startTime)
+  )
+  const effectiveEndDate = endDate || (isOvernight ? addDays(eventDate, 1) : eventDate)
+  if (isOvernight && effectiveEndDate && effectiveEndDate !== eventDate) {
+    return `${formatDate(eventDate)} at ${formatTime(startTime)} – ${formatDate(effectiveEndDate)} at ${formatTime(endTime)} (Overnight)`
+  }
+  return `${formatDate(eventDate)} · ${formatTimeRange(startTime, endTime)}`
+}
+
 export function daysUntil(iso: string | null | undefined) {
   if (!iso) return null
   const today = new Date()

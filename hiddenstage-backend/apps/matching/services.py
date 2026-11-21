@@ -57,10 +57,12 @@ def discover_providers(
     """
     if not category and event is not None:
         categories = list(
-            event.requirements.filter(status="OPEN").values_list("category__code", flat=True)
+            event.requirements.filter(status="OPEN")
+            .exclude(category__code="other")
+            .values_list("category__code", flat=True)
         )
         if not categories:
-            raise ValidationError({"category": "This event has no open requirements."})
+            return []
         category_list = categories
     else:
         category_list = [normalize_text(category).lower()] if category else []
@@ -160,12 +162,12 @@ def provider_is_eligible_for_event(user, event) -> bool:
     provider = get_completed_provider(user)
     if provider is None:
         return False
-    categories = set(provider.declared_categories())
+    categories = set(provider.declared_categories()) - {"other"}
     if not categories:
         return False
     if not event.requirements.filter(
         status=RequirementStatus.OPEN, category__code__in=categories
-    ).exists():
+    ).exclude(category__code="other").exists():
         return False
     return provider_covers_location(
         provider, pin_code=event.pin_code, city=event.city, state=event.state
@@ -182,7 +184,7 @@ def provider_opportunities(user) -> list[dict]:
     provider = get_completed_provider(user)
     if provider is None:
         return []
-    categories = set(provider.declared_categories())
+    categories = set(provider.declared_categories()) - {"other"}
     if not categories:
         return []
 

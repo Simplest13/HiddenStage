@@ -128,13 +128,32 @@ export function jsonBody(value: unknown): RequestInit {
 /** Absolute URL for an API-relative link returned by the server (e.g. attachment downloads). */
 export function apiUrl(path: string) {
   if (/^https?:\/\//i.test(path)) return path
-  return `${API_BASE_URL}${path.startsWith('/') ? path : `/${path}`}`
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`
+  if (normalizedPath.startsWith('/api/v1/')) {
+    if (API_BASE_URL.endsWith('/api/v1')) {
+      const root = API_BASE_URL.slice(0, -'/api/v1'.length)
+      return `${root}${normalizedPath}`
+    }
+  }
+  return `${API_BASE_URL}${normalizedPath}`
 }
 
 /** Trigger an authenticated download without exposing the session cookie to a new tab. */
 export async function downloadApiFile(path: string, filename: string) {
   const response = await fetch(apiUrl(path), { credentials: 'include', headers: { Accept: '*/*' } })
-  if (!response.ok) throw new ApiError(response.status, fallbackMessage(response.status))
+  if (!response.ok) {
+    let message = fallbackMessage(response.status)
+    try {
+      const data = await response.json()
+      if (data && typeof data === 'object') {
+        if (typeof data.detail === 'string') message = data.detail
+        else if (typeof data.message === 'string') message = data.message
+      }
+    } catch {
+      // not json body
+    }
+    throw new ApiError(response.status, message)
+  }
   const blob = await response.blob()
   const url = URL.createObjectURL(blob)
   const anchor = document.createElement('a')

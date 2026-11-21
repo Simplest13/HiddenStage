@@ -5,6 +5,10 @@ from rest_framework import serializers
 from apps.core.validators import normalize_pin_code, normalize_text, validate_pin_code
 from apps.profiles.models import (
     CustomerProfile,
+    PortfolioItem,
+    PortfolioMediaKind,
+    PortfolioVisibility,
+    ProfileTeamMember,
     ProviderCoverage,
     ProviderProfile,
     ProviderService,
@@ -36,6 +40,8 @@ class CustomerProfileSerializer(serializers.ModelSerializer):
             "locality",
             "city",
             "state",
+            "avatar",
+            "bio",
             "completed_at",
             "created_at",
             "updated_at",
@@ -117,7 +123,22 @@ class ProviderProfileSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "display_name",
+            "username",
+            "headline",
             "kind",
+            "primary_category",
+            "talent_category",
+            "specializations",
+            "performance_styles",
+            "experience_summary",
+            "languages",
+            "website",
+            "instagram",
+            "youtube",
+            "availability_note",
+            "logo",
+            "cover_image",
+            "is_public",
             "description",
             "contact",
             "categories",
@@ -154,6 +175,17 @@ class ProviderProfileSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         instance = self.instance
         categories = attrs.get("categories")
+        kind = attrs.get("kind") or (instance.kind if instance else None)
+        if kind == "INDIVIDUAL_SERVICE_PROVIDER":
+            check_categories = (
+                categories
+                if categories is not None
+                else (instance.declared_categories() if instance else [])
+            )
+            if check_categories and len(check_categories) > 1:
+                raise serializers.ValidationError(
+                    {"categories": "An Individual Service Provider can select only one primary service category."}
+                )
         if instance is not None:
             desired = (
                 set(categories)
@@ -254,6 +286,101 @@ class ProviderPublicSerializer(serializers.ModelSerializer):
         if locations is None:
             return []
         return ProviderCoverageSerializer(locations, many=True).data
+
+
+class PortfolioItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PortfolioItem
+        fields = [
+            "id",
+            "owner",
+            "provider",
+            "title",
+            "description",
+            "category",
+            "event_date",
+            "media",
+            "external_url",
+            "media_kind",
+            "visibility",
+            "position",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "owner", "provider", "created_at", "updated_at"]
+
+
+class ProfileTeamMemberSerializer(serializers.ModelSerializer):
+    member_email = serializers.EmailField(source="member.email", read_only=True)
+    member_name = serializers.CharField(source="member.full_name", read_only=True)
+    email = serializers.EmailField(write_only=True, required=False)
+
+    class Meta:
+        model = ProfileTeamMember
+        fields = [
+            "id",
+            "owner",
+            "member",
+            "member_email",
+            "member_name",
+            "email",
+            "permissions",
+            "is_active",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = [
+            "id",
+            "owner",
+            "member",
+            "member_email",
+            "member_name",
+            "created_at",
+            "updated_at",
+        ]
+
+    def validate_permissions(self, value):
+        valid = {
+            "MANAGE_BUSINESS_PROFILE",
+            "MANAGE_PORTFOLIO",
+            "MANAGE_SERVICES",
+            "MANAGE_TEAM",
+            "VIEW_EVENTS",
+            "MANAGE_EVENTS",
+        }
+        unknown = set(value or []) - valid
+        if unknown:
+            raise serializers.ValidationError(
+                f"Unknown permission(s): {', '.join(sorted(unknown))}."
+            )
+        return value
+
+
+class ManagerSearchSerializer(serializers.ModelSerializer):
+    business_name = serializers.CharField(
+        source="business.name", default="", read_only=True
+    )
+    categories = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ProviderProfile
+        fields = [
+            "id",
+            "user_id",
+            "display_name",
+            "username",
+            "business_name",
+            "headline",
+            "description",
+            "logo",
+            "cover_image",
+            "verification_status",
+            "categories",
+        ]
+
+    def get_categories(self, obj):
+        return obj.declared_categories()
+
 
 
 __all__ = [

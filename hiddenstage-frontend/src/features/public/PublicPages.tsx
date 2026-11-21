@@ -5,7 +5,12 @@ import { Badge, Button, ButtonLink, Card, Input, Textarea } from '../../shared/u
 import { EmptyState } from '../../shared/ui/feedback'
 import { ProviderDirectoryPage, ProviderProfilePage, ServiceDiscoveryPage } from '../discovery/DiscoveryPages'
 import { categoryName, demoProviders, serviceCategories } from '../discovery/data/catalog'
-import { categoryGlyph, providerInitials } from '../../shared/ui/monogram'
+import { CategoryIcon } from '../../shared/ui/CategoryIcon'
+import { Award, Calendar, MapPin, Search, Users } from 'kubai-icons-react'
+import spacesImg from '../../assets/hero/spaces.jpg'
+import foodImg from '../../assets/hero/food.jpg'
+import photoImg from '../../assets/hero/photography.jpg'
+import musicImg from '../../assets/hero/music.jpg'
 import './public.css'
 
 type PageHandle = { page?: string }
@@ -44,14 +49,21 @@ const homeSteps = [
 ]
 
 
+const demoProviderImages: Record<string, string> = {
+  'p-silver-screen': '/hero/photography.jpg',
+  'p-twilight-strings': '/hero/music.jpg',
+  'p-rustic-roots': '/hero/food.jpg',
+}
+
 function CategoryTile({ slug, index }: { slug: string; index: number }) {
   const category = serviceCategories.find((item) => item.slug === slug)
   if (!category) return null
   const tone = ['clay', 'sage', 'gold', 'rose', 'blue', 'plum'][index % 6]
   return <Link to={serviceCategoryPath(category.slug)} className={`cat-tile cat-tile--${tone}`}>
     <div className="cat-tile__media" aria-hidden="true">
-      <span className="cat-tile__monogram">{categoryGlyph(category.name)}</span>
-      <span className="cat-tile__label">Explore category</span>
+      <div className="cat-tile__icon-wrap">
+        <CategoryIcon slug={category.slug} size={36} color="#ffffff" />
+      </div>
     </div>
     <div className="cat-tile__body">
       <h3>{category.name}</h3>
@@ -61,11 +73,14 @@ function CategoryTile({ slug, index }: { slug: string; index: number }) {
   </Link>
 }
 
-function ProviderPreview({ provider }: { provider: (typeof demoProviders)[number] }) {
+function ProviderPreview({ provider, index = 0 }: { provider: (typeof demoProviders)[number]; index?: number }) {
+  const fallbacks = ['/hero/photography.jpg', '/hero/music.jpg', '/hero/food.jpg', '/hero/spaces.jpg']
+  const imgUrl = demoProviderImages[provider.id] || fallbacks[index % fallbacks.length]
   return <article className="pro-card">
     <Link to={providerDetailPath(provider.id)} className="pro-card__media" aria-hidden="true">
-      <span className="pro-card__monogram">{providerInitials(provider.name)}</span>
-      <span className="pro-card__chip">Demo profile</span>
+      <img src={imgUrl} alt={provider.name} className="pro-card__img" />
+      <div className="pro-card__overlay" />
+      <span className="pro-card__chip">Featured profile</span>
     </Link>
     <div className="pro-card__body">
       <div className="pro-card__meta"><span>{provider.city}</span><span className="pro-card__rating">Demo listing</span></div>
@@ -96,32 +111,52 @@ function HomePage() {
     <section className="hero-banner">
       <div className="wrap hero-banner__inner">
         <div className="hero-copy">
-          <span className="eyebrow eyebrow--light">The thoughtful way to book event services</span>
-          <h1>Make room for<br />something <em>special.</em></h1>
-          <p>Find trusted event professionals for weddings, parties, and celebrations — compare personalised quotes and choose the people who fit your day.</p>
+          <h1>Direct booking for<br />event <em>specialists.</em></h1>
+          <p>Hire vetted caterers, photographers, venues, and DJs for your gathering. Review transparent quotations and book directly with zero agency markup.</p>
           <form className="hero-search" onSubmit={search}>
             <div className="hero-search__field">
-              <label htmlFor="hero-service">What do you need?</label>
-              <input id="hero-service" name="service" placeholder="Photography, catering, a venue…" value={service} onChange={(event) => setService(event.target.value)} />
+              <label htmlFor="hero-service">Service needed</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
+                <Search size={18} color="var(--color-orange)" />
+                <input id="hero-service" name="service" placeholder="Photography, catering, DJ, venue…" value={service} onChange={(event) => setService(event.target.value)} />
+              </div>
             </div>
             <div className="hero-search__field">
-              <label htmlFor="hero-location">Where?</label>
-              <input id="hero-location" name="location" placeholder="City or PIN code" value={place} onChange={(event) => setPlace(event.target.value)} />
+              <label htmlFor="hero-location">Location</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
+                <MapPin size={18} color="var(--color-orange)" />
+                <input id="hero-location" name="location" placeholder="City or PIN code" value={place} onChange={(event) => setPlace(event.target.value)} />
+              </div>
             </div>
-            <Button type="submit">Search</Button>
+            <Button type="submit">Search services</Button>
           </form>
           <ul className="hero-trust">
-            <li>100% free to use</li>
-            <li>No commission</li>
-            <li>Personalised quotes</li>
+            <li>Zero booking commission</li>
+            <li>Direct supplier quotations</li>
+            <li>Verified event specialists</li>
           </ul>
-          <p className="hero-demo-note">Product preview with fictional sample listings. No booking or request is submitted.</p>
         </div>
         <div className="hero-collage" aria-hidden="true">
-          <div className="hero-collage__tile hero-collage__tile--tall"><span>Spaces</span><i /></div>
-          <div className="hero-collage__tile hero-collage__tile--food"><span>Food &amp; drink</span><i /></div>
-          <div className="hero-collage__tile hero-collage__tile--photo"><span>Photography</span><i /></div>
-          <div className="hero-collage__tile hero-collage__tile--music"><span>Music</span><i /></div>
+          <div className="hero-collage__tile hero-collage__tile--tall">
+            <img src={spacesImg} alt="Spaces and Venues" loading="eager" />
+            <div className="hero-collage__overlay" />
+            <span>Spaces</span>
+          </div>
+          <div className="hero-collage__tile hero-collage__tile--food">
+            <img src={foodImg} alt="Food and Catering" loading="eager" />
+            <div className="hero-collage__overlay" />
+            <span>Catering</span>
+          </div>
+          <div className="hero-collage__tile hero-collage__tile--photo">
+            <img src={photoImg} alt="Photography and Video" loading="eager" />
+            <div className="hero-collage__overlay" />
+            <span>Photography</span>
+          </div>
+          <div className="hero-collage__tile hero-collage__tile--music">
+            <img src={musicImg} alt="Live Music and DJ" loading="eager" />
+            <div className="hero-collage__overlay" />
+            <span>Sound &amp; DJ</span>
+          </div>
         </div>
       </div>
     </section>
@@ -130,11 +165,10 @@ function HomePage() {
       <div className="wrap">
         <div className="section-head">
           <div>
-            <span className="eyebrow">Everything you need for your event</span>
-            <h2>One place for every service</h2>
-            <p>From the food on the table to the photographs you keep, explore the professionals who make a gathering feel complete.</p>
+            <h2>Explore event services</h2>
+            <p>Hire verified specialists across catering, sound, photography, decoration, and venue spaces.</p>
           </div>
-          <Link className="section-link" to={routes.services}>View all services <span aria-hidden="true">→</span></Link>
+          <Link className="section-link" to={routes.services}>View all categories <span aria-hidden="true">→</span></Link>
         </div>
         <div className="cat-tabs" role="tablist" aria-label="Service groups">
           {categoryGroups.map((item) => <button key={item.id} type="button" role="tab" aria-selected={group === item.id} className={group === item.id ? 'cat-tabs__active' : ''} onClick={() => setGroup(item.id)}>{item.label}</button>)}
@@ -147,9 +181,8 @@ function HomePage() {
       <div className="wrap">
         <div className="section-head section-head--center">
           <div>
-            <span className="eyebrow">How it works</span>
-            <h2>A simpler way to plan your event</h2>
-            <p>Submit a request once, then compare the professionals who are right for your services and location.</p>
+            <h2>How HiddenStage works</h2>
+            <p>Submit your event requirements once, compare direct quotations from verified professionals, and confirm bookings.</p>
           </div>
         </div>
         <ol className="steps-grid">
@@ -159,7 +192,7 @@ function HomePage() {
             <p>{step.body}</p>
           </li>)}
         </ol>
-        <div className="section-foot"><ButtonLink to={routes.customer.newRequest}>Get quotes — it’s free <span aria-hidden="true">→</span></ButtonLink></div>
+        <div className="section-foot"><ButtonLink to={routes.customer.newRequest}>Request quotations <span aria-hidden="true">→</span></ButtonLink></div>
       </div>
     </section>
 
@@ -167,13 +200,12 @@ function HomePage() {
       <div className="wrap">
         <div className="section-head">
           <div>
-            <span className="eyebrow">Powered by passionate professionals</span>
-            <h2>Meet the people behind the moments</h2>
-            <p>Sample profiles show how a professional’s services, coverage, and introduction come together. They are fictional demo listings.</p>
+            <h2>Featured event professionals</h2>
+            <p>Review verified portfolios, authentic client feedback, and direct service pricing from active suppliers.</p>
           </div>
           <Link className="section-link" to={routes.providers}>Browse all professionals <span aria-hidden="true">→</span></Link>
         </div>
-        <div className="pro-grid">{demoProviders.slice(0, 3).map((provider) => <ProviderPreview key={provider.id} provider={provider} />)}</div>
+        <div className="pro-grid">{demoProviders.slice(0, 3).map((provider, index) => <ProviderPreview key={provider.id} provider={provider} index={index} />)}</div>
       </div>
     </section>
 
@@ -181,25 +213,24 @@ function HomePage() {
       <div className="wrap">
         <div className="section-head">
           <div>
-            <span className="eyebrow">Why HiddenStage</span>
-            <h2>Built around how events come together</h2>
+            <h2>Built for transparent event planning</h2>
           </div>
         </div>
         <div className="benefits-grid">
           <article>
-            <span className="benefit-icon" aria-hidden="true">₹</span>
-            <h3>Free to use</h3>
-            <p>No commission when you request quotes or book a supplier. You only pay the professionals you choose.</p>
+            <span className="benefit-icon" aria-hidden="true"><Award size={26} color="var(--color-orange)" /></span>
+            <h3>Zero commission</h3>
+            <p>No booking fee or commission charges on quotations. Pay the exact rates set directly by your chosen professionals.</p>
           </article>
           <article>
-            <span className="benefit-icon" aria-hidden="true">◎</span>
-            <h3>Considered matches</h3>
-            <p>Requests are shaped by the service you need and the places a professional explicitly covers — never a vague nearby guess.</p>
+            <span className="benefit-icon" aria-hidden="true"><Users size={26} color="var(--color-orange)" /></span>
+            <h3>Accurate coverage</h3>
+            <p>Requests match the exact PIN codes and cities a professional actively covers, avoiding out-of-area mismatches.</p>
           </article>
           <article>
-            <span className="benefit-icon" aria-hidden="true">◷</span>
-            <h3>Clear comparisons</h3>
-            <p>Review each proposal line by line, keep quotation revisions, and see exactly what is included before you decide.</p>
+            <span className="benefit-icon" aria-hidden="true"><Calendar size={26} color="var(--color-orange)" /></span>
+            <h3>Itemised quotations</h3>
+            <p>Compare deliverables, inclusions, and payment milestones line by line before confirming your supplier.</p>
           </article>
         </div>
       </div>
@@ -209,15 +240,14 @@ function HomePage() {
       <div className="wrap">
         <div className="pro-cta">
           <div className="pro-cta__copy">
-            <span className="eyebrow">For event professionals</span>
-            <h2>Grow your business with HiddenStage</h2>
-            <p>Present your services to people already planning an event, with clear coverage and considered quotations.</p>
+            <h2>List your business on HiddenStage</h2>
+            <p>Showcase your portfolio, receive qualified event requests in your service areas, and manage quotations in one workspace.</p>
             <ul className="check-list">
-              <li>Receive requests that match the services you offer</li>
-              <li>Manage your profile, coverage, and quotations in one workspace</li>
-              <li>Keep control of your pricing and availability</li>
+              <li>Receive requests matched to your specific services</li>
+              <li>Manage your profile, portfolio albums, and quotations in one place</li>
+              <li>Maintain full control over your pricing and terms</li>
             </ul>
-            <ButtonLink to={routes.forProfessionals} variant="secondary">Become a supplier</ButtonLink>
+            <ButtonLink to={routes.forProfessionals} variant="secondary">Join as a professional</ButtonLink>
           </div>
           <div className="pro-cta__panel" aria-hidden="true">
             <span className="pro-cta__quote">“The right work, with the right people.”</span>
@@ -231,11 +261,11 @@ function HomePage() {
       <div className="wrap">
         <div className="final-cta">
           <div>
-            <h2>Ready to find your perfect suppliers?</h2>
-            <p>Submit your event details and receive personalised quotes from professionals who fit your plans.</p>
+            <h2>Ready to plan your event?</h2>
+            <p>Share your dates and requirements to receive transparent quotes from verified event specialists.</p>
           </div>
           <div className="final-cta__actions">
-            <ButtonLink to={routes.customer.newRequest} size="lg">Get quotes — it’s free</ButtonLink>
+            <ButtonLink to={routes.customer.newRequest} size="lg">Request quotations</ButtonLink>
             <ButtonLink to={routes.services} variant="secondary" size="lg">Browse services</ButtonLink>
           </div>
         </div>

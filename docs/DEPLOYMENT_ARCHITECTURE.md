@@ -12,10 +12,10 @@ Browser
   │  HTTPS
   ▼
 ┌─────────────────────┐        ┌──────────────────────────┐        ┌─────────────────┐
-│  Vercel (static)    │        │  Django + Gunicorn       │        │ Managed         │
-│  hiddenstage-       │  XHR   │  (Railway / Render /     │  TCP   │ PostgreSQL      │
-│  frontend           │───────▶│   Fly / VPS)             │───────▶│ (Neon / RDS /   │
-│  React 19 + Vite    │ cookies│  DRF API under /api/v1   │  TLS   │  Railway PG)    │
+│  Vercel (static)    │        │  Django + Gunicorn       │        │ Neon PostgreSQL │
+│  hiddenstage-       │  XHR   │  (Railway / Render /     │  TCP   │ (Cloud Serverless│
+│  frontend           │───────▶│   Fly / VPS)             │───────▶│  Postgres)      │
+│  React 19 + Vite    │ cookies│  DRF API under /api/v1   │  TLS   │  Pooled/Direct  │
 └─────────────────────┘        └──────────────────────────┘        └─────────────────┘
                                         │
                                         └──▶ persistent disk or object storage (attachments)
@@ -68,22 +68,33 @@ The host must provide:
 - a health check: `GET /api/v1/health/` (returns 503 if the DB is unreachable)
 - a persistent disk for `MEDIA_ROOT` (see §7), or object storage
 
-## 4. Database — managed PostgreSQL
+## 4. Database — Neon PostgreSQL
 
-Postgres is the only supported engine (`D-006`); there is no SQLite fallback.
-Use a managed instance (Neon, RDS, Railway, Supabase) and connect with:
+Neon PostgreSQL is the authoritative cloud database platform (`D-006`, `D-016`); there is no SQLite fallback.
+All shared environments connect to Neon through environment variables. Credentials are never hardcoded.
+
+### Topology: Pooled Runtime vs Direct Migrations
+
+Neon separates connection pooling from direct compute:
+
+- **Application runtime (Gunicorn / ASGI)**: Connects via `DATABASE_URL` using the Neon PgBouncer connection pooler (`*-pooler.*.aws.neon.tech`). Settings enforce `CONN_MAX_AGE=0` and `DISABLE_SERVER_SIDE_CURSORS=True`.
+- **Release-phase migrations (`migrate`)**: Automatically routes through `DATABASE_URL_UNPOOLED` directly to the compute node (`ep-*.*.aws.neon.tech`), avoiding pooler transaction-lock and advisory-lock limitations during DDL execution.
+- **SSL security**: Connections must enforce TLS with `sslmode=require&channel_binding=require`.
 
 ```
-POSTGRES_DB / POSTGRES_USER / POSTGRES_PASSWORD
-POSTGRES_HOST / POSTGRES_PORT
-POSTGRES_SSLMODE=require
+DATABASE_URL="postgresql://<user>:<password>@<project>-pooler.<region>.aws.neon.tech/<dbname>?channel_binding=require&sslmode=require"
+DATABASE_URL_UNPOOLED="postgresql://<user>:<password>@<project>.<region>.aws.neon.tech/<dbname>?channel_binding=require&sslmode=require"
+NEON_BRANCH=production
+NEON_BRANCH_ID=br-<branch-id>
 ```
 
-Requirements: TLS enabled, automated backups with point-in-time recovery, and
-`CREATEDB` not needed in production (only tests create databases).
+### Branching and Isolation Rules
 
-The development `docker-compose.yml` publishes Postgres on **55432** to avoid
-colliding with a local install; production ignores it entirely.
+- **Production branch**: The live production branch (`production`) holds authoritative business state. Destructive operations (reset, recreate, wipe) are forbidden. Explicit approval is mandatory prior to running migrations.
+- **Automated test isolation**: Test suites are isolated from shared Neon databases. The test runner guards against execution against remote Neon hosts unless a dedicated `TEST_DATABASE_URL` is explicitly provided.
+- **Media storage**: Uploaded files and attachments must use persistent object storage (S3/R2) or local persistent volume mounts. Neon database tables must never store raw binary media.
+
+The development `docker-compose.yml` publishes local Postgres on **55432** for offline development and test isolation.
 
 ## 5. How the browser talks to the API
 

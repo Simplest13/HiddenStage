@@ -20,6 +20,7 @@ from apps.profiles.models import ProviderKind, ProviderProfile
 from apps.network.models import (
     AssignmentStatus,
     AssociationStatus,
+    InvitationInitiator,
     NetworkAssociation,
     NetworkInvitation,
     NetworkInvitationStatus,
@@ -144,12 +145,16 @@ def send_network_invitation(*, manager, worker_id, message: str = "") -> Network
     if worker.id == manager.id:
         raise ValidationError({"worker": "You cannot invite yourself."})
     profile = _profile_for(worker)
-    if profile is None or profile.kind != ProviderKind.WORKER or profile.completed_at is None:
-        raise ValidationError({"worker": "This account is not a completed Worker profile."})
+    if (
+        profile is None
+        or profile.kind == ProviderKind.MANAGER
+        or profile.completed_at is None
+    ):
+        raise ValidationError({"worker": "This account is not a completed professional profile."})
     if NetworkAssociation.objects.filter(
         manager=manager, worker=worker, status=AssociationStatus.ACTIVE
     ).exists():
-        raise Conflict("This Worker is already in your network.")
+        raise Conflict("This professional is already in your network.")
 
     expire_stale_network_invitations(
         NetworkInvitation.objects.filter(manager=manager, worker=worker)
@@ -161,25 +166,74 @@ def send_network_invitation(*, manager, worker_id, message: str = "") -> Network
                 worker=worker,
                 message=message,
                 status=NetworkInvitationStatus.PENDING,
+                initiated_by=InvitationInitiator.MANAGER_INVITES,
                 expires_at=timezone.now()
                 + timedelta(days=getattr(settings, "NETWORK_INVITATION_TTL_DAYS", 14)),
             )
     except IntegrityError as exc:
-        raise Conflict("An active invitation already exists for this Worker.") from exc
+        raise Conflict("An active invitation already exists for this professional.") from exc
+
+
+def request_network_association(*, professional, manager_id, message: str = "") -> NetworkInvitation:
+    if not professional or not professional.is_authenticated or not professional.is_provider:
+        raise PermissionDenied("Only providers can request network associations.")
+    _require_verified(professional)
+    manager = User.objects.filter(id=manager_id, is_active=True).first()
+    if manager is None:
+        raise ValidationError({"manager": "Unknown Manager account."})
+    if manager.id == professional.id:
+        raise ValidationError({"manager": "You cannot request association with yourself."})
+    profile = _profile_for(manager)
+    if profile is None or profile.kind != ProviderKind.MANAGER:
+        raise ValidationError({"manager": "Target account is not an active Manager profile."})
+    if NetworkAssociation.objects.filter(
+        manager=manager, worker=professional, status=AssociationStatus.ACTIVE
+    ).exists():
+        raise Conflict("You are already associated with this Manager.")
+
+    expire_stale_network_invitations(
+        NetworkInvitation.objects.filter(manager=manager, worker=professional)
+    )
+    try:
+        with transaction.atomic():
+            return NetworkInvitation.objects.create(
+                manager=manager,
+                worker=professional,
+                message=message,
+                status=NetworkInvitationStatus.PENDING,
+                initiated_by=InvitationInitiator.PROFESSIONAL_REQUESTS,
+                expires_at=timezone.now()
+                + timedelta(days=getattr(settings, "NETWORK_INVITATION_TTL_DAYS", 14)),
+            )
+    except IntegrityError as exc:
+        raise Conflict("An active request already exists with this Manager.") from exc
 
 
 @transaction.atomic
 def respond_to_network_invitation(
-    *, invitation_id, worker, accept: bool
+    *, invitation_id, actor=None, worker=None, accept: bool
 ) -> tuple[NetworkInvitation, NetworkAssociation | None]:
-    require_worker(worker)
+    if actor is None and worker is not None:
+        actor = worker
+    if actor is None:
+        raise ValidationError("Actor or worker must be provided.")
+
     invitation = (
         NetworkInvitation.objects.select_for_update()
-        .filter(id=invitation_id, worker=worker)
+        .filter(id=invitation_id)
         .first()
     )
     if invitation is None:
         raise PermissionDenied("This network invitation is not available to your account.")
+
+    # Validate who is authorized to respond
+    if invitation.initiated_by == InvitationInitiator.PROFESSIONAL_REQUESTS:
+        if invitation.manager_id != actor.id:
+            raise PermissionDenied("Only the recipient Manager can respond to this request.")
+    else:
+        if invitation.worker_id != actor.id:
+            raise PermissionDenied("Only the recipient professional can respond to this invitation.")
+
     if invitation.status != NetworkInvitationStatus.PENDING:
         raise Conflict(f"This invitation is already {invitation.status.lower()}.")
     if invitation.expires_at <= timezone.now():
@@ -190,17 +244,17 @@ def respond_to_network_invitation(
     invitation.responded_at = timezone.now()
     association = None
     if accept:
-        _require_verified(worker)
+        _require_verified(actor)
         existing = NetworkAssociation.objects.filter(
             manager_id=invitation.manager_id,
-            worker=worker,
+            worker_id=invitation.worker_id,
             status=AssociationStatus.ACTIVE,
         ).first()
         if existing is not None:
-            raise Conflict("This Manager is already in your network.")
+            raise Conflict("This network association is already active.")
         try:
             association = NetworkAssociation.objects.create(
-                manager_id=invitation.manager_id, worker=worker
+                manager_id=invitation.manager_id, worker_id=invitation.worker_id
             )
         except IntegrityError as exc:
             raise Conflict("This network association already exists.") from exc
@@ -212,15 +266,28 @@ def respond_to_network_invitation(
 
 
 @transaction.atomic
-def cancel_network_invitation(*, invitation_id, manager) -> NetworkInvitation:
-    require_manager(manager)
+def cancel_network_invitation(
+    *, invitation_id, actor=None, manager=None
+) -> NetworkInvitation:
+    if actor is None and manager is not None:
+        actor = manager
+    if actor is None:
+        raise ValidationError("Actor or manager must be provided.")
+
     invitation = (
         NetworkInvitation.objects.select_for_update()
-        .filter(id=invitation_id, manager=manager)
+        .filter(id=invitation_id)
         .first()
     )
     if invitation is None:
         raise PermissionDenied("This network invitation is not available to your account.")
+    if invitation.initiated_by == InvitationInitiator.PROFESSIONAL_REQUESTS:
+        if invitation.worker_id != actor.id:
+            raise PermissionDenied("Only the requesting professional can cancel this request.")
+    else:
+        if invitation.manager_id != actor.id:
+            raise PermissionDenied("Only the inviting Manager can cancel this invitation.")
+
     if invitation.status != NetworkInvitationStatus.PENDING:
         raise Conflict("Only a pending invitation can be cancelled.")
     invitation.status = NetworkInvitationStatus.CANCELLED

@@ -21,6 +21,36 @@ def get_owned_event(*, actor, event_id: str) -> Event:
     return event
 
 
+def can_access_event_attachments(*, actor, event: Event) -> bool:
+    """Verify whether an actor has authorized permission to view/download event attachments."""
+    if not actor or not actor.is_authenticated:
+        return False
+    if actor.is_staff or getattr(actor, "is_superuser", False):
+        return True
+    if event.customer_id == actor.id:
+        return True
+    if getattr(actor, "is_provider", False):
+        from apps.invitations.models import Invitation
+
+        if Invitation.objects.filter(event=event, provider=actor).exists():
+            return True
+        from apps.quotations.models import Quotation
+
+        if Quotation.objects.filter(event=event, provider__user=actor).exists():
+            return True
+        from apps.commitments.models import Commitment
+
+        if Commitment.objects.filter(event=event, provider__user=actor).exists():
+            return True
+        from apps.network.models import WorkerAssignment
+
+        if WorkerAssignment.objects.filter(
+            commitment__event=event, worker=actor
+        ).exists():
+            return True
+    return False
+
+
 def has_active_invitations(event: Event) -> bool:
     return Invitation.objects.filter(event=event, status=InvitationStatus.PENDING).exists()
 
@@ -105,6 +135,14 @@ def create_event_with_requirements(*, customer, payload: dict, requirements: lis
     for position, requirement in enumerate(requirements):
         data = dict(requirement)
         category = categories[data.pop("category")]
+        custom_name = data.get("custom_service_name") or ""
+        custom_desc = data.get("custom_service_description") or ""
+        if category.code == "other" or custom_name:
+            data.setdefault("custom_review_status", "PENDING")
+            data["custom_service_name"] = custom_name
+            data["custom_service_description"] = custom_desc
+        else:
+            data.setdefault("custom_review_status", "NOT_REQUIRED")
         ServiceRequirement.objects.create(
             event=event, position=position, category=category, **data
         )

@@ -86,7 +86,7 @@ const protectedChildren: RouteObject[] = [
     { index: true, element: lazyPage(ProviderPages), handle: { page: 'providerHome' } },
     { path: relativePath(routes.provider.home, routes.provider.profile), element: lazyPage(ProviderPages), handle: { page: 'providerProfile' } },
     { path: relativePath(routes.provider.home, routes.provider.services), element: lazyPage(ProviderPages), handle: { page: 'providerServices' } },
-    { path: relativePath(routes.provider.home, routes.provider.coverage), element: lazyPage(ProviderPages), handle: { page: 'providerCoverage' } },
+    { path: relativePath(routes.provider.home, routes.provider.coverage), element: <Navigate to={`${routes.provider.profile}?tab=coverage`} replace /> },
     { path: relativePath(routes.provider.home, routes.provider.opportunities), element: lazyPage(ProviderPages), handle: { page: 'providerOpportunities' } },
     { path: relativePath(routes.provider.home, routes.provider.network), element: lazyPage(NetworkPages), handle: { page: 'network' } },
     { path: relativePath(routes.provider.home, routes.provider.networkDiscover), element: lazyPage(NetworkPages), handle: { page: 'networkDiscover' } },

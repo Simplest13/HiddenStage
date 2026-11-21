@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { ApiError, apiRequest } from './client'
+import { ApiError, apiRequest, apiUrl } from './client'
 
 describe('API error boundary', () => {
   afterEach(() => vi.unstubAllGlobals())
@@ -19,5 +19,11 @@ describe('API error boundary', () => {
     expect(new ApiError(403, 'forbidden').status).toBe(403)
     expect(new ApiError(404, 'missing').status).toBe(404)
     expect(new ApiError(500, 'server').status).toBe(500)
+  })
+
+  it('constructs correct API URLs without duplicating version prefixes', () => {
+    expect(apiUrl('/events')).toBe('/api/v1/events')
+    expect(apiUrl('/api/v1/events/123/attachments/456/download/')).toBe('/api/v1/events/123/attachments/456/download/')
+    expect(apiUrl('https://example.com/asset.pdf')).toBe('https://example.com/asset.pdf')
   })
 })

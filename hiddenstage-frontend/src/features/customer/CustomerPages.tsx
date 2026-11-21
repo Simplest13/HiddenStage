@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Link, useMatches } from 'react-router-dom'
+import { Award, Calendar, CircleCheck, Folder, Sparkles } from 'kubai-icons-react'
 import { customerEventPath, routes } from '../../app/routes/routePaths'
 import { useAuth, useAuthActions } from '../../app/auth/useAuth'
 import { Badge, Button, ButtonLink, Card, EmptyState, ErrorState, Input, Select, Spinner } from '../../shared/ui'
@@ -55,28 +56,69 @@ function DashboardPage() {
   if (data.events.error) return <section className="customer-page"><ErrorState description={data.events.error} onRetry={data.events.reload} /></section>
 
   return <section className="customer-page">
-    <div className="customer-page__heading">
-      <div>
-        <span className="eyebrow eyebrow--accent">YOUR WORKSPACE</span>
-        <h1>Welcome back{user ? `, ${firstName(user.fullName)}` : ''}.</h1>
+    <div className="dashboard-welcome-hero">
+      <div className="dashboard-welcome-hero__body">
+        <span className="dashboard-welcome-hero__tag">
+          <Sparkles size={14} color="#f8b6c1" />
+          <span>Event Concierge</span>
+        </span>
+        <h1>
+          Welcome back{user ? `, ${firstName(user.fullName)}` : ''}.
+          <br />
+          Make room for your next <em>celebration.</em>
+        </h1>
         <p>{openRequests.length
-          ? `${openRequests.length} request${openRequests.length === 1 ? ' is' : 's are'} open for quotes. Compare what suppliers offer before you choose.`
-          : 'Start with a request. Describe what you need and matching professionals can send you quotations.'}</p>
+          ? `${openRequests.length} request${openRequests.length === 1 ? ' is' : 's are'} open for quotes. Compare transparent supplier bids with zero agency markup.`
+          : 'Describe your occasion, dates and services to receive direct quotations from verified professionals across your area.'}</p>
+        <div className="dashboard-welcome-hero__chips">
+          <span><CircleCheck size={13} color="#f8b6c1" /> Verified specialists</span>
+          <span><CircleCheck size={13} color="#f8b6c1" /> 0% agency markup</span>
+          <span><CircleCheck size={13} color="#f8b6c1" /> Direct quotation comparison</span>
+        </div>
       </div>
-      <ButtonLink to={routes.customer.newRequest}>Create a request</ButtonLink>
+      <div className="dashboard-welcome-hero__actions">
+        <ButtonLink to={routes.customer.newRequest} size="lg" className="button--saffron-hero">Create a request →</ButtonLink>
+      </div>
     </div>
 
     {loading && <Spinner label="Loading your workspace" />}
 
     {!loading && <div className="stat-grid">
-      <Card className="dashboard-stat"><span className="dashboard-stat__label">Open requests</span><strong>{openRequests.length}</strong><p>Requests matching professionals can quote on.</p></Card>
-      <Card className="dashboard-stat"><span className="dashboard-stat__label">Quotations received</span><strong>{quotes.length}</strong><p>{quotes.length ? 'Compare totals, scope and validity.' : waitingQuotes ? 'Invite professionals to speed this up.' : 'No quotes yet.'}</p></Card>
-      <Card className="dashboard-stat"><span className="dashboard-stat__label">Active commitments</span><strong>{activeCommitments.length}</strong><p>Suppliers chosen for specific services.</p></Card>
-      <Card className="dashboard-stat"><span className="dashboard-stat__label">Drafts</span><strong>{events.filter((event) => event.status === 'DRAFT').length}</strong><p>Unpublished requests only you can see.</p></Card>
+      <Card className="dashboard-stat">
+        <div className="dashboard-stat__top">
+          <span className="stat-icon-wrap"><Calendar size={20} color="#ff7a00" /></span>
+          <span className="dashboard-stat__label">Open requests</span>
+        </div>
+        <strong>{openRequests.length}</strong>
+        <p>Requests matching professionals can quote on.</p>
+      </Card>
+      <Card className="dashboard-stat">
+        <div className="dashboard-stat__top">
+          <span className="stat-icon-wrap"><Sparkles size={20} color="#f8b6c1" /></span>
+          <span className="dashboard-stat__label">Quotations received</span>
+        </div>
+        <strong>{quotes.length}</strong>
+        <p>{quotes.length ? 'Compare totals, scope and validity.' : waitingQuotes ? 'Invite professionals to speed this up.' : 'No quotes yet.'}</p>
+      </Card>
+      <Card className="dashboard-stat">
+        <div className="dashboard-stat__top">
+          <span className="stat-icon-wrap"><Award size={20} color="#ff7a00" /></span>
+          <span className="dashboard-stat__label">Active commitments</span>
+        </div>
+        <strong>{activeCommitments.length}</strong>
+        <p>Suppliers chosen for specific services.</p>
+      </Card>
+      <Card className="dashboard-stat">
+        <div className="dashboard-stat__top">
+          <span className="stat-icon-wrap"><Folder size={20} color="#6b3e26" /></span>
+          <span className="dashboard-stat__label">Drafts</span>
+        </div>
+        <strong>{events.filter((event) => event.status === 'DRAFT').length}</strong>
+        <p>Unpublished requests only you can see.</p>
+      </Card>
     </div>}
 
     {!loading && events.length === 0 && <div className="dashboard-empty">
-      <span className="eyebrow eyebrow--accent">A CLEARER WAY TO PLAN</span>
       <h2>Your first request takes a few minutes.</h2>
       <p>Tell us the occasion, where it is and which services you need. HiddenStage matches it to professionals who explicitly cover your area — then you compare real quotations and choose.</p>
       <div className="dashboard-empty__steps"><span>1 · Describe the event</span><span>2 · Add services</span><span>3 · Compare quotes</span><span>4 · Choose suppliers</span></div>
@@ -230,13 +272,28 @@ function SettingsPage() {
   const auth = useAuth()
   const user = auth.status === 'authenticated' ? auth.user : undefined
   const profile = useApiData(() => profilesApi.getCustomerProfile(), [])
-  const [values, setValues] = useState({ pinCode: '', locality: '', city: '', state: '' })
+  const portfolioData = useApiData(() => profilesApi.listPortfolioItems(), [])
+  const [values, setValues] = useState({ pinCode: '', locality: '', city: '', state: '', avatar: '', bio: '' })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
+
+  // Customer private event gallery state
+  const [showAddGallery, setShowAddGallery] = useState(false)
+  const [galleryTitle, setGalleryTitle] = useState('')
+  const [galleryFile, setGalleryFile] = useState<File | null>(null)
+  const [savingGallery, setSavingGallery] = useState(false)
+
   useEffect(() => {
     if (!profile.data) return
-    setValues({ pinCode: profile.data.pin_code, locality: profile.data.locality, city: profile.data.city, state: profile.data.state })
+    setValues({
+      pinCode: profile.data.pin_code,
+      locality: profile.data.locality,
+      city: profile.data.city,
+      state: profile.data.state,
+      avatar: profile.data.avatar || '',
+      bio: profile.data.bio || '',
+    })
   }, [profile.data])
 
   function update(field: keyof typeof values, value: string) {
@@ -248,16 +305,54 @@ function SettingsPage() {
     if (!event.currentTarget.reportValidity()) return
     setSaving(true); setError(''); setNotice('')
     try {
-      await profilesApi.saveCustomerProfile({ pin_code: values.pinCode, locality: values.locality, city: values.city, state: values.state })
-      setNotice('Your default location has been updated.')
+      await profilesApi.saveCustomerProfile({
+        pin_code: values.pinCode,
+        locality: values.locality,
+        city: values.city,
+        state: values.state,
+        avatar: values.avatar.trim() || undefined,
+        bio: values.bio.trim() || undefined,
+      })
+      setNotice('Your profile and default location have been updated.')
       profile.reload()
-    } catch (caught) { setError(caught instanceof Error ? caught.message : 'Could not save your location.') }
+    } catch (caught) { setError(caught instanceof Error ? caught.message : 'Could not save your profile.') }
     finally { setSaving(false) }
+  }
+
+  async function handleAddGallery(e: FormEvent) {
+    e.preventDefault()
+    if (!galleryTitle.trim()) return
+    setSavingGallery(true)
+    try {
+      const formData = new FormData()
+      formData.append('title', galleryTitle.trim())
+      formData.append('media_kind', 'IMAGE')
+      formData.append('visibility', 'PRIVATE')
+      if (galleryFile) formData.append('media', galleryFile)
+      await profilesApi.createPortfolioItem(formData)
+      setGalleryTitle('')
+      setGalleryFile(null)
+      setShowAddGallery(false)
+      portfolioData.reload()
+    } catch {
+      // ignore
+    } finally {
+      setSavingGallery(false)
+    }
+  }
+
+  async function handleDeleteGallery(id: string) {
+    try {
+      await profilesApi.deletePortfolioItem(id)
+      portfolioData.reload()
+    } catch {
+      // ignore
+    }
   }
 
   return <section className="customer-page">
     <div className="customer-page__heading">
-      <div><span className="eyebrow eyebrow--accent">ACCOUNT</span><h1>Account settings</h1><p>Your sign-in identity, default location and security.</p></div>
+      <div><span className="eyebrow eyebrow--accent">ACCOUNT</span><h1>Account settings</h1><p>Your sign-in identity, profile picture, default location and personal gallery.</p></div>
     </div>
 
     <div className="settings-layout">
@@ -273,9 +368,11 @@ function SettingsPage() {
         </Card>
 
         <Card className="detail-card">
-          <h2>Default location</h2>
-          <p className="detail-card__hint">Pre-fills new requests. Every request can use a different location.</p>
+          <h2>Customer profile & default location</h2>
+          <p className="detail-card__hint">Your profile details and location pre-fill new event requests.</p>
           {profile.loading ? <Spinner label="Loading your profile" /> : <form className="customer-form" onSubmit={submit} noValidate>
+            <Input label="Profile picture URL (Avatar)" name="avatar" placeholder="https://..." value={values.avatar} onChange={(e) => update('avatar', e.target.value)} />
+            <Input label="Short Bio" name="bio" placeholder="A little about you or the kinds of events you organise..." value={values.bio} onChange={(e) => update('bio', e.target.value)} />
             <Input label="PIN code" name="pinCode" inputMode="numeric" pattern="[0-9]{6}" maxLength={6} required value={values.pinCode} onChange={(event) => update('pinCode', event.target.value.replace(/\D/g, ''))} />
             <Input label="Locality" name="locality" required minLength={2} value={values.locality} onChange={(event) => update('locality', event.target.value)} />
             <div className="event-form-grid">
@@ -284,8 +381,43 @@ function SettingsPage() {
             </div>
             {error && <p className="customer-error" role="alert">{error}</p>}
             {notice && <p className="form-success" role="status">{notice}</p>}
-            <div className="customer-form__actions"><Button type="submit" disabled={saving}>{saving ? 'Saving…' : 'Save location'}</Button></div>
+            <div className="customer-form__actions"><Button type="submit" disabled={saving}>{saving ? 'Saving…' : 'Save profile'}</Button></div>
           </form>}
+        </Card>
+
+        <Card className="detail-card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <h2>Private Event Gallery</h2>
+              <p className="detail-card__hint">Store private moodboards, references, and past event photos.</p>
+            </div>
+            <Button type="button" size="sm" onClick={() => setShowAddGallery(!showAddGallery)}>{showAddGallery ? 'Close' : '+ Add photo'}</Button>
+          </div>
+
+          {showAddGallery && (
+            <form onSubmit={handleAddGallery} style={{ marginTop: '1rem', padding: '1rem', border: '1px solid var(--color-border)', borderRadius: '8px' }}>
+              <Input label="Photo Title" name="galleryTitle" required value={galleryTitle} onChange={(e) => setGalleryTitle(e.target.value)} placeholder="e.g. Wedding Decor Inspiration" />
+              <div style={{ margin: '0.75rem 0' }}>
+                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.25rem' }}>Upload Image</label>
+                <input type="file" accept="image/*" onChange={(e) => setGalleryFile(e.target.files?.[0] || null)} />
+              </div>
+              <Button type="submit" disabled={savingGallery}>{savingGallery ? 'Saving…' : 'Add to Gallery'}</Button>
+            </form>
+          )}
+
+          <div style={{ marginTop: '1rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '0.75rem' }}>
+            {(portfolioData.data ?? []).map((item) => (
+              <div key={item.id} style={{ border: '1px solid var(--color-border)', borderRadius: '6px', padding: '0.5rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div>
+                  <strong style={{ fontSize: '0.875rem' }}>{item.title}</strong>
+                  {item.media && <p style={{ fontSize: '0.8rem', margin: '0.25rem 0' }}><a href={item.media} target="_blank" rel="noopener noreferrer">View file ↗</a></p>}
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
+                  <Button type="button" size="sm" variant="quiet" onClick={() => void handleDeleteGallery(item.id)}>Remove</Button>
+                </div>
+              </div>
+            ))}
+          </div>
         </Card>
       </div>
 

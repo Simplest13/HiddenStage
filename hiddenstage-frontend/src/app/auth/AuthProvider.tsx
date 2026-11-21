@@ -45,10 +45,15 @@ export function AuthProvider({ children, state }: { children: ReactNode; state?:
   useEffect(() => {
     if (state) return
     let active = true
-    sessionApi.bootstrap()
-      .then(() => sessionApi.me())
-      .then((user) => { if (active) setAuthState(authenticated(toSessionUser(user))) })
-      .catch(() => { if (active) setAuthState(anonymousAuthState) })
+    Promise.allSettled([sessionApi.bootstrap(), sessionApi.me()])
+      .then(([, meResult]) => {
+        if (!active) return
+        if (meResult.status === 'fulfilled') {
+          setAuthState(authenticated(toSessionUser(meResult.value)))
+        } else {
+          setAuthState(anonymousAuthState)
+        }
+      })
     return () => { active = false }
   }, [state])
 

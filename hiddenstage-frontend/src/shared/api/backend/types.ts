@@ -33,11 +33,15 @@ export type ApiCategory = {
 }
 
 export type RequirementStatus = 'OPEN' | 'COMMITTED' | 'CANCELLED'
+export type RequirementCustomReviewStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'NOT_REQUIRED'
 
 export type ApiRequirement = {
   id: string
   category: string
   category_detail: ApiCategory
+  custom_service_name?: string
+  custom_service_description?: string
+  custom_review_status?: RequirementCustomReviewStatus
   title: string
   description: string
   budget_paise: number | null
@@ -66,6 +70,7 @@ export type ApiEvent = {
   event_type: string
   description: string
   event_date: string
+  end_date?: string | null
   start_time: string
   end_time: string
   guest_count: number
@@ -90,6 +95,7 @@ export type ApiEventListItem = {
   name: string
   event_type: string
   event_date: string
+  end_date?: string | null
   start_time: string
   end_time: string
   city: string
@@ -117,6 +123,8 @@ export type ApiCustomerProfile = {
   locality: string
   city: string
   state: string
+  avatar?: string | null
+  bio?: string
   completed_at: string | null
   created_at: string
   updated_at: string
@@ -136,7 +144,12 @@ export type ApiProviderService = {
 
 export type VerificationStatus = 'UNVERIFIED' | 'PENDING' | 'VERIFIED' | 'REJECTED'
 
-export type ProviderKind = 'MANAGER' | 'WORKER'
+export type ProviderKind =
+  | 'MANAGER'
+  | 'INDIVIDUAL_SERVICE_PROVIDER'
+  | 'ASSOCIATED_SERVICE_PROVIDER'
+  | 'TALENT'
+  | 'WORKER'
 
 export type ApiOpportunityRequirement = {
   id: string
@@ -283,7 +296,22 @@ export type ApiAvailability = {
 export type ApiProviderProfile = {
   id: string
   display_name: string
+  username?: string
+  headline?: string
   kind: ProviderKind
+  primary_category?: string | null
+  talent_category?: string
+  specializations?: string[]
+  performance_styles?: string[]
+  experience_summary?: string
+  languages?: string[]
+  website?: string
+  instagram?: string
+  youtube?: string
+  availability_note?: string
+  logo?: string | null
+  cover_image?: string | null
+  is_public?: boolean
   description: string
   contact: string
   categories: string[]
@@ -293,6 +321,60 @@ export type ApiProviderProfile = {
   completed_at: string | null
   created_at: string
   updated_at: string
+}
+
+export type PortfolioMediaKind = 'IMAGE' | 'VIDEO' | 'DOCUMENT' | 'LINK'
+export type PortfolioVisibility = 'PUBLIC' | 'PRIVATE'
+
+export type ApiPortfolioItem = {
+  id: string
+  owner: string
+  provider: string | null
+  title: string
+  description: string
+  category: string
+  event_date: string | null
+  media: string | null
+  external_url: string
+  media_kind: PortfolioMediaKind
+  visibility: PortfolioVisibility
+  position: number
+  created_at: string
+  updated_at: string
+}
+
+export type ProfileTeamPermission =
+  | 'MANAGE_BUSINESS_PROFILE'
+  | 'MANAGE_PORTFOLIO'
+  | 'MANAGE_SERVICES'
+  | 'MANAGE_TEAM'
+  | 'VIEW_EVENTS'
+  | 'MANAGE_EVENTS'
+
+export type ApiProfileTeamMember = {
+  id: string
+  owner: string
+  member: string
+  member_email: string
+  member_name: string
+  permissions: ProfileTeamPermission[]
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export type ApiManagerSearchResult = {
+  id: string
+  user_id: string
+  display_name: string
+  username: string
+  business_name: string
+  headline: string
+  description: string
+  logo: string | null
+  cover_image: string | null
+  verification_status: VerificationStatus
+  categories: string[]
 }
 
 export type ApiProviderMatch = {
@@ -311,12 +393,56 @@ export type ApiProviderMatch = {
 export type ApiProviderDetail = {
   id: string
   display_name: string
+  username?: string | null
+  headline?: string | null
   kind: ProviderKind
   description: string
   contact: string
   verification_status: VerificationStatus
   categories: string[]
   coverage: ApiCoverage[]
+  primary_category?: string | null
+  primary_category_name?: string | null
+  talent_category?: string | null
+  specializations?: string[]
+  performance_styles?: string[]
+  experience_summary?: string | null
+  languages?: string[]
+  website?: string | null
+  instagram?: string | null
+  youtube?: string | null
+  availability_note?: string | null
+  logo?: string | null
+  cover_image?: string | null
+  is_public?: boolean
+  completed_at?: string | null
+  services?: ApiProviderService[]
+  portfolio_items?: ApiPortfolioItem[]
+  team_members?: Array<{ id: string; name: string; permissions: string[] }>
+  rating?: number | null
+  review_count?: number
+}
+
+export type ApiPublicDirectoryProvider = {
+  id: string
+  display_name: string
+  username?: string | null
+  headline?: string | null
+  kind: ProviderKind
+  description: string
+  verification_status: VerificationStatus
+  categories: string[]
+  primary_category?: string | null
+  logo?: string | null
+  cover_image?: string | null
+  city?: string | null
+  state?: string | null
+  locality?: string | null
+  pin_code?: string | null
+  starting_price_paise?: number | null
+  coverage_count: number
+  rating?: number | null
+  review_count: number
 }
 
 export type InvitationStatus = 'PENDING' | 'ACCEPTED' | 'DECLINED' | 'WITHDRAWN' | 'EXPIRED'

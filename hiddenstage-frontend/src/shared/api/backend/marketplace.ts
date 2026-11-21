@@ -5,6 +5,7 @@ import type {
   ApiProviderDetail,
   ApiProviderMatch,
   ApiProviderOpportunity,
+  ApiPublicDirectoryProvider,
   ApiQuotation,
   ApiQuoteRevision,
   Paginated,
@@ -16,6 +17,13 @@ export type DiscoveryParams = {
   pin_code?: string
   city?: string
   state?: string
+}
+
+export type PublicDirectoryParams = {
+  q?: string
+  category?: string
+  kind?: string
+  location?: string
 }
 
 export type QuoteItemPayload = {
@@ -42,6 +50,16 @@ async function unpaginated<T>(path: string): Promise<T[]> {
 }
 
 export const marketplaceApi = {
+  /** Public directory exploration of verified providers. */
+  listPublicProviders(params?: PublicDirectoryParams) {
+    const search = new URLSearchParams()
+    if (params?.q) search.set('q', params.q)
+    if (params?.category) search.set('category', params.category)
+    if (params?.kind) search.set('kind', params.kind)
+    if (params?.location) search.set('location', params.location)
+    const query = search.toString()
+    return apiRequest<ApiPublicDirectoryProvider[]>(`/directory/providers/${query ? `?${query}` : ''}`)
+  },
   /** Eligible providers for one owned event: category + explicit location coverage. */
   discover(params: DiscoveryParams) {
     return apiRequest<ApiProviderMatch[]>(`/providers/${queryString(params)}`)

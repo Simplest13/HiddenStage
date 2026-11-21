@@ -22,6 +22,11 @@ class NetworkInvitationStatus(models.TextChoices):
     EXPIRED = "EXPIRED", "Expired"
 
 
+class InvitationInitiator(models.TextChoices):
+    MANAGER_INVITES = "MANAGER_INVITES", "Manager invites"
+    PROFESSIONAL_REQUESTS = "PROFESSIONAL_REQUESTS", "Professional requests"
+
+
 class AssociationStatus(models.TextChoices):
     ACTIVE = "ACTIVE", "Active"
     ENDED = "ENDED", "Ended"
@@ -55,6 +60,13 @@ class NetworkInvitation(UUIDModel, TimeStampedModel):
         choices=NetworkInvitationStatus.choices,
         default=NetworkInvitationStatus.PENDING,
     )
+    initiated_by = models.CharField(
+        max_length=30,
+        choices=InvitationInitiator.choices,
+        default=InvitationInitiator.MANAGER_INVITES,
+        null=True,
+        blank=True,
+    )
     expires_at = models.DateTimeField()
     responded_at = models.DateTimeField(null=True, blank=True)
 
@@ -74,6 +86,15 @@ class NetworkInvitation(UUIDModel, TimeStampedModel):
                     status__in=["PENDING", "ACCEPTED", "DECLINED", "CANCELLED", "EXPIRED"]
                 ),
                 name="network_invitation_status_valid",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    models.Q(
+                        initiated_by__in=["MANAGER_INVITES", "PROFESSIONAL_REQUESTS"]
+                    )
+                    | models.Q(initiated_by__isnull=True)
+                ),
+                name="network_invitation_direction_valid",
             ),
             models.UniqueConstraint(
                 fields=["manager", "worker"],

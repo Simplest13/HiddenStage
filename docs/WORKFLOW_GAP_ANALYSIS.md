@@ -19,10 +19,10 @@ Priority 2 (Worker independence) is functionally implemented. Priority 3 is part
 | Public website (home, categories, provider directory) | React public pages exist. Directory and category examples are explicitly fictional demo data; the public provider detail route reads the demo catalogue, not the API. | Replace demo directory with real public Manager/Worker profiles when the public-directory scope is approved. Keep the demo labels until then. | P2/P4 |
 | Customer authentication | Real Django session auth, email verification, password reset, CSRF. Working. | None for current scope. | — |
 | Provider authentication | Same account system for all professionals. `UserRole` remains `CUSTOMER`/`PROVIDER`. | Decide whether account roles must split into `CUSTOMER`/`MANAGER`/`WORKER`. Current profile-level `ProviderKind` avoids a destructive account migration. | Decision |
-| Manager / Worker identity | `ProviderProfile.kind` (`MANAGER`/`WORKER`) added with migration. Selectable in onboarding and profile; shown in discovery and profile status. Existing providers default to Manager. | Add kind-aware copy/onboarding questions and reporting. Add Manager-only and Worker-only capabilities as they are built. | P2 |
-| Customer dashboard | Real API: requests, quotes, commitments, profile. Complete. | Add event preparations and completion confirmation when execution exists. | P4 |
-| Customer event creation/editing | Complete, validated multi-service request wizard, drafts, attachments, publish/edit/withdraw. | Add direct-profile request origin (`Workflow A`) and provider pinning. | P2 |
-| Multi-service requirements | Complete: each requirement has category, description, budget, instructions, matching, quotation lines and commitment state. | Add per-requirement attachments and independent acceptance audit where required. | P3 |
+| Manager / Worker identity | `ProviderProfile.kind` (`MANAGER`/`INDIVIDUAL_SERVICE_PROVIDER`/`ASSOCIATED_SERVICE_PROVIDER`/`TALENT`/`WORKER`) formalized with Neon schema synchronization. Selectable in onboarding and profile; shown in discovery and profile status. Individual service providers strictly restricted to 1 primary category. | Complete. | P2 |
+| Customer dashboard | Real API: requests, quotes, commitments, profile. Customer private event gallery and bio/avatar settings added. | Add event preparations and completion confirmation when execution exists. | P4 |
+| Customer event creation/editing | Complete multi-service wizard with multi-day support (1-day, 2-day, 3-day, 7-day chips, overnight detection), custom service categories ("Other" with manual review status), and attachment upload/preview/download. | Add direct-profile request origin (`Workflow A`) and provider pinning. | P2 |
+| Multi-service requirements | Complete: each requirement has category, description, budget, instructions, matching, quotation lines, custom service fields (`custom_service_name`, `custom_service_description`, `custom_review_status`), and commitment state. | Add per-requirement attachments and independent acceptance audit where required. | P3 |
 | Provider matching | Complete for signed-in customers. Explicit category + exact PIN or city/state coverage; no inferred coverage. Returns Manager and Worker profiles. | Add availability and sub-service filters when those fields exist. Do not add inferred ranking. | P3 |
 | Public opportunity feed | **Implemented:** `GET /api/v1/provider/opportunities/` returns submitted, future requests whose open requirements match declared services and explicit coverage. Hides customer identity, phone, PIN, venue name and address. Shows invitation state, quotation state and matched requirements. | Add decline/snooze and question-asking once messaging exists. | P2 |
 | Invitations | Complete: customer creates per-event or per-requirement invitation; provider accepts/declines; expiry and duplicate guards. | Keep as a direct nudge. Revisit whether invitation acceptance should remain mandatory after a provider is committed elsewhere. | — |
@@ -70,6 +70,18 @@ Priority 2 (Worker independence) is functionally implemented. Priority 3 is part
 - Network/assignment permissions enforced on the backend: ownership, role, active-association and commitment checks. Customers cannot access private staffing data.
 - Tests: 21 network/assignment backend tests. Full backend suite now 73 tests; frontend 18 unit tests, 7 Playwright tests, TypeScript and production build passing.
 - Live verification: invite → accept → assign → Worker accept; two Managers associated with one Worker; overlapping assignment rejected at acceptance; decline → reassign → replacement accepted/started/completed; association removal retained history; independent Worker commitment remained active.
+
+## Changes delivered in Milestone 4 (Functional Upgrade & Professional Architecture)
+
+- **Logo Authentication Preservation:** Logo click in `PublicLayout` and `WorkspaceLayout` navigates authenticated users directly to their workspace without destroying sessions.
+- **Multi-day Event Request Dates:** Multi-day duration chips (1, 2, 3, 7 days), overnight detection (`endTime <= startTime`), and validation ensuring end date never precedes start date.
+- **Attachment Download & Preview:** Authenticated and authorized file downloads (`EventAttachmentDownloadView`) for event owners, quoting/committed providers, and staff; 403 Forbidden for unauthenticated/unauthorized users.
+- **Custom Service Categories:** Support for selecting "Other", collecting custom title/description, tagging with `custom_review_status='PENDING'`, and excluding custom requirements from automated provider matching.
+- **Five Professional Participation Roles:** Formalized `MANAGER`, `INDIVIDUAL_SERVICE_PROVIDER`, `ASSOCIATED_SERVICE_PROVIDER`, `TALENT`, and `WORKER` across database models, serializers, onboarding, and profiles.
+- **Strict 1-Category Rule:** Enforced strictly for `INDIVIDUAL_SERVICE_PROVIDER` on both frontend (single radio selection) and backend DRF serializers.
+- **Portfolio Management:** `PortfolioItem` model and CRUD APIs (`/api/v1/profiles/portfolio/`) for professional showcase items and customer private event gallery.
+- **Manager Assistant Delegation:** `ProfileTeamMember` model and permissions API (`/api/v1/profiles/team/`) for assistant delegation.
+- **Manager Search & Association Requests:** `/api/v1/profiles/managers/search/` and `/api/v1/network/request-association/` for Associated Service Providers.
 
 ## Remaining work, in dependency order
 

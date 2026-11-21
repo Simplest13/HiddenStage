@@ -8,6 +8,7 @@ invitation has been issued, and withdrawal is recorded rather than deleted.
 """
 
 import uuid
+from datetime import timedelta
 from pathlib import Path
 
 from django.conf import settings
@@ -34,6 +35,13 @@ class RequirementStatus(models.TextChoices):
     CANCELLED = "CANCELLED", "Cancelled"
 
 
+class CustomReviewStatus(models.TextChoices):
+    PENDING = "PENDING", "Pending"
+    APPROVED = "APPROVED", "Approved"
+    REJECTED = "REJECTED", "Rejected"
+    NOT_REQUIRED = "NOT_REQUIRED", "Not required"
+
+
 class Event(UUIDModel, TimeStampedModel):
     customer = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="events"
@@ -42,6 +50,7 @@ class Event(UUIDModel, TimeStampedModel):
     event_type = models.CharField(max_length=60)
     description = models.TextField(blank=True)
     event_date = models.DateField()
+    end_date = models.DateField(null=True, blank=True)
     start_time = models.TimeField()
     end_time = models.TimeField()
     guest_count = models.PositiveIntegerField(validators=[MinValueValidator(1)])
@@ -69,8 +78,15 @@ class Event(UUIDModel, TimeStampedModel):
                 name="event_status_valid",
             ),
             models.CheckConstraint(
-                condition=models.Q(end_time__gt=models.F("start_time")),
+                condition=(
+                    (models.Q(end_date__isnull=False) & models.Q(end_date__gt=models.F("event_date")))
+                    | models.Q(end_time__gt=models.F("start_time"))
+                ),
                 name="event_end_after_start",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(end_date__isnull=True) | models.Q(end_date__gte=models.F("event_date")),
+                name="event_end_date_on_or_after_start",
             ),
             models.CheckConstraint(
                 condition=models.Q(guest_count__gte=1), name="event_guest_count_positive"
@@ -82,6 +98,11 @@ class Event(UUIDModel, TimeStampedModel):
         for field in ("locality", "city", "state"):
             setattr(self, field, normalize_text(getattr(self, field)))
         self.name = normalize_text(self.name)
+        if not self.end_date:
+            if self.event_date and self.start_time and self.end_time and self.end_time <= self.start_time:
+                self.end_date = self.event_date + timedelta(days=1)
+            else:
+                self.end_date = self.event_date
         super().save(*args, **kwargs)
 
     @property
@@ -105,6 +126,15 @@ class ServiceRequirement(UUIDModel):
     description = models.TextField(blank=True)
     budget_paise = money_field(null=True, blank=True)
     instructions = models.TextField(blank=True)
+    custom_service_name = models.CharField(max_length=150, blank=True, null=True)
+    custom_service_description = models.TextField(blank=True, null=True)
+    custom_review_status = models.CharField(
+        max_length=20,
+        choices=CustomReviewStatus.choices,
+        default=CustomReviewStatus.NOT_REQUIRED,
+        blank=True,
+        null=True,
+    )
     status = models.CharField(
         max_length=20, choices=RequirementStatus.choices, default=RequirementStatus.OPEN
     )
@@ -118,6 +148,20 @@ class ServiceRequirement(UUIDModel):
             models.CheckConstraint(
                 condition=models.Q(status__in=["OPEN", "COMMITTED", "CANCELLED"]),
                 name="requirement_status_valid",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    models.Q(
+                        custom_review_status__in=[
+                            "PENDING",
+                            "APPROVED",
+                            "REJECTED",
+                            "NOT_REQUIRED",
+                        ]
+                    )
+                    | models.Q(custom_review_status__isnull=True)
+                ),
+                name="requirement_custom_review_status_valid",
             ),
             non_negative_check("budget_paise", "requirement_budget_non_negative"),
         ]

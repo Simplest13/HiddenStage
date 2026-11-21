@@ -12,7 +12,7 @@ HiddenStage starts as a modular monolith with independently installable frontend
 flowchart LR
   Browser[Customer, provider, business, admin] --> Frontend[React + TypeScript + Vite]
   Frontend -->|REST /api/v1, session cookie + CSRF| API[Django + DRF modular monolith]
-  API --> DB[(PostgreSQL)]
+  API --> DB[(Neon PostgreSQL)]
   API --> Mail[Email delivery adapter]
   API --> Files[Private attachment storage]
   API -. optional background jobs .-> Redis[Redis, only when required]
@@ -23,7 +23,7 @@ flowchart LR
 ## Repository boundaries
 
 - `hiddenstage-frontend`: React, TypeScript, Vite, React Router, responsive UI, API client, and generated OpenAPI types.
-- `hiddenstage-backend`: Python 3.12+, Django 5.2 LTS, Django REST Framework, PostgreSQL, drf-spectacular, Docker, and deployment configuration.
+- `hiddenstage-backend`: Python 3.12+, Django 5.2 LTS, Django REST Framework, Neon PostgreSQL, drf-spectacular, Docker, and deployment configuration.
 - Product-level discovery and decision records live in the workspace `docs/` directory; they are not a third application repository or monorepo.
 - No existing repository or user data is to be deleted or repurposed.
 
@@ -35,10 +35,10 @@ Accounts, businesses, services, event requests, matching, invitations, quotation
 
 - REST API prefix: `/api/v1/`.
 - OpenAPI is generated from backend contracts; frontend types are generated from that schema, never manually duplicated.
-- PostgreSQL is authoritative. Money uses integer paise, timestamps are timezone-aware, and Asia/Kolkata is the default timezone.
+- Neon PostgreSQL is authoritative (D-006, D-016). Runtime server uses pooled connections, and migrations use direct unpooled compute connections. Money uses integer paise, timestamps are timezone-aware, and Asia/Kolkata is the default timezone.
 - Acceptance and release operations preserve audited history and enforce the approved state rules under concurrency.
 - Session authentication uses HttpOnly cookies and CSRF protection; no authentication token is stored in localStorage.
-- Attachments are private by default, downloads are authorized, and storage must expose a malware-scanning integration point.
+- Attachments are private by default, downloads are authorized, and storage must expose a malware-scanning integration point. Uploaded files use persistent storage, never stored directly in Neon database.
 
 ## External integrations
 

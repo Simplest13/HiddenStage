@@ -6,8 +6,8 @@
 .form-success { margin: 0; padding: 0.7rem 0.85rem; border-radius: var(--radius-sm); color: var(--color-success); background: var(--color-success-soft); font-size: 0.85rem; }
 .eyebrow { font-family: var(--font-ui); }
 
-.callout { display: grid; gap: 0.3rem; padding: 0.9rem 1.1rem; border: 1px solid #ecd9b8; border-left: 4px solid var(--color-gold); border-radius: var(--radius-sm); background: #fdf6e9; color: var(--color-ink); font-size: 0.86rem; line-height: 1.6; }
-.callout--muted { border-color: var(--color-line); border-left-color: var(--color-indigo); background: var(--color-tint); }
+.callout { display: grid; gap: 0.3rem; padding: 0.9rem 1.15rem; border: 1px solid var(--color-orange-light); border-radius: var(--radius-md); background: var(--color-orange-soft); color: var(--color-ink); font-size: 0.86rem; line-height: 1.6; }
+.callout--muted { border-color: var(--color-line); background: var(--color-tint); }
 .callout strong { font-weight: 700; }
 
 .modal-stack { display: grid; gap: 0.9rem; }

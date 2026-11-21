@@ -112,6 +112,14 @@ class EventDetailView(APIView):
                 for position, requirement in enumerate(requirements):
                     line = dict(requirement)
                     category = categories[line.pop("category")]
+                    custom_name = line.get("custom_service_name") or ""
+                    custom_desc = line.get("custom_service_description") or ""
+                    if category.code == "other" or custom_name:
+                        line.setdefault("custom_review_status", "PENDING")
+                        line["custom_service_name"] = custom_name
+                        line["custom_service_description"] = custom_desc
+                    else:
+                        line.setdefault("custom_review_status", "NOT_REQUIRED")
                     ServiceRequirement.objects.create(
                         event=event, position=position, category=category, **line
                     )
@@ -243,12 +251,33 @@ class EventAttachmentDownloadView(APIView):
 
     @extend_schema(responses={200: OpenApiResponse(description="File stream.")})
     def get(self, request, event_pk, pk):
-        event = get_owned_event(actor=request.user, event_id=event_pk)
+        try:
+            event = Event.objects.get(pk=event_pk)
+        except Event.DoesNotExist:
+            return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        from apps.events.services import can_access_event_attachments
+
+        if not can_access_event_attachments(actor=request.user, event=event):
+            return Response(
+                {"detail": "You do not have permission to access attachments for this event."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         attachment = EventAttachment.objects.filter(id=pk, event=event).first()
         if attachment is None:
             return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+        if not attachment.file:
+            return Response({"detail": "File not found."}, status=status.HTTP_404_NOT_FOUND)
+        try:
+            file_handle = attachment.file.open("rb")
+        except (FileNotFoundError, OSError, ValueError):
+            return Response(
+                {"detail": "Attachment file was not found on storage."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
         response = FileResponse(
-            attachment.file.open("rb"),
+            file_handle,
             as_attachment=True,
             filename=attachment.original_name,
             content_type=attachment.content_type

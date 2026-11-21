@@ -142,7 +142,14 @@ export default function EventWorkspacePage({ initialTab }: { initialTab?: TabKey
         <Card className="detail-card">
           <h2>Request details</h2>
           <dl className="detail-list">
-            <div><dt>Date and time</dt><dd>{formatDate(event.event_date)} · {formatTimeRange(event.start_time, event.end_time)}</dd></div>
+            <div>
+              <dt>Date and time</dt>
+              <dd>
+                {event.end_date && event.end_date !== event.event_date
+                  ? `${formatDate(event.event_date)} – ${formatDate(event.end_date)} · ${formatTimeRange(event.start_time, event.end_time)}`
+                  : `${formatDate(event.event_date)} · ${formatTimeRange(event.start_time, event.end_time)}`}
+              </dd>
+            </div>
             <div><dt>Guest count</dt><dd>{event.guest_count} guests</dd></div>
             <div><dt>Venue</dt><dd><strong>{event.venue_name || 'Not specified'}</strong><br />{event.venue_address || 'No street address provided'}<br />{event.locality}, {event.city}, {event.state} {event.pin_code}</dd></div>
             <div><dt>About this event</dt><dd>{event.description || 'No description provided.'}</dd></div>
@@ -151,21 +158,28 @@ export default function EventWorkspacePage({ initialTab }: { initialTab?: TabKey
 
         <Card className="detail-card">
           <div className="detail-card__heading"><h2>Services requested</h2><Badge>{event.requirements.length} service{event.requirements.length === 1 ? '' : 's'}</Badge></div>
-          {event.requirements.length ? event.requirements.map((item, index) => <div className="event-detail-requirement" key={item.id}>
-            <div className="event-detail-requirement__head">
-              <span className="requirement-index">{String(index + 1).padStart(2, '0')}</span>
-              <div>
-                <Badge>{categoryName[item.category] ?? item.category_detail?.name ?? item.category}</Badge>
-                <h3>{item.title}</h3>
+          {event.requirements.length ? event.requirements.map((item, index) => {
+            const badgeLabel = item.category === 'other'
+              ? (item.custom_service_name ? `Other: ${item.custom_service_name}` : 'Other')
+              : (categoryName[item.category] ?? item.category_detail?.name ?? item.category)
+            return <div className="event-detail-requirement" key={item.id}>
+              <div className="event-detail-requirement__head">
+                <span className="requirement-index">{String(index + 1).padStart(2, '0')}</span>
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <Badge>{badgeLabel}</Badge>
+                  {item.custom_review_status === 'PENDING' && <Badge tone="neutral">Under Review</Badge>}
+                  <h3>{item.title}</h3>
+                </div>
+                <Badge tone={item.status === 'OPEN' ? 'accent' : 'success'}>{requirementStatusLabels[item.status]}</Badge>
               </div>
-              <Badge tone={item.status === 'OPEN' ? 'accent' : 'success'}>{requirementStatusLabels[item.status]}</Badge>
+              {item.description && <p>{item.description}</p>}
+              {item.custom_service_description && <p style={{ fontStyle: 'italic', color: 'var(--color-muted)' }}>Custom brief: {item.custom_service_description}</p>}
+              <div className="event-detail-requirement__meta">
+                <small>Budget: {item.budget_paise === null ? 'Not specified' : formatPaise(item.budget_paise)}</small>
+                {item.instructions && <small>Instructions: {item.instructions}</small>}
+              </div>
             </div>
-            {item.description && <p>{item.description}</p>}
-            <div className="event-detail-requirement__meta">
-              <small>Budget: {item.budget_paise === null ? 'Not specified' : formatPaise(item.budget_paise)}</small>
-              {item.instructions && <small>Instructions: {item.instructions}</small>}
-            </div>
-          </div>) : <p className="detail-card__hint">No services were added to this request.</p>}
+          }) : <p className="detail-card__hint">No services were added to this request.</p>}
         </Card>
 
         <Card className="detail-card">
@@ -173,7 +187,30 @@ export default function EventWorkspacePage({ initialTab }: { initialTab?: TabKey
           <p className="detail-card__hint">Files are private to you and the suppliers you invite.</p>
           {event.attachments.length ? event.attachments.map((file) => <div className="attachment-row" key={file.id}>
             <div><strong>{file.original_name}</strong><small>{file.content_type} · {(file.size_bytes / 1024).toFixed(0)} KB</small></div>
-            <Button type="button" size="sm" variant="quiet" onClick={() => downloadApiFile(file.download_url, file.original_name).catch(() => setActionError('That file could not be downloaded.'))}>Download</Button>
+            <div style={{ display: 'flex', gap: '0.25rem' }}>
+              <Button
+                type="button"
+                size="sm"
+                variant="quiet"
+                onClick={() => window.open(file.download_url, '_blank')}
+              >
+                Preview
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="quiet"
+                onClick={() =>
+                  downloadApiFile(file.download_url, file.original_name).catch((caught: unknown) =>
+                    setActionError(
+                      caught instanceof Error ? caught.message : 'That file could not be downloaded.'
+                    )
+                  )
+                }
+              >
+                Download
+              </Button>
+            </div>
           </div>) : <p className="detail-card__hint">No reference files were attached.</p>}
         </Card>
       </div>

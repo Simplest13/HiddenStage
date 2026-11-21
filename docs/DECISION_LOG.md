@@ -21,6 +21,12 @@ This log separates explicit product decisions from unresolved choices. Entries s
 | D-013 | Event attachments are private by default; validate type, MIME, size, and count; authorize downloads; retain a malware-scanning integration point. | Restart prompt |
 | D-014 | Exclude chat, direct messaging, booking records/confirmation, payments, escrow, payouts, refunds, settlements, wallets, credits, subscriptions, commission infrastructure, automatic GST, and fabricated invoices from release one. | Restart prompt |
 | D-015 | PostHog may be optional analytics only after current pricing/limits, privacy/consent, configuration, and actual delivery are verified; core functionality cannot depend on it. | Restart prompt |
+| D-016 | Adopt Neon PostgreSQL as the authoritative shared cloud database platform across environments. Configure pooled connection for runtime Gunicorn/ASGI (`CONN_MAX_AGE=0`, server-side cursors disabled) and unpooled compute connection for migrations (`DATABASE_URL_UNPOOLED`). Require isolated local/branch databases for automated test suites. Media attachments remain in persistent storage and never in the database. | Architecture update |
+| D-017 | Support 5 professional participation types under `ProviderProfile.kind` (`MANAGER`, `INDIVIDUAL_SERVICE_PROVIDER`, `ASSOCIATED_SERVICE_PROVIDER`, `TALENT`, `WORKER`). Existing managers map to `MANAGER`. Independent workers preserve independent account ownership. | Functional Upgrade Spec |
+| D-018 | Support multi-day events with independent start (`event_date`) and end (`end_date`) fields. Validate that end date is on or after start date. | Functional Upgrade Spec |
+| D-019 | Authorize event attachment downloads for the customer event owner, invited or quoting providers, committed providers, and administrative staff. Deny unassociated users. | Functional Upgrade Spec |
+| D-020 | Support custom service requirements via the "Other" category code, storing `custom_service_name`, `custom_service_description`, and `custom_review_status` on the requirement without creating global taxonomy clutter. | Functional Upgrade Spec |
+| D-021 | Provide portfolio items (`PortfolioItem`) for both professional showcases and private customer event history. Enable assistant delegation (`ProfileTeamMember`) with granular capabilities. | Functional Upgrade Spec |
 
 ## Workspace decisions for this restart
 

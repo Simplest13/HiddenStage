@@ -16,7 +16,7 @@ export const workspaceConfig: Record<WorkspaceAudience, WorkspaceSettings> = {
     { href: routes.provider.network, label: 'My network', icon: '♧' },
     { href: routes.provider.assignments, label: 'Assignments', icon: '▣' },
     { href: routes.provider.quotes, label: 'Quotes', icon: '▤' }, { href: routes.provider.profile, label: 'Profile', icon: '◉' },
-    { href: routes.provider.coverage, label: 'Service coverage', icon: '◎' }, { href: routes.provider.commitments, label: 'Commitments', icon: '◇' },
+    { href: routes.provider.commitments, label: 'Commitments', icon: '◇' },
     { href: routes.provider.services, label: 'Services', icon: '✳' },
   ] },
   business: { title: 'Business workspace', eyebrow: 'BUSINESS', home: routes.business.home, items: [

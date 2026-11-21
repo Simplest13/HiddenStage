@@ -60,6 +60,41 @@ class EventApiTests(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertIn("end_time", response.data)
 
+    def test_overnight_event_succeeds_with_next_day_end_date(self):
+        event_date = str(timezone.localdate() + timedelta(days=5))
+        end_date = str(timezone.localdate() + timedelta(days=6))
+        response = self.client.post(
+            EVENTS,
+            event_payload(
+                event_date=event_date,
+                end_date=end_date,
+                start_time="17:00",
+                end_time="02:00",
+            ),
+            format="json",
+        )
+        self.assertEqual(response.status_code, 201, response.content)
+        self.assertEqual(response.data["event_date"], event_date)
+        self.assertEqual(response.data["end_date"], end_date)
+        self.assertEqual(response.data["start_time"], "17:00:00")
+        self.assertEqual(response.data["end_time"], "02:00:00")
+
+    def test_invalid_end_date_before_event_date_rejected(self):
+        event_date = str(timezone.localdate() + timedelta(days=5))
+        end_date = str(timezone.localdate() + timedelta(days=4))
+        response = self.client.post(
+            EVENTS,
+            event_payload(
+                event_date=event_date,
+                end_date=end_date,
+                start_time="17:00",
+                end_time="22:00",
+            ),
+            format="json",
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("end_date", response.data)
+
     def test_past_event_date_cannot_be_submitted(self):
         past = str(timezone.localdate() - timedelta(days=1))
         response = self.client.post(

@@ -37,6 +37,13 @@ export default function AuthPages() {
   const verificationStarted = useRef(false)
 
   useEffect(() => {
+    if (auth.status === 'authenticated' && page !== 'verifyEmail') {
+      const requested = (location.state as { from?: string } | null)?.from
+      navigate(requested && requested !== routes.auth.login ? requested : destinationFor(auth.user), { replace: true })
+    }
+  }, [auth, page, navigate, location.state])
+
+  useEffect(() => {
     if (page !== 'verifyEmail' || !token || verificationStarted.current) return
     verificationStarted.current = true
     setVerificationState('working')

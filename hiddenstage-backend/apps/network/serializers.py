@@ -56,6 +56,7 @@ class NetworkInvitationSerializer(serializers.ModelSerializer):
             "worker_profile",
             "message",
             "status",
+            "initiated_by",
             "expires_at",
             "responded_at",
             "created_at",
@@ -283,8 +284,18 @@ class AvailabilityQuerySerializer(serializers.Serializer):
 
 
 class NetworkInvitationCreateSerializer(serializers.Serializer):
-    worker_id = serializers.UUIDField()
-    message = serializers.CharField(required=False, allow_blank=True, max_length=2000, default="")
+    worker_id = serializers.UUIDField(required=False, allow_null=True)
+    manager_id = serializers.UUIDField(required=False, allow_null=True)
+    message = serializers.CharField(
+        required=False, allow_blank=True, max_length=2000, default=""
+    )
+
+    def validate(self, attrs):
+        if not attrs.get("worker_id") and not attrs.get("manager_id"):
+            raise serializers.ValidationError(
+                "Either worker_id or manager_id is required."
+            )
+        return attrs
 class NetworkAssociationEndSerializer(serializers.Serializer):
     """Body of `POST /network/associations/{id}/end/`."""
 

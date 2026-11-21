@@ -1,13 +1,28 @@
+from django.db.models import Q
 from drf_spectacular.utils import extend_schema
 from rest_framework import generics, status
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.accounts.models import User
 from apps.core.permissions import IsCustomer, IsProvider
-from apps.profiles.models import CustomerProfile, ProviderCoverage, ProviderProfile, ProviderService, ServiceCategory
+from apps.profiles.models import (
+    CustomerProfile,
+    PortfolioItem,
+    ProfileTeamMember,
+    ProviderCoverage,
+    ProviderKind,
+    ProviderProfile,
+    ProviderService,
+    ServiceCategory,
+)
 from apps.profiles.serializers import (
     CustomerProfileSerializer,
+    ManagerSearchSerializer,
+    PortfolioItemSerializer,
+    ProfileTeamMemberSerializer,
     ProviderCoverageSerializer,
     ProviderProfileSerializer,
     ProviderServiceSerializer,
@@ -162,3 +177,117 @@ class ProviderCoverageDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def get_queryset(self):
         return ProviderCoverage.objects.filter(provider__user=self.request.user)
+
+
+class ManagerSearchView(APIView):
+    permission_classes = [AllowAny]
+
+    @extend_schema(responses={200: ManagerSearchSerializer(many=True)})
+    def get(self, request):
+        query = (request.query_params.get("q") or "").strip()
+        queryset = ProviderProfile.objects.filter(
+            kind=ProviderKind.MANAGER,
+            user__is_active=True,
+            completed_at__isnull=False,
+        ).select_related("business", "user")
+        if query:
+            clean_query = query.lstrip("@")
+            queryset = queryset.filter(
+                Q(display_name__icontains=clean_query)
+                | Q(username__iexact=clean_query)
+                | Q(username__icontains=clean_query)
+                | Q(business__name__icontains=clean_query)
+            )
+        return Response(ManagerSearchSerializer(queryset[:20], many=True).data)
+
+
+class PortfolioItemListCreateView(generics.ListCreateAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = PortfolioItemSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        target_user = self.request.query_params.get("user_id")
+        target_username = self.request.query_params.get("username")
+        if target_user or target_username:
+            q = Q(visibility="PUBLIC")
+            if target_user:
+                q &= Q(owner_id=target_user)
+            if target_username:
+                q &= Q(provider__username__iexact=target_username.lstrip("@"))
+            return PortfolioItem.objects.filter(q).order_by("position", "-created_at")
+
+        user = self.request.user
+        managed_owners = ProfileTeamMember.objects.filter(
+            member=user, is_active=True, permissions__contains=["MANAGE_PORTFOLIO"]
+        ).values_list("owner_id", flat=True)
+        return PortfolioItem.objects.filter(
+            Q(owner=user) | Q(owner_id__in=managed_owners)
+        ).order_by("position", "-created_at")
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        owner = user
+        owner_id = self.request.data.get("owner_id")
+        if owner_id and str(owner_id) != str(user.id):
+            if not ProfileTeamMember.objects.filter(
+                owner_id=owner_id,
+                member=user,
+                is_active=True,
+                permissions__contains=["MANAGE_PORTFOLIO"],
+            ).exists():
+                raise PermissionDenied("You do not have permission to manage this portfolio.")
+            owner = User.objects.get(id=owner_id)
+
+        provider = getattr(owner, "provider_profile", None)
+        position = PortfolioItem.objects.filter(owner=owner).count()
+        serializer.save(owner=owner, provider=provider, position=position)
+
+
+class PortfolioItemDetailView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = PortfolioItemSerializer
+    lookup_field = "pk"
+
+    def get_queryset(self):
+        user = self.request.user
+        managed_owners = ProfileTeamMember.objects.filter(
+            member=user, is_active=True, permissions__contains=["MANAGE_PORTFOLIO"]
+        ).values_list("owner_id", flat=True)
+        return PortfolioItem.objects.filter(
+            Q(owner=user) | Q(owner_id__in=managed_owners)
+        )
+
+
+class ProfileTeamMemberListCreateView(generics.ListCreateAPIView):
+    permission_classes = [IsProvider]
+    serializer_class = ProfileTeamMemberSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        return ProfileTeamMember.objects.filter(owner=self.request.user).select_related("member")
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        profile = getattr(user, "provider_profile", None)
+        if not profile or profile.kind != ProviderKind.MANAGER:
+            raise PermissionDenied("Only Managers can add assistant team members.")
+        email = (self.request.data.get("email") or "").strip().lower()
+        if not email:
+            raise ValidationError({"email": "Assistant email is required."})
+        target_member = User.objects.filter(email=email, is_active=True).first()
+        if not target_member:
+            raise ValidationError({"email": f"No active user found with email {email}."})
+        if target_member.id == user.id:
+            raise ValidationError({"email": "You cannot add yourself as a team member."})
+        serializer.save(owner=user, member=target_member)
+
+
+class ProfileTeamMemberDetailView(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = [IsProvider]
+    serializer_class = ProfileTeamMemberSerializer
+    lookup_field = "pk"
+
+    def get_queryset(self):
+        return ProfileTeamMember.objects.filter(owner=self.request.user)
+

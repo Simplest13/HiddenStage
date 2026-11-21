@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { customerEventPath, routes } from '../../app/routes/routePaths'
 import { eventsApi } from '../../shared/api/backend/events'
 import { marketplaceApi } from '../../shared/api/backend/marketplace'
 import { useApiData } from '../../shared/api/backend/useApiData'
-import { formatDate, formatPaise, formatTimeRange } from '../../shared/api/backend/format'
+import { addDays, formatDate, formatPaise, formatTime, formatTimeRange } from '../../shared/api/backend/format'
 import type { ApiAttachment, ApiCategory, EventStatus } from '../../shared/api/backend/types'
-import { isApiError } from '../../shared/api/client'
+import { downloadApiFile, isApiError } from '../../shared/api/client'
 import { Badge, Button, ButtonLink, Card, ErrorState, Input, Modal, Select, Spinner, Textarea, useToast } from '../../shared/ui'
 import './events.css'
 
@@ -17,6 +17,7 @@ type EventValues = {
   type: string
   description: string
   date: string
+  endDate?: string
   startTime: string
   endTime: string
   guests: string
@@ -35,6 +36,8 @@ type RequirementDraft = {
   description: string
   budget: string
   instructions: string
+  custom_service_name?: string
+  custom_service_description?: string
 }
 
 type PickedFile = { id: string; file: File }
@@ -45,10 +48,19 @@ const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'
 const maxFileSize = 5 * 1024 * 1024
 const today = () => new Date().toISOString().slice(0, 10)
 const blankValues = (): EventValues => ({
-  name: '', type: '', description: '', date: '', startTime: '', endTime: '',
+  name: '', type: '', description: '', date: '', endDate: '', startTime: '', endTime: '',
   guests: '50', pinCode: '', locality: '', city: '', state: '', venueName: '', address: '',
 })
-const blankRequirement = (): RequirementDraft => ({ key: cryptoKey(), category: '', title: '', description: '', budget: '', instructions: '' })
+const blankRequirement = (): RequirementDraft => ({
+  key: cryptoKey(),
+  category: '',
+  title: '',
+  description: '',
+  budget: '',
+  instructions: '',
+  custom_service_name: '',
+  custom_service_description: '',
+})
 function cryptoKey() { return globalThis.crypto?.randomUUID?.() ?? `draft-${Date.now()}-${Math.random().toString(36).slice(2, 7)}` }
 function budgetToPaise(value: string) {
   const amount = Number(value.replace(/[^0-9.]/g, ''))
@@ -57,6 +69,11 @@ function budgetToPaise(value: string) {
 
 export default function EventPages() {
   const { eventId } = useParams()
+  const [searchParams] = useSearchParams()
+  const targetProviderId = searchParams.get('provider')
+  const targetProviderName = searchParams.get('providerName')
+  const targetCategory = searchParams.get('category')
+
   const editing = Boolean(eventId)
   const [step, setStep] = useState<Step>(0)
   const [values, setValues] = useState<EventValues>(blankValues)
@@ -83,6 +100,19 @@ export default function EventPages() {
   const categories: ApiCategory[] = useMemo(() => categoriesState.data ?? [], [categoriesState.data])
 
   useEffect(() => {
+    if (!eventId && targetCategory && requirements.length === 0) {
+      setRequirements([{
+        key: cryptoKey(),
+        category: targetCategory,
+        title: targetProviderName ? `Quote request for ${targetProviderName}` : `${targetCategory.toUpperCase()} Service`,
+        description: `Direct request initiated from ${targetProviderName || 'provider profile'}.`,
+        budget: '',
+        instructions: '',
+      }])
+    }
+  }, [eventId, targetCategory, targetProviderName])
+
+  useEffect(() => {
     if (!eventId) return
     let active = true
     Promise.all([eventsApi.get(eventId), marketplaceApi.listEventInvitations(eventId)])
@@ -91,13 +121,16 @@ export default function EventPages() {
         setStatus(event.status)
         setValues({
           name: event.name, type: event.event_type, description: event.description,
-          date: event.event_date, startTime: event.start_time.slice(0, 5), endTime: event.end_time.slice(0, 5),
+          date: event.event_date, endDate: event.end_date ?? '',
+          startTime: event.start_time.slice(0, 5), endTime: event.end_time.slice(0, 5),
           guests: String(event.guest_count), pinCode: event.pin_code, locality: event.locality,
           city: event.city, state: event.state, venueName: event.venue_name, address: event.venue_address,
         })
         setRequirements(event.requirements.map((item) => ({
           key: item.id, category: item.category, title: item.title, description: item.description,
           budget: item.budget_paise === null ? '' : String(item.budget_paise / 100), instructions: item.instructions,
+          custom_service_name: item.custom_service_name ?? '',
+          custom_service_description: item.custom_service_description ?? '',
         })))
         setExistingAttachments(event.attachments)
         if (event.status === 'WITHDRAWN' || event.status === 'CLOSED') setLockedReason(`This request is ${event.status.toLowerCase()} and can no longer be edited.`)
@@ -118,9 +151,20 @@ export default function EventPages() {
 
   function saveRequirement() {
     if (draft.category === '') { setRequirementError('Choose the service category.'); return }
+    if (draft.category === 'other' && (!draft.custom_service_name || draft.custom_service_name.trim().length < 2)) {
+      setRequirementError('Enter the custom service name.')
+      return
+    }
     if (draft.title.trim().length < 3) { setRequirementError('Give this service a short title.'); return }
     if (draft.budget.trim() && budgetToPaise(draft.budget) === null) { setRequirementError('Enter the budget in rupees, for example 25000.'); return }
-    const entry = { ...draft, title: draft.title.trim(), description: draft.description.trim(), instructions: draft.instructions.trim() }
+    const entry = {
+      ...draft,
+      title: draft.title.trim(),
+      description: draft.description.trim(),
+      instructions: draft.instructions.trim(),
+      custom_service_name: draft.custom_service_name?.trim() || '',
+      custom_service_description: draft.custom_service_description?.trim() || '',
+    }
     setRequirements((current) => editingRequirement ? current.map((item) => item.key === editingRequirement ? entry : item) : [...current, entry])
     setDraft(blankRequirement()); setEditingRequirement(''); setRequirementError('')
   }
@@ -150,9 +194,15 @@ export default function EventPages() {
       if (!values.type) next.type = 'Choose the type of event.'
       if (!values.date) next.date = 'Choose the event date.'
       else if (values.date < today()) next.date = 'The event date cannot be in the past.'
+      if (values.endDate && values.endDate < values.date) {
+        next.endDate = 'The end date cannot be before the start date.'
+      }
       if (!values.startTime) next.startTime = 'Add a start time.'
       if (!values.endTime) next.endTime = 'Add an end time.'
-      if (values.startTime && values.endTime && values.endTime <= values.startTime) next.endTime = 'The end time must be after the start time.'
+      const isMultiDay = Boolean(values.endDate && values.endDate > values.date)
+      if (values.startTime && values.endTime && !isMultiDay && values.startTime === values.endTime) {
+        next.endTime = 'The end time cannot be the same as the start time.'
+      }
       if (!Number.isFinite(Number(values.guests)) || Number(values.guests) < 1) next.guests = 'Enter at least one guest.'
     }
     if (lastStep >= 1) {
@@ -168,7 +218,7 @@ export default function EventPages() {
     setErrors(next)
     if (Object.keys(next).length) {
       setError('Check the highlighted details before continuing.')
-      if (next.name || next.type || next.date || next.startTime || next.endTime || next.guests) setStep(0)
+      if (next.name || next.type || next.date || next.endDate || next.startTime || next.endTime || next.guests) setStep(0)
       else if (next.pinCode || next.locality || next.city || next.state) setStep(1)
       else setStep(2)
       return false
@@ -192,11 +242,17 @@ export default function EventPages() {
   }
 
   function payload() {
+    const isOvernight = Boolean(
+      values.date && values.startTime && values.endTime && values.endTime <= values.startTime
+    )
+    const effectiveEndDate = values.endDate || (isOvernight ? addDays(values.date, 1) : values.date)
+
     return {
       name: values.name.trim(),
       event_type: values.type,
       description: values.description.trim(),
       event_date: values.date,
+      end_date: effectiveEndDate,
       start_time: values.startTime,
       end_time: values.endTime,
       guest_count: Number(values.guests),
@@ -212,6 +268,8 @@ export default function EventPages() {
         description: item.description.trim(),
         instructions: item.instructions.trim(),
         budget_paise: budgetToPaise(item.budget),
+        custom_service_name: item.category === 'other' ? (item.custom_service_name?.trim() || item.title.trim()) : undefined,
+        custom_service_description: item.category === 'other' ? (item.custom_service_description?.trim() || item.description.trim()) : undefined,
       })),
     }
   }
@@ -228,8 +286,17 @@ export default function EventPages() {
       const savedEventId = savedId
       await Promise.all(removedAttachments.map((attachmentId) => eventsApi.deleteAttachment(savedEventId, attachmentId)))
       for (const picked of files) await eventsApi.uploadAttachment(savedEventId, picked.file)
-      if (mode === 'publish' && status === 'DRAFT') await eventsApi.submit(savedEventId)
-      showToast(mode === 'publish' ? 'Request published.' : 'Draft saved.', 'success')
+      if (mode === 'publish' && status === 'DRAFT') {
+        await eventsApi.submit(savedEventId)
+        if (targetProviderId) {
+          try {
+            await marketplaceApi.inviteProvider(savedEventId, { provider_id: targetProviderId })
+          } catch {
+            // direct invite is best-effort, does not block submission
+          }
+        }
+      }
+      showToast(mode === 'publish' ? (targetProviderName ? `Request published and sent to ${targetProviderName}.` : 'Request published.') : 'Draft saved.', 'success')
       navigate(customerEventPath(savedEventId))
     } catch (caught) {
       if (isApiError(caught)) {
@@ -260,6 +327,17 @@ export default function EventPages() {
       </div>
       <Link className="text-link" to={editing && draftId ? customerEventPath(draftId) : routes.customer.requests}>Cancel</Link>
     </div>
+
+    {targetProviderName && (
+      <div className="callout callout--accent" style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div>
+          <strong>Direct Enquiry for {targetProviderName}</strong>
+          <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.875rem' }}>
+            Publishing this event will automatically send an invitation and request a quotation directly from {targetProviderName}.
+          </p>
+        </div>
+      </div>
+    )}
 
     <div className="event-wizard">
       <ol className="wizard-steps" aria-label={`Step ${step + 1} of ${stepLabels.length}`}>
@@ -320,7 +398,7 @@ export default function EventPages() {
           : 'Your changes will replace the current brief. Suppliers who already replied will see the updated request.'}</p>
         <ul className="confirm-summary">
           <li><span>Event</span><strong>{values.name || '—'}</strong></li>
-          <li><span>Date</span><strong>{values.date ? formatDate(values.date) : '—'}</strong></li>
+          <li><span>Date</span><strong>{values.date ? (values.startTime && values.endTime && values.endTime <= values.startTime ? `${formatDate(values.date)} → ${formatDate(addDays(values.date, 1))} (Overnight)` : formatDate(values.date)) : '—'}</strong></li>
           <li><span>Area</span><strong>{[values.locality, values.city, values.pinCode].filter(Boolean).join(', ') || '—'}</strong></li>
           <li><span>Services</span><strong>{requirements.length}</strong></li>
           <li><span>Attachments</span><strong>{existingAttachments.length + files.length}</strong></li>
@@ -340,6 +418,13 @@ function FormHeading({ number, title, intro }: { number: string; title: string; 
 }
 
 function BasicDetails({ values, errors, onChange }: { values: EventValues; errors: Record<string, string>; onChange: <K extends keyof EventValues>(field: K, value: EventValues[K]) => void }) {
+  const isOvernight = Boolean(
+    values.date && values.startTime && values.endTime && values.endTime <= values.startTime
+  )
+  const computedEndDate = isOvernight ? addDays(values.date, 1) : values.date
+  const effectiveEndDate = values.endDate || computedEndDate
+  const isMultiDay = Boolean(values.date && effectiveEndDate && effectiveEndDate > values.date)
+
   return <>
     <FormHeading number="01" title="The essentials" intro="What is the occasion, when is it, and how many people are you expecting?" />
     <Input label="Request name" name="name" required minLength={3} maxLength={120} value={values.name} onChange={(event) => onChange('name', event.target.value)} hint="A name only you see, for example “Aisha & Tom’s wedding”." error={errors.name} />
@@ -349,11 +434,40 @@ function BasicDetails({ values, errors, onChange }: { values: EventValues; error
         {eventTypes.map((type) => <option key={type} value={type}>{type}</option>)}
       </Select>
       <Input label="Guest count" name="guests" type="number" min={1} max={10000} required value={values.guests} onChange={(event) => onChange('guests', event.target.value)} error={errors.guests} />
-      <Input label="Event date" name="date" type="date" min={today()} required value={values.date} onChange={(event) => onChange('date', event.target.value)} error={errors.date} />
+      <Input label="Event start date" name="date" type="date" min={today()} required value={values.date} onChange={(event) => onChange('date', event.target.value)} error={errors.date} />
+      <Input
+        label="Event end date"
+        name="endDate"
+        type="date"
+        min={values.date || today()}
+        value={values.endDate || (isOvernight ? computedEndDate : values.date)}
+        onChange={(event) => onChange('endDate', event.target.value)}
+        error={errors.endDate}
+        hint="For multi-day events or overnight celebrations."
+      />
+      {values.date && (
+        <div className="event-duration-selector" style={{ gridColumn: '1 / -1', display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '0.85rem', color: 'var(--color-muted)' }}>Quick duration:</span>
+          <Button type="button" size="sm" variant={(!values.endDate || values.endDate === values.date) && !isOvernight ? 'primary' : 'quiet'} onClick={() => onChange('endDate', values.date)}>1 Day</Button>
+          <Button type="button" size="sm" variant={values.endDate === addDays(values.date, 1) ? 'primary' : 'quiet'} onClick={() => onChange('endDate', addDays(values.date, 1))}>2 Days</Button>
+          <Button type="button" size="sm" variant={values.endDate === addDays(values.date, 2) ? 'primary' : 'quiet'} onClick={() => onChange('endDate', addDays(values.date, 2))}>3 Days</Button>
+          <Button type="button" size="sm" variant={values.endDate === addDays(values.date, 6) ? 'primary' : 'quiet'} onClick={() => onChange('endDate', addDays(values.date, 6))}>7 Days</Button>
+        </div>
+      )}
       <div className="event-form-grid event-form-grid--tight">
         <Input label="Start time" name="startTime" type="time" required value={values.startTime} onChange={(event) => onChange('startTime', event.target.value)} error={errors.startTime} />
         <Input label="End time" name="endTime" type="time" required value={values.endTime} onChange={(event) => onChange('endTime', event.target.value)} error={errors.endTime} />
       </div>
+      {isOvernight && (!values.endDate || values.endDate === computedEndDate) && (
+        <div className="event-overnight-note" role="status" style={{ gridColumn: '1 / -1' }}>
+          <span>🌙 Overnight event — ends on <strong>{formatDate(computedEndDate)}</strong> at <strong>{formatTime(values.endTime)}</strong></span>
+        </div>
+      )}
+      {isMultiDay && !isOvernight && (
+        <div className="event-overnight-note" role="status" style={{ gridColumn: '1 / -1' }}>
+          <span>🗓️ Multi-day event — from <strong>{formatDate(values.date)}</strong> to <strong>{formatDate(effectiveEndDate)}</strong></span>
+        </div>
+      )}
     </div>
     <Textarea label="About the event (optional)" name="description" rows={4} maxLength={2000} value={values.description} onChange={(event) => onChange('description', event.target.value)} hint="The mood, the plan, anything a supplier should understand." />
   </>
@@ -388,18 +502,23 @@ function Services({ requirements, categories, draft, editing, error, onDraftChan
   return <>
     <FormHeading number="03" title="What do you need?" intro="Add one service per line — catering, photography, music — each with its own brief and budget." />
     {requirements.length > 0 && <div className="requirement-list">
-      {requirements.map((item) => <Card className="requirement-card" key={item.key}>
-        <div>
-          <Badge>{categories.find((category) => category.code === item.category)?.name ?? item.category}</Badge>
-          <h3>{item.title}</h3>
-          {item.description && <p>{item.description}</p>}
-          <small>Budget: {item.budget ? formatPaise(budgetToPaise(item.budget) ?? 0) : 'Not specified'}{item.instructions ? ` · ${item.instructions}` : ''}</small>
-        </div>
-        <div className="requirement-card__actions">
-          <Button type="button" size="sm" variant="quiet" onClick={() => onEdit(item)}>Edit</Button>
-          <Button type="button" size="sm" variant="quiet" onClick={() => onRemove(item.key)}>Remove</Button>
-        </div>
-      </Card>)}
+      {requirements.map((item) => {
+        const catBadge = item.category === 'other'
+          ? (item.custom_service_name ? `Other: ${item.custom_service_name}` : 'Other')
+          : (categories.find((category) => category.code === item.category)?.name ?? item.category)
+        return <Card className="requirement-card" key={item.key}>
+          <div>
+            <Badge>{catBadge}</Badge>
+            <h3>{item.title}</h3>
+            {item.description && <p>{item.description}</p>}
+            <small>Budget: {item.budget ? formatPaise(budgetToPaise(item.budget) ?? 0) : 'Not specified'}{item.instructions ? ` · ${item.instructions}` : ''}</small>
+          </div>
+          <div className="requirement-card__actions">
+            <Button type="button" size="sm" variant="quiet" onClick={() => onEdit(item)}>Edit</Button>
+            <Button type="button" size="sm" variant="quiet" onClick={() => onRemove(item.key)}>Remove</Button>
+          </div>
+        </Card>
+      })}
     </div>}
     <div className="requirement-editor">
       <h3>{editing ? 'Edit this service' : 'Add a service'}</h3>
@@ -410,6 +529,29 @@ function Services({ requirements, categories, draft, editing, error, onDraftChan
         </Select>
         <Input label="Short title" name="requirementTitle" required minLength={3} maxLength={120} value={draft.title} onChange={(event) => onDraftChange('title', event.target.value)} hint="For example “Vegetarian dinner for 80”." />
       </div>
+      {draft.category === 'other' && (
+        <div className="custom-service-fields" style={{ background: 'var(--color-surface-subtle, #f8f9fa)', padding: '1rem', borderRadius: '8px', marginBottom: '1rem', border: '1px solid var(--color-border)' }}>
+          <Input
+            label="Custom service name"
+            name="customServiceName"
+            required
+            minLength={2}
+            maxLength={100}
+            value={draft.custom_service_name ?? ''}
+            onChange={(event) => onDraftChange('custom_service_name', event.target.value)}
+            hint="Specify the exact service, e.g. Drone Videography, Mehendi Artist, Pyrotechnics."
+          />
+          <Textarea
+            label="Custom service details"
+            name="customServiceDescription"
+            rows={2}
+            maxLength={500}
+            value={draft.custom_service_description ?? ''}
+            onChange={(event) => onDraftChange('custom_service_description', event.target.value)}
+            hint="Special requirements or expectations for this custom service."
+          />
+        </div>
+      )}
       <Textarea label="What do you need?" name="requirementDescription" rows={3} maxLength={1000} value={draft.description} onChange={(event) => onDraftChange('description', event.target.value)} hint="Style, timings, must-haves — this is what suppliers quote against." />
       <div className="event-form-grid">
         <Input label="Budget in ₹ (optional)" name="requirementBudget" inputMode="decimal" value={draft.budget} onChange={(event) => onDraftChange('budget', event.target.value.replace(/[^0-9.]/g, ''))} hint="Leave blank to let suppliers propose a price." />
@@ -433,6 +575,23 @@ function Attachments({ existing, files, error, onPick, onRemoveFile, onRemoveExi
   onRemoveFile: (id: string) => void
   onRemoveExisting: (attachment: ApiAttachment) => void
 }) {
+  const { showToast } = useToast()
+
+  function handleDownload(file: ApiAttachment) {
+    downloadApiFile(file.download_url, file.original_name).catch((caught: unknown) => {
+      showToast(caught instanceof Error ? caught.message : 'That file could not be downloaded.', 'error')
+    })
+  }
+
+  function handlePreview(file: ApiAttachment) {
+    window.open(file.download_url, '_blank')
+  }
+
+  function handleLocalPreview(file: File) {
+    const url = URL.createObjectURL(file)
+    window.open(url, '_blank')
+  }
+
   return <>
     <FormHeading number="04" title="Reference files (optional)" intro="Share a mood board, floor plan or brief. JPG, PNG, WebP or PDF, up to 5 MB each." />
     <div className="attachment-upload">
@@ -444,16 +603,35 @@ function Attachments({ existing, files, error, onPick, onRemoveFile, onRemoveExi
       {error && <p className="customer-error" role="alert">{error}</p>}
     </div>
     {(existing.length > 0 || files.length > 0) && <div className="attachment-list">
-      {existing.map((file) => <div className="attachment-preview" key={file.id}>
-        <span className="attachment-preview__type">PDF</span>
-        <div><strong>{file.original_name}</strong><small>{(file.size_bytes / 1024).toFixed(0)} KB · already attached</small></div>
-        <Button type="button" size="sm" variant="quiet" aria-label={`Remove ${file.original_name}`} onClick={() => onRemoveExisting(file)}>Remove</Button>
-      </div>)}
-      {files.map((picked) => <div className="attachment-preview" key={picked.id}>
-        <span className="attachment-preview__type">{picked.file.name.split('.').pop()?.toUpperCase().slice(0, 4)}</span>
-        <div><strong>{picked.file.name}</strong><small>{(picked.file.size / 1024).toFixed(0)} KB · uploads when you save</small></div>
-        <Button type="button" size="sm" variant="quiet" aria-label={`Remove ${picked.file.name}`} onClick={() => onRemoveFile(picked.id)}>Remove</Button>
-      </div>)}
+      {existing.map((file) => {
+        const ext = file.original_name.split('.').pop()?.toUpperCase().slice(0, 4) || 'FILE'
+        return <div className="attachment-preview" key={file.id}>
+          <span className="attachment-preview__type">{ext}</span>
+          <div>
+            <strong>{file.original_name}</strong>
+            <small>{file.content_type || ext} · {(file.size_bytes / 1024).toFixed(0)} KB · already attached</small>
+          </div>
+          <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
+            <Button type="button" size="sm" variant="quiet" onClick={() => handlePreview(file)}>Preview</Button>
+            <Button type="button" size="sm" variant="quiet" onClick={() => handleDownload(file)}>Download</Button>
+            <Button type="button" size="sm" variant="quiet" aria-label={`Remove ${file.original_name}`} onClick={() => onRemoveExisting(file)}>Remove</Button>
+          </div>
+        </div>
+      })}
+      {files.map((picked) => {
+        const ext = picked.file.name.split('.').pop()?.toUpperCase().slice(0, 4) || 'FILE'
+        return <div className="attachment-preview" key={picked.id}>
+          <span className="attachment-preview__type">{ext}</span>
+          <div>
+            <strong>{picked.file.name}</strong>
+            <small>{picked.file.type || ext} · {(picked.file.size / 1024).toFixed(0)} KB · uploads when you save</small>
+          </div>
+          <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
+            <Button type="button" size="sm" variant="quiet" onClick={() => handleLocalPreview(picked.file)}>Preview</Button>
+            <Button type="button" size="sm" variant="quiet" aria-label={`Remove ${picked.file.name}`} onClick={() => onRemoveFile(picked.id)}>Remove</Button>
+          </div>
+        </div>
+      })}
     </div>}
   </>
 }
@@ -467,6 +645,23 @@ function Review({ values, requirements, categories, files, existing, onEdit, sta
   onEdit: (step: Step) => void
   status: EventStatus
 }) {
+  const isOvernight = Boolean(
+    values.date && values.startTime && values.endTime && values.endTime <= values.startTime
+  )
+  const effectiveEndDate = values.endDate || (isOvernight ? addDays(values.date, 1) : values.date)
+  const isMultiDay = Boolean(values.date && effectiveEndDate && effectiveEndDate > values.date)
+
+  let dateSummary = '—'
+  if (values.date) {
+    if (isOvernight && (!values.endDate || values.endDate === effectiveEndDate)) {
+      dateSummary = `${formatDate(values.date)} at ${formatTime(values.startTime)} – ${formatDate(effectiveEndDate)} at ${formatTime(values.endTime)} (Overnight)`
+    } else if (isMultiDay) {
+      dateSummary = `${formatDate(values.date)} – ${formatDate(effectiveEndDate)} · ${formatTimeRange(values.startTime, values.endTime)}`
+    } else {
+      dateSummary = `${formatDate(values.date)} · ${formatTimeRange(values.startTime, values.endTime)}`
+    }
+  }
+
   return <>
     <div className="review-heading">
       <div><span className="eyebrow eyebrow--accent">STEP 05</span><h2>Review before you publish</h2><p>Check the brief a supplier will read. You can jump back to any step.</p></div>
@@ -475,7 +670,7 @@ function Review({ values, requirements, categories, files, existing, onEdit, sta
     <ReviewSection title="Event" onEdit={() => onEdit(0)}>
       <ReviewRow label="Request name" value={values.name} />
       <ReviewRow label="Type" value={values.type} />
-      <ReviewRow label="Date and time" value={`${values.date ? formatDate(values.date) : '—'} · ${formatTimeRange(values.startTime, values.endTime)}`} />
+      <ReviewRow label="Date and time" value={dateSummary} />
       <ReviewRow label="Guests" value={`${values.guests} guests`} />
       {values.description && <ReviewRow label="About" value={values.description} />}
     </ReviewSection>
@@ -484,12 +679,17 @@ function Review({ values, requirements, categories, files, existing, onEdit, sta
       <ReviewRow label="Venue" value={[values.venueName, values.address].filter(Boolean).join(', ') || 'Not specified'} />
     </ReviewSection>
     <ReviewSection title={`Services (${requirements.length})`} onEdit={() => onEdit(2)}>
-      {requirements.map((item) => <div className="review-requirement" key={item.key}>
-        <Badge>{categories.find((category) => category.code === item.category)?.name ?? item.category}</Badge>
-        <strong>{item.title}</strong>
-        {item.description && <p>{item.description}</p>}
-        <small>Budget: {item.budget ? formatPaise(budgetToPaise(item.budget) ?? 0) : 'Not specified'}{item.instructions ? ` · ${item.instructions}` : ''}</small>
-      </div>)}
+      {requirements.map((item) => {
+        const catBadge = item.category === 'other'
+          ? (item.custom_service_name ? `Other: ${item.custom_service_name}` : 'Other')
+          : (categories.find((category) => category.code === item.category)?.name ?? item.category)
+        return <div className="review-requirement" key={item.key}>
+          <Badge>{catBadge}</Badge>
+          <strong>{item.title}</strong>
+          {item.description && <p>{item.description}</p>}
+          <small>Budget: {item.budget ? formatPaise(budgetToPaise(item.budget) ?? 0) : 'Not specified'}{item.instructions ? ` · ${item.instructions}` : ''}</small>
+        </div>
+      })}
     </ReviewSection>
     <ReviewSection title={`Attachments (${existing.length + files.length})`} onEdit={() => onEdit(3)}>
       {existing.length + files.length

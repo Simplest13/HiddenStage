@@ -1,13 +1,14 @@
 import { useState } from 'react'
 import { Link, NavLink, Outlet } from 'react-router-dom'
 import { routes } from '../app/routes/routePaths'
-import { ButtonLink } from '../shared/ui/primitives'
+import { Avatar, ButtonLink } from '../shared/ui/primitives'
+import { useAuth, useAuthActions } from '../app/auth/useAuth'
 import './layouts.css'
 
 const COPYRIGHT_YEAR = new Date().getFullYear()
 
-export function Brand({ inverse = false }: { inverse?: boolean }) {
-  return <Link to={routes.home} className={`brand ${inverse ? 'brand--inverse' : ''}`} aria-label="HiddenStage home">
+export function Brand({ inverse = false, to }: { inverse?: boolean; to?: string }) {
+  return <Link to={to ?? routes.home} className={`brand ${inverse ? 'brand--inverse' : ''}`} aria-label="HiddenStage home">
     <span className="brand__mark" aria-hidden="true"><span /><span /><span /></span>
     <span className="brand__word">hidden<span>stage</span></span>
   </Link>
@@ -15,6 +16,18 @@ export function Brand({ inverse = false }: { inverse?: boolean }) {
 
 export function PublicLayout() {
   const [menuOpen, setMenuOpen] = useState(false)
+  const auth = useAuth()
+  const authActions = useAuthActions()
+  const isLoading = auth.status === 'loading'
+  const isAuthenticated = auth.status === 'authenticated'
+  const workspacePath = isAuthenticated
+    ? auth.user.isStaff
+      ? routes.admin.home
+      : auth.user.accountType === 'PROVIDER'
+      ? routes.provider.home
+      : routes.customer.home
+    : routes.customer.home
+
   return <div className="public-site">
     <a className="skip-link" href="#main-content">Skip to content</a>
     <div className="topbar">
@@ -40,9 +53,32 @@ export function PublicLayout() {
           <NavLink to={routes.howItWorks} onClick={() => setMenuOpen(false)}>How it works</NavLink>
           <NavLink to={routes.forProfessionals} onClick={() => setMenuOpen(false)}>For professionals</NavLink>
           <div className="site-nav__actions">
-            <Link className="site-nav__login" to={routes.auth.login}>Log in</Link>
-            <ButtonLink to={routes.auth.register} variant="secondary" size="sm">List your business</ButtonLink>
-            <ButtonLink to={routes.customer.newRequest} size="sm">Get quotes</ButtonLink>
+            {isLoading ? null : isAuthenticated ? (
+              <div className="site-nav__auth-group" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.85rem' }}>
+                <Link
+                  to={workspacePath}
+                  className="account-pfp-link site-nav__pfp"
+                  aria-label={`Go to workspace (${auth.user.fullName})`}
+                  title={`Signed in as ${auth.user.fullName} — Go to workspace`}
+                >
+                  <Avatar name={auth.user.fullName} size="sm" />
+                </Link>
+                <button
+                  type="button"
+                  className="site-nav__login"
+                  style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+                  onClick={() => void authActions.logout()}
+                >
+                  Sign out
+                </button>
+              </div>
+            ) : (
+              <>
+                <Link className="site-nav__login" to={routes.auth.login}>Log in</Link>
+                <ButtonLink to={routes.auth.register} variant="secondary" size="sm">List your business</ButtonLink>
+                <ButtonLink to={routes.customer.newRequest} size="sm">Get quotes</ButtonLink>
+              </>
+            )}
           </div>
         </nav>
       </div>
@@ -65,13 +101,25 @@ export function PublicLayout() {
           <div>
             <span className="eyebrow">Organisers</span>
             <Link to={routes.customer.newRequest}>Request quotes</Link>
-            <Link to={routes.auth.login}>Log in</Link>
+            {!isLoading && (
+              isAuthenticated ? (
+                <Link to={workspacePath}>My workspace</Link>
+              ) : (
+                <Link to={routes.auth.login}>Log in</Link>
+              )
+            )}
             <Link to={routes.help}>Help &amp; support</Link>
           </div>
           <div>
             <span className="eyebrow">Professionals</span>
             <Link to={routes.forProfessionals}>Supply a service</Link>
-            <Link to={routes.auth.register}>Create an account</Link>
+            {!isLoading && (
+              isAuthenticated && auth.user.accountType === 'PROVIDER' ? (
+                <Link to={routes.provider.home}>Provider workspace</Link>
+              ) : (
+                <Link to={routes.auth.register}>Create an account</Link>
+              )
+            )}
             <Link to={routes.contact}>Contact us</Link>
           </div>
           <div>

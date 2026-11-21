@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react'
-import { Link, useMatches, useParams } from 'react-router-dom'
+import { Link, useMatches, useParams, useSearchParams } from 'react-router-dom'
+import { Award, CircleCheck, FileText, Mail, ShieldCheck, Sparkles } from 'kubai-icons-react'
 import { customerEventPath, providerQuotePath, routes } from '../../app/routes/routePaths'
 import { useAuth } from '../../app/auth/useAuth'
 import { Badge, Button, ButtonLink, Card, EmptyState, ErrorState, Input, Modal, Select, Spinner, Textarea, useToast } from '../../shared/ui'
@@ -19,11 +20,15 @@ import {
 import type {
   ApiCommitment,
   ApiInvitation,
+  ApiManagerSearchResult,
   ApiProviderOpportunity,
   ApiProviderProfile,
   ApiProviderService,
   ApiQuotation,
   ApiQuoteRevision,
+  PortfolioMediaKind,
+  PortfolioVisibility,
+  ProfileTeamPermission,
   ProviderKind,
 } from '../../shared/api/backend/types'
 import { isApiError } from '../../shared/api/client'
@@ -35,7 +40,13 @@ import './provider.css'
 
 type Page = 'providerHome' | 'providerProfile' | 'providerServices' | 'providerCoverage' | 'providerOpportunities' | 'providerRequests' | 'providerQuotes' | 'providerQuoteEditor' | 'providerCommitments'
 
-const providerKindLabels = { MANAGER: 'Manager', WORKER: 'Independent worker' } as const
+const providerKindLabels = {
+  MANAGER: 'Manager',
+  INDIVIDUAL_SERVICE_PROVIDER: 'Individual Service Provider',
+  ASSOCIATED_SERVICE_PROVIDER: 'Associated Service Provider',
+  TALENT: 'Talent / Performer',
+  WORKER: 'Worker / Crew',
+} as const
 
 export default function ProviderPages() {
   const page = (useMatches().at(-1)?.handle as { page?: Page } | undefined)?.page ?? 'providerHome'
@@ -54,9 +65,9 @@ function useCategories() {
   return useApiData(() => eventsApi.categories(), [])
 }
 
-function PageHeading({ eyebrow, title, intro, action }: { eyebrow: string; title: string; intro: string; action?: ReactNode }) {
+function PageHeading({ eyebrow: _eyebrow, title, intro, action }: { eyebrow?: string; title: string; intro?: string; action?: ReactNode }) {
   return <div className="customer-page__heading">
-    <div><span className="eyebrow eyebrow--accent">{eyebrow}</span><h1>{title}</h1><p>{intro}</p></div>
+    <div><h1>{title}</h1>{intro && <p>{intro}</p>}</div>
     {action}
   </div>
 }
@@ -86,22 +97,75 @@ function DashboardPage() {
   const upcomingAssignments = (data.data?.assignments ?? []).filter((item) => ['ACCEPTED', 'IN_PROGRESS'].includes(item.status))
   const user = auth.status === 'authenticated' ? auth.user : undefined
 
+  const providerName = profile?.display_name || (user?.fullName ? user.fullName : 'there')
+
   return <section className="customer-page">
-    <PageHeading
-      eyebrow="PROFESSIONAL WORKSPACE"
-      title={`Welcome${user ? `, ${user.fullName.split(' ')[0]}` : ''}.`}
-      intro="Review invitations, prepare quotations against the organiser's brief, and track the services they choose."
-      action={<ButtonLink to={routes.provider.requests}>Open invitations</ButtonLink>}
-    />
+    <div className="dashboard-welcome-hero">
+      <div className="dashboard-welcome-hero__body">
+        <span className="dashboard-welcome-hero__tag">
+          <Sparkles size={14} color="#f8b6c1" />
+          <span>Professional Workspace</span>
+        </span>
+        <h1>
+          Welcome back{providerName ? `, ${providerName}` : ''}.
+          <br />
+          Power your events with <em>direct bookings.</em>
+        </h1>
+        <p>Review organiser invitations, prepare transparent itemized quotations against briefs, and track confirmed engagements with 0% platform commission.</p>
+        <div className="dashboard-welcome-hero__chips">
+          <span><CircleCheck size={13} color="#f8b6c1" /> Verified business</span>
+          <span><CircleCheck size={13} color="#f8b6c1" /> 0% agency markup</span>
+          <span><CircleCheck size={13} color="#f8b6c1" /> Direct client communication</span>
+        </div>
+      </div>
+      <div className="dashboard-welcome-hero__actions">
+        <ButtonLink to={routes.provider.requests} size="lg" className="button--saffron-hero">Open invitations →</ButtonLink>
+      </div>
+    </div>
     {data.error && <ErrorState description={data.error} onRetry={data.reload} />}
     {data.loading && <Spinner label="Loading your workspace" />}
     {!data.loading && <>
-      <div className="stat-grid">
-        <Card className="dashboard-stat"><span className="dashboard-stat__label">Matched opportunities</span><strong>{data.data?.opportunities.length ?? 0}</strong><p>Open requests you can quote directly.</p></Card>
-        <Card className="dashboard-stat"><span className="dashboard-stat__label">Invitations awaiting reply</span><strong>{pending.length}</strong><p>Organisers waiting for your answer.</p></Card>
-        <Card className="dashboard-stat"><span className="dashboard-stat__label">Open quotations</span><strong>{openQuotes.length}</strong><p>Quotes you can revise or track.</p></Card>
-        <Card className="dashboard-stat"><span className="dashboard-stat__label">Active commitments</span><strong>{activeCommitments.length}</strong><p>Services an organiser has chosen.</p></Card>
-        <Card className="dashboard-stat"><span className="dashboard-stat__label">Profile</span><strong className="dashboard-stat__text">{profile ? verificationStatusLabels[profile.verification_status] : '—'}</strong><p>{profile?.completed_at ? 'Published to matching organisers.' : 'Complete your profile to be matched.'}</p></Card>
+      <div className="stat-grid stat-grid--five">
+        <Card className="dashboard-stat">
+          <div className="dashboard-stat__top">
+            <span className="stat-icon-wrap"><Sparkles size={20} color="#ff7a00" /></span>
+            <span className="dashboard-stat__label">Opportunities</span>
+          </div>
+          <strong>{data.data?.opportunities.length ?? 0}</strong>
+          <p>Open requests you can quote directly.</p>
+        </Card>
+        <Card className="dashboard-stat">
+          <div className="dashboard-stat__top">
+            <span className="stat-icon-wrap"><Mail size={20} color="#f8b6c1" /></span>
+            <span className="dashboard-stat__label">Invitations</span>
+          </div>
+          <strong>{pending.length}</strong>
+          <p>Organisers waiting for your answer.</p>
+        </Card>
+        <Card className="dashboard-stat">
+          <div className="dashboard-stat__top">
+            <span className="stat-icon-wrap"><FileText size={20} color="#ff7a00" /></span>
+            <span className="dashboard-stat__label">Open quotes</span>
+          </div>
+          <strong>{openQuotes.length}</strong>
+          <p>Quotes you can revise or track.</p>
+        </Card>
+        <Card className="dashboard-stat">
+          <div className="dashboard-stat__top">
+            <span className="stat-icon-wrap"><Award size={20} color="#6b3e26" /></span>
+            <span className="dashboard-stat__label">Commitments</span>
+          </div>
+          <strong>{activeCommitments.length}</strong>
+          <p>Services an organiser has chosen.</p>
+        </Card>
+        <Card className="dashboard-stat">
+          <div className="dashboard-stat__top">
+            <span className="stat-icon-wrap"><ShieldCheck size={20} color="#ff7a00" /></span>
+            <span className="dashboard-stat__label">Profile</span>
+          </div>
+          <strong className="dashboard-stat__text">{profile ? verificationStatusLabels[profile.verification_status] : '—'}</strong>
+          <p>{profile?.completed_at ? 'Published to matching organisers.' : 'Complete profile to be matched.'}</p>
+        </Card>
       </div>
 
       {profile && profile.verification_status !== 'VERIFIED' && <div className="callout callout--muted">
@@ -121,13 +185,11 @@ function DashboardPage() {
         </Card>
         <div className="dashboard-side">
           <Card className="profile-card">
-            <span className="eyebrow eyebrow--accent">YOUR PRESENCE</span>
             <h2>{profile?.display_name ?? 'Your profile'}</h2>
             <p>{profile?.description || 'Add a short description so organisers understand your work.'}</p>
             <div className="profile-card__actions"><ButtonLink to={routes.provider.profile} variant="secondary" size="sm">Edit profile</ButtonLink></div>
           </Card>
           <Card className="quick-card">
-            <span className="eyebrow">SHORTCUTS</span>
             <Link to={routes.provider.opportunities}>Browse matched opportunities</Link>
             <Link to={routes.provider.services}>Manage services and prices</Link>
             <Link to={routes.provider.coverage}>Review coverage</Link>
@@ -151,11 +213,73 @@ function DashboardPage() {
   </section>
 }
 
+function calculateProfileScore(profile?: ApiProviderProfile | null, portfolioCount = 0): { score: number; missing: string[] } {
+  if (!profile) return { score: 0, missing: [] }
+  let score = 0
+  const missing: string[] = []
+
+  if (profile.display_name?.trim()) score += 10
+  else missing.push('Business Name')
+
+  if (profile.headline?.trim()) score += 10
+  else missing.push('Professional Headline')
+
+  if (profile.description?.trim().length >= 20) score += 10
+  else missing.push('Detailed Description')
+
+  if (profile.experience_summary?.trim()) score += 10
+  else missing.push('Experience & Background')
+
+  if (profile.categories && profile.categories.length > 0) score += 10
+  else missing.push('Service Categories')
+
+  if (profile.coverage && profile.coverage.length > 0) score += 10
+  else missing.push('Coverage Locations')
+
+  if (profile.contact?.trim()) score += 10
+  else missing.push('Contact Information')
+
+  if (profile.instagram?.trim() || profile.website?.trim() || profile.youtube?.trim()) score += 5
+  else missing.push('Social / Web Links')
+
+  if (profile.cover_image?.trim() || profile.logo?.trim()) score += 10
+  else missing.push('Cover / Logo Media')
+
+  if (portfolioCount > 0) score += 15
+  else missing.push('Showcase & Portfolio Items')
+
+  return { score: Math.min(score, 100), missing }
+}
+
 function ProfilePage() {
   const { showToast } = useToast()
+  const [searchParams, setSearchParams] = useSearchParams()
   const categoriesState = useCategories()
   const data = useApiData(() => profilesApi.getProviderProfile(), [])
-  const [values, setValues] = useState({ displayName: '', description: '', contact: '' })
+  const portfolioData = useApiData(() => profilesApi.listPortfolioItems(), [])
+
+  const initialTab = searchParams.get('tab') as 'details' | 'services' | 'coverage' | 'portfolio' | 'team' | 'association' | null
+  const [activeTab, setActiveTab] = useState<'details' | 'services' | 'coverage' | 'portfolio' | 'team' | 'association'>(initialTab || 'details')
+
+  const [values, setValues] = useState({
+    displayName: '',
+    username: '',
+    headline: '',
+    description: '',
+    experienceSummary: '',
+    languages: '',
+    specializations: '',
+    contact: '',
+    website: '',
+    instagram: '',
+    youtube: '',
+    availabilityNote: '',
+    talentCategory: '',
+    performanceStyles: '',
+    logo: '',
+    coverImage: '',
+    isPublic: true,
+  })
   const [kind, setKind] = useState<ProviderKind>('MANAGER')
   const [selected, setSelected] = useState<string[]>([])
   const [coverage, setCoverage] = useState<ApiProviderProfile['coverage']>([])
@@ -164,24 +288,99 @@ function ProfilePage() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
 
   useEffect(() => {
+    const tabParam = searchParams.get('tab') as 'details' | 'services' | 'coverage' | 'portfolio' | 'team' | 'association' | null
+    if (tabParam && ['details', 'services', 'coverage', 'portfolio', 'team', 'association'].includes(tabParam)) {
+      setActiveTab(tabParam)
+    }
+  }, [searchParams])
+
+  function switchTab(nextTab: 'details' | 'services' | 'coverage' | 'portfolio' | 'team' | 'association') {
+    setActiveTab(nextTab)
+    setSearchParams({ tab: nextTab })
+  }
+
+  useEffect(() => {
     if (!data.data) return
-    setValues({ displayName: data.data.display_name, description: data.data.description, contact: data.data.contact })
-    setKind(data.data.kind)
-    setSelected(data.data.categories)
-    setCoverage(data.data.coverage)
+    const p = data.data
+    setValues({
+      displayName: p.display_name,
+      username: p.username || '',
+      headline: p.headline || '',
+      description: p.description,
+      experienceSummary: p.experience_summary || '',
+      languages: (p.languages || []).join(', '),
+      specializations: (p.specializations || []).join(', '),
+      contact: p.contact,
+      website: p.website || '',
+      instagram: p.instagram || '',
+      youtube: p.youtube || '',
+      availabilityNote: p.availability_note || '',
+      talentCategory: p.talent_category || '',
+      performanceStyles: (p.performance_styles || []).join(', '),
+      logo: p.logo || '',
+      coverImage: p.cover_image || '',
+      isPublic: p.is_public ?? true,
+    })
+    setKind(p.kind)
+    setSelected(p.categories)
+    setCoverage(p.coverage)
   }, [data.data])
+
+  function handleKindChange(nextKind: ProviderKind) {
+    setKind(nextKind)
+    if (nextKind === 'INDIVIDUAL_SERVICE_PROVIDER' && selected.length > 1) {
+      setSelected(selected.slice(0, 1))
+    }
+  }
+
+  function toggleCategory(code: string) {
+    if (kind === 'INDIVIDUAL_SERVICE_PROVIDER') {
+      setSelected([code])
+      return
+    }
+    setSelected((items) => (items.includes(code) ? items.filter((item) => item !== code) : [...items, code]))
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!event.currentTarget.reportValidity()) return
-    if (!selected.length) { setError('Choose at least one service category.'); return }
-    setSaving(true); setError(''); setFieldErrors({})
+    if (!selected.length) {
+      setError('Choose at least one service category.')
+      return
+    }
+    if (kind === 'INDIVIDUAL_SERVICE_PROVIDER' && selected.length > 1) {
+      setError('Individual Service Providers can select only one primary service category.')
+      return
+    }
+    setSaving(true)
+    setError('')
+    setFieldErrors({})
     try {
       await profilesApi.saveProviderProfile({
         display_name: values.displayName.trim(),
+        username: values.username.trim() || undefined,
+        headline: values.headline.trim() || undefined,
         kind,
         description: values.description.trim(),
+        experience_summary: values.experienceSummary.trim() || undefined,
+        languages: values.languages.trim() ? values.languages.split(',').map((s) => s.trim()).filter(Boolean) : undefined,
+        specializations: values.specializations.trim() ? values.specializations.split(',').map((s) => s.trim()).filter(Boolean) : undefined,
         contact: values.contact.trim(),
+        website: values.website.trim() || undefined,
+        instagram: values.instagram.trim() || undefined,
+        youtube: values.youtube.trim() || undefined,
+        availability_note: values.availabilityNote.trim() || undefined,
+        talent_category: kind === 'TALENT' ? values.talentCategory.trim() : undefined,
+        performance_styles:
+          kind === 'TALENT' && values.performanceStyles.trim()
+            ? values.performanceStyles
+                .split(',')
+                .map((s) => s.trim())
+                .filter(Boolean)
+            : undefined,
+        logo: values.logo.trim() || undefined,
+        cover_image: values.coverImage.trim() || undefined,
+        is_public: values.isPublic,
         categories: selected,
         coverage: coverage.map(({ pin_code, locality, city, state }) => ({ pin_code, locality, city, state })),
       })
@@ -190,38 +389,1038 @@ function ProfilePage() {
     } catch (caught) {
       if (isApiError(caught)) setFieldErrors(caught.fields)
       setError(caught instanceof Error ? caught.message : 'Could not save your profile.')
-    } finally { setSaving(false) }
+    } finally {
+      setSaving(false)
+    }
   }
 
   const profile = data.data
-  return <section className="customer-page">
-    <PageHeading eyebrow="PROFILE" title="How organisers see you" intro="Your display name, description and categories are shown on your profile and in matching. Coverage decides which events you are invited to." action={<ButtonLink to={routes.provider.coverage} variant="secondary">Manage coverage</ButtonLink>} />
-    {profile && <div className="profile-status">
-      <Badge tone={profile.verification_status === 'VERIFIED' ? 'success' : 'neutral'}>{verificationStatusLabels[profile.verification_status]}</Badge>
-      <span>{providerKindLabels[profile.kind]} · {profile.completed_at ? `Profile completed ${formatShortDate(profile.completed_at)}` : 'Profile not complete — organisers cannot see you yet.'}</span>
-    </div>}
-    {data.loading && <Spinner label="Loading your profile" />}
-    {data.error && <ErrorState description={data.error} onRetry={data.reload} />}
-    {profile && <form className="customer-form" onSubmit={submit} noValidate>
-      <Input label="Professional or business name" name="displayName" required minLength={2} maxLength={150} value={values.displayName} onChange={(event) => setValues((current) => ({ ...current, displayName: event.target.value }))} error={fieldErrors.display_name} />
-      <Textarea label="Short description" name="description" rows={4} required minLength={20} maxLength={500} value={values.description} onChange={(event) => setValues((current) => ({ ...current, description: event.target.value }))} hint="20–500 characters. What you do, and how you work." error={fieldErrors.description} />
-      <Input label="Contact phone or email" name="contact" required minLength={5} value={values.contact} onChange={(event) => setValues((current) => ({ ...current, contact: event.target.value }))} hint="Only shared with an organiser who chooses you." error={fieldErrors.contact} />
-      <Select label="How you work" name="kind" value={kind} onChange={(event) => setKind(event.target.value as ProviderKind)} required hint="Managers coordinate events and can recruit workers. Independent workers quote customers directly and can also work with managers.">
-        <option value="MANAGER">Manager — coordinate events and build a team</option>
-        <option value="WORKER">Independent worker — deliver services and quote directly</option>
-      </Select>
-      <fieldset className="provider-onboarding__categories">
-        <legend>Service categories</legend>
-        <p>Removing a category hides it from matching. Existing quotations keep their history.</p>
-        <div>{(categoriesState.data ?? []).map((category) => <label key={category.code}>
-          <input type="checkbox" checked={selected.includes(category.code)} onChange={() => setSelected((current) => current.includes(category.code) ? current.filter((code) => code !== category.code) : [...current, category.code])} />
-          {category.name}
-        </label>)}</div>
-      </fieldset>
-      {error && <p className="customer-error" role="alert">{error}</p>}
-      <div className="customer-form__actions"><Button type="submit" disabled={saving}>{saving ? 'Saving…' : 'Save profile'}</Button></div>
-    </form>}
-  </section>
+  const scoreInfo = useMemo(
+    () => calculateProfileScore(profile, portfolioData.data?.length ?? 0),
+    [profile, portfolioData.data],
+  )
+
+  return (
+    <section className="customer-page">
+      <PageHeading
+        eyebrow="PROFILE & PORTFOLIO"
+        title="Professional Profile & Portfolio"
+        intro="Manage your public business profile, services, coverage locations, showcase items, and team delegation."
+        action={
+          profile ? (
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              <a
+                href={`/providers/${profile.username || profile.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="button button--secondary"
+                style={{ textDecoration: 'none' }}
+              >
+                Preview Public Profile ↗
+              </a>
+            </div>
+          ) : undefined
+        }
+      />
+
+      {profile && (
+        <div style={{ background: 'var(--color-surface, #fff)', border: '1px solid var(--color-border)', borderRadius: '12px', padding: '1.25rem', marginBottom: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <strong style={{ fontSize: '1.1rem' }}>Profile Strength & Readiness: {scoreInfo.score}%</strong>
+                <Badge tone={values.isPublic ? 'success' : 'neutral'}>
+                  {values.isPublic ? 'Publicly Listed' : 'Draft / Private'}
+                </Badge>
+                <Badge tone={profile.verification_status === 'VERIFIED' ? 'success' : 'neutral'}>
+                  {verificationStatusLabels[profile.verification_status]}
+                </Badge>
+              </div>
+              <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.85rem', color: 'var(--color-muted)' }}>
+                {scoreInfo.score === 100
+                  ? '🎉 Outstanding! Your profile is 100% complete with services, coverage, and media showcase.'
+                  : `Next step: Add ${scoreInfo.missing.slice(0, 2).join(' & ')} to reach full customer discoverability.`}
+              </p>
+            </div>
+            <div style={{ fontSize: '0.875rem', color: 'var(--color-muted)' }}>
+              {providerKindLabels[profile.kind]} · {profile.completed_at ? `Profile completed ${formatShortDate(profile.completed_at)}` : 'Incomplete'}
+            </div>
+          </div>
+          <div style={{ background: 'var(--color-border, #ebd7cd)', borderRadius: '9999px', height: '10px', overflow: 'hidden' }}>
+            <div
+              style={{
+                width: `${scoreInfo.score}%`,
+                background: scoreInfo.score > 80
+                  ? 'linear-gradient(90deg, #f8b6c1, #ff7a00)'
+                  : scoreInfo.score > 50
+                  ? 'linear-gradient(90deg, #f8b6c1, #e66e00)'
+                  : 'var(--color-espresso-light)',
+                height: '100%',
+                borderRadius: '9999px',
+                transition: 'width 0.4s ease',
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      <div style={{ display: 'flex', gap: '0.5rem', borderBottom: '1px solid var(--color-border)', margin: '1.5rem 0', overflowX: 'auto' }}>
+        <button
+          type="button"
+          className="tab-button"
+          style={{
+            padding: '0.75rem 1rem',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            borderBottom: activeTab === 'details' ? '2.5px solid var(--color-orange)' : 'none',
+            fontWeight: activeTab === 'details' ? 'bold' : 'normal',
+            color: activeTab === 'details' ? 'var(--color-orange)' : 'var(--color-muted)',
+          }}
+          onClick={() => switchTab('details')}
+        >
+          Profile Details
+        </button>
+        <button
+          type="button"
+          className="tab-button"
+          style={{
+            padding: '0.75rem 1rem',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            borderBottom: activeTab === 'services' ? '2.5px solid var(--color-orange)' : 'none',
+            fontWeight: activeTab === 'services' ? 'bold' : 'normal',
+            color: activeTab === 'services' ? 'var(--color-orange)' : 'var(--color-muted)',
+          }}
+          onClick={() => switchTab('services')}
+        >
+          Services & Pricing
+        </button>
+        <button
+          type="button"
+          className="tab-button"
+          style={{
+            padding: '0.75rem 1rem',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            borderBottom: activeTab === 'coverage' ? '2.5px solid var(--color-orange)' : 'none',
+            fontWeight: activeTab === 'coverage' ? 'bold' : 'normal',
+            color: activeTab === 'coverage' ? 'var(--color-orange)' : 'var(--color-muted)',
+          }}
+          onClick={() => switchTab('coverage')}
+        >
+          Service Coverage
+        </button>
+        <button
+          type="button"
+          className="tab-button"
+          style={{
+            padding: '0.75rem 1rem',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            borderBottom: activeTab === 'portfolio' ? '2.5px solid var(--color-orange)' : 'none',
+            fontWeight: activeTab === 'portfolio' ? 'bold' : 'normal',
+            color: activeTab === 'portfolio' ? 'var(--color-orange)' : 'var(--color-muted)',
+          }}
+          onClick={() => switchTab('portfolio')}
+        >
+          Portfolio & Showcase
+        </button>
+        {kind === 'MANAGER' && (
+          <button
+            type="button"
+            className="tab-button"
+            style={{
+              padding: '0.75rem 1rem',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              borderBottom: activeTab === 'team' ? '2.5px solid var(--color-orange)' : 'none',
+              fontWeight: activeTab === 'team' ? 'bold' : 'normal',
+              color: activeTab === 'team' ? 'var(--color-orange)' : 'var(--color-muted)',
+            }}
+            onClick={() => switchTab('team')}
+          >
+            Team & Delegation
+          </button>
+        )}
+        {kind === 'ASSOCIATED_SERVICE_PROVIDER' && (
+          <button
+            type="button"
+            className="tab-button"
+            style={{
+              padding: '0.75rem 1rem',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              borderBottom: activeTab === 'association' ? '2.5px solid var(--color-orange)' : 'none',
+              fontWeight: activeTab === 'association' ? 'bold' : 'normal',
+              color: activeTab === 'association' ? 'var(--color-orange)' : 'var(--color-muted)',
+            }}
+            onClick={() => switchTab('association')}
+          >
+            Manager Network
+          </button>
+        )}
+        {kind === 'ASSOCIATED_SERVICE_PROVIDER' && (
+          <button
+            type="button"
+            className="tab-button"
+            style={{
+              padding: '0.75rem 1rem',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              borderBottom: activeTab === 'association' ? '2px solid var(--color-primary)' : 'none',
+              fontWeight: activeTab === 'association' ? 'bold' : 'normal',
+            }}
+            onClick={() => switchTab('association')}
+          >
+            Manager Affiliation
+          </button>
+        )}
+      </div>
+
+      {data.loading && <Spinner label="Loading your profile" />}
+      {data.error && <ErrorState description={data.error} onRetry={data.reload} />}
+
+      {profile && activeTab === 'details' && (
+        <form className="customer-form" onSubmit={submit} noValidate>
+          <div className="event-form-grid">
+            <Input
+              label="Professional or business name"
+              name="displayName"
+              required
+              minLength={2}
+              maxLength={150}
+              value={values.displayName}
+              onChange={(event) => setValues((current) => ({ ...current, displayName: event.target.value }))}
+              error={fieldErrors.display_name}
+            />
+            <Input
+              label="Public profile username"
+              name="username"
+              placeholder="e.g. soundcraft-audio"
+              value={values.username}
+              onChange={(event) => setValues((current) => ({ ...current, username: event.target.value }))}
+              error={fieldErrors.username}
+              hint="Creates your permanent clean URL: /providers/username"
+            />
+          </div>
+
+          <Input
+            label="Professional headline"
+            name="headline"
+            maxLength={200}
+            placeholder="e.g. Premier Destination Wedding Sound & Light Specialist"
+            value={values.headline}
+            onChange={(event) => setValues((current) => ({ ...current, headline: event.target.value }))}
+            error={fieldErrors.headline}
+          />
+
+          <Select
+            label="How you work"
+            name="kind"
+            value={kind}
+            onChange={(event) => handleKindChange(event.target.value as ProviderKind)}
+            required
+            hint="Select your professional identity on HiddenStage."
+          >
+            <option value="MANAGER">Manager — coordinate events and build a team</option>
+            <option value="INDIVIDUAL_SERVICE_PROVIDER">Individual Service Provider — deliver a single specialized service directly</option>
+            <option value="ASSOCIATED_SERVICE_PROVIDER">Associated Service Provider — independent provider affiliated with an event company</option>
+            <option value="TALENT">Talent / Performer — artist, DJ, musician, anchor, dancer, entertainer</option>
+            <option value="WORKER">Worker / Crew — event setup, coordination, and on-ground operations</option>
+          </Select>
+
+          {kind === 'TALENT' && (
+            <div style={{ background: 'var(--color-surface-subtle, #f8f9fa)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--color-border)' }}>
+              <h3 style={{ margin: '0 0 0.5rem 0' }}>Talent & Performance Details</h3>
+              <div className="event-form-grid">
+                <Input
+                  label="Talent category"
+                  name="talentCategory"
+                  placeholder="e.g. DJ, Solo Guitarist, Emcee"
+                  value={values.talentCategory}
+                  onChange={(event) => setValues((current) => ({ ...current, talentCategory: event.target.value }))}
+                />
+                <Input
+                  label="Performance styles"
+                  name="performanceStyles"
+                  placeholder="e.g. Commercial, Bollywood, Western Acoustic"
+                  value={values.performanceStyles}
+                  onChange={(event) => setValues((current) => ({ ...current, performanceStyles: event.target.value }))}
+                />
+              </div>
+            </div>
+          )}
+
+          <Textarea
+            label="About your work"
+            name="description"
+            rows={4}
+            required
+            minLength={20}
+            maxLength={1000}
+            value={values.description}
+            onChange={(event) => setValues((current) => ({ ...current, description: event.target.value }))}
+            hint="20–1000 characters. What you do, equipment, style, and track record."
+            error={fieldErrors.description}
+          />
+
+          <Textarea
+            label="Experience & Track Record"
+            name="experienceSummary"
+            rows={3}
+            maxLength={2000}
+            value={values.experienceSummary}
+            onChange={(event) => setValues((current) => ({ ...current, experienceSummary: event.target.value }))}
+            placeholder="Years in business, venues worked, notable celebrations, awards, or signature production milestones."
+            hint="Displayed prominently in your profile's Experience & Story section."
+          />
+
+          <div className="event-form-grid">
+            <Input
+              label="Languages spoken (comma separated)"
+              name="languages"
+              placeholder="e.g. English, Hindi, Kannada, Tamil"
+              value={values.languages}
+              onChange={(event) => setValues((current) => ({ ...current, languages: event.target.value }))}
+            />
+            <Input
+              label="Specializations (comma separated)"
+              name="specializations"
+              placeholder="e.g. Destination Weddings, Sangeet Night, Corporate Galas"
+              value={values.specializations}
+              onChange={(event) => setValues((current) => ({ ...current, specializations: event.target.value }))}
+            />
+          </div>
+
+          <div className="event-form-grid">
+            <Input
+              label="Contact phone or email"
+              name="contact"
+              required
+              minLength={5}
+              value={values.contact}
+              onChange={(event) => setValues((current) => ({ ...current, contact: event.target.value }))}
+              hint="Only shared with an organiser who chooses you."
+              error={fieldErrors.contact}
+            />
+            <Input
+              label="Availability notes (optional)"
+              name="availabilityNote"
+              placeholder="e.g. Available across South India with 3-day notice"
+              value={values.availabilityNote}
+              onChange={(event) => setValues((current) => ({ ...current, availabilityNote: event.target.value }))}
+            />
+          </div>
+
+          <div className="event-form-grid">
+            <Input
+              label="Website or portfolio URL"
+              name="website"
+              value={values.website}
+              onChange={(event) => setValues((current) => ({ ...current, website: event.target.value }))}
+            />
+            <Input
+              label="Instagram URL or handle"
+              name="instagram"
+              value={values.instagram}
+              onChange={(event) => setValues((current) => ({ ...current, instagram: event.target.value }))}
+            />
+            <Input
+              label="YouTube link"
+              name="youtube"
+              value={values.youtube}
+              onChange={(event) => setValues((current) => ({ ...current, youtube: event.target.value }))}
+            />
+          </div>
+
+          <div className="event-form-grid">
+            <Input
+              label="Cover banner image URL"
+              name="coverImage"
+              placeholder="https://... high-resolution landscape photo for profile header"
+              value={values.coverImage}
+              onChange={(event) => setValues((current) => ({ ...current, coverImage: event.target.value }))}
+            />
+            <Input
+              label="Logo or avatar URL"
+              name="logo"
+              placeholder="https://... square logo or brand image"
+              value={values.logo}
+              onChange={(event) => setValues((current) => ({ ...current, logo: event.target.value }))}
+            />
+          </div>
+
+          <div style={{ background: 'var(--color-surface-subtle, #f9fafb)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--color-border)', margin: '1rem 0' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontWeight: 600, cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={values.isPublic}
+                onChange={(e) => setValues((current) => ({ ...current, isPublic: e.target.checked }))}
+                style={{ width: '1.15rem', height: '1.15rem' }}
+              />
+              <span>Publish profile to public directory and client search</span>
+            </label>
+            <p style={{ margin: '0.25rem 0 0 1.9rem', fontSize: '0.85rem', color: 'var(--color-muted)' }}>
+              When enabled, your business profile and showcase can be discovered by customers at /providers and via search engines.
+            </p>
+          </div>
+
+          <fieldset className="provider-onboarding__categories">
+            <legend>Service categories</legend>
+            {kind === 'INDIVIDUAL_SERVICE_PROVIDER' ? (
+              <p><strong>Individual Service Providers specialize in exactly one primary category.</strong></p>
+            ) : (
+              <p>Removing a category hides it from matching. Existing quotations keep their history.</p>
+            )}
+            <div>
+              {(categoriesState.data ?? []).map((category) => (
+                <label key={category.code}>
+                  <input
+                    type={kind === 'INDIVIDUAL_SERVICE_PROVIDER' ? 'radio' : 'checkbox'}
+                    name={kind === 'INDIVIDUAL_SERVICE_PROVIDER' ? 'providerPrimaryCategory' : undefined}
+                    checked={selected.includes(category.code)}
+                    onChange={() => toggleCategory(category.code)}
+                  />
+                  {category.name}
+                </label>
+              ))}
+            </div>
+            {fieldErrors.categories && <span className="field__error">{fieldErrors.categories}</span>}
+          </fieldset>
+
+          {error && <p className="customer-error" role="alert">{error}</p>}
+          <div className="customer-form__actions">
+            <Button type="submit" disabled={saving}>{saving ? 'Saving…' : 'Save profile'}</Button>
+          </div>
+        </form>
+      )}
+
+      {profile && activeTab === 'services' && (
+        <EmbeddedServicesManager providerKind={kind} onServicesChanged={() => data.reload()} />
+      )}
+
+      {profile && activeTab === 'coverage' && (
+        <EmbeddedCoverageManager onCoverageChanged={() => data.reload()} />
+      )}
+
+      {profile && activeTab === 'portfolio' && (
+        <PortfolioManager
+          categories={categoriesState.data ?? []}
+          onItemsChanged={() => {
+            portfolioData.reload()
+            data.reload()
+          }}
+        />
+      )}
+
+      {profile && activeTab === 'team' && (
+        <TeamManager />
+      )}
+
+      {profile && activeTab === 'association' && (
+        <AssociationManager />
+      )}
+    </section>
+  )
+}
+
+function EmbeddedCoverageManager({ onCoverageChanged }: { onCoverageChanged?: () => void }) {
+  const { showToast } = useToast()
+  const data = useApiData(() => profilesApi.listProviderCoverage(), [])
+  const coverage = data.data ?? []
+  const [values, setValues] = useState({ pinCode: '', locality: '', city: '', state: '' })
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!event.currentTarget.reportValidity()) return
+    setSaving(true)
+    setError('')
+    try {
+      await profilesApi.createProviderCoverage({
+        pin_code: values.pinCode,
+        locality: values.locality.trim(),
+        city: values.city.trim(),
+        state: values.state.trim(),
+      })
+      setValues({ pinCode: '', locality: '', city: '', state: '' })
+      showToast('Coverage location added.', 'success')
+      data.reload()
+      onCoverageChanged?.()
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Could not add that location.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="coverage-manager">
+      <div style={{ marginBottom: '1.5rem' }}>
+        <h3>Service Coverage Locations ({coverage.length})</h3>
+        <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--color-muted)' }}>
+          HiddenStage matches client event requests strictly by the exact PIN codes and localities you cover. A city name alone does not imply coverage of all areas.
+        </p>
+      </div>
+
+      {data.error && <ErrorState description={data.error} onRetry={data.reload} />}
+      {data.loading && <Spinner label="Loading coverage" />}
+
+      {coverage.length === 0 && !data.loading && (
+        <EmptyState title="No coverage locations yet" description="Add at least one PIN code so organisers in that area can find and invite you." />
+      )}
+
+      {coverage.length > 0 && (
+        <div className="coverage-list" style={{ marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          {coverage.map((location) => (
+            <div className="card coverage-row" key={location.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem 1rem' }}>
+              <div>
+                <strong>{location.locality}</strong>
+                <small style={{ display: 'block', color: 'var(--color-muted)' }}>
+                  {location.city}, {location.state} · PIN {location.pin_code}
+                </small>
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                variant="quiet"
+                onClick={() =>
+                  void profilesApi.deleteProviderCoverage(location.id).then(() => {
+                    showToast('Coverage removed.', 'success')
+                    data.reload()
+                    onCoverageChanged?.()
+                  })
+                }
+              >
+                Remove
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="card customer-form" style={{ padding: '1.25rem' }}>
+        <h4 style={{ margin: '0 0 1rem 0' }}>Add a new coverage location</h4>
+        <form onSubmit={submit} noValidate>
+          <div className="event-form-grid">
+            <Input
+              label="PIN code"
+              name="pinCode"
+              inputMode="numeric"
+              pattern="[0-9]{6}"
+              maxLength={6}
+              required
+              value={values.pinCode}
+              onChange={(event) => setValues((current) => ({ ...current, pinCode: event.target.value.replace(/\D/g, '') }))}
+            />
+            <Input
+              label="Locality / Area"
+              name="locality"
+              required
+              minLength={2}
+              value={values.locality}
+              onChange={(event) => setValues((current) => ({ ...current, locality: event.target.value }))}
+            />
+          </div>
+          <div className="event-form-grid">
+            <Input
+              label="City"
+              name="city"
+              required
+              minLength={2}
+              value={values.city}
+              onChange={(event) => setValues((current) => ({ ...current, city: event.target.value }))}
+            />
+            <Input
+              label="State"
+              name="state"
+              required
+              minLength={2}
+              value={values.state}
+              onChange={(event) => setValues((current) => ({ ...current, state: event.target.value }))}
+            />
+          </div>
+          {error && <p className="customer-error" role="alert">{error}</p>}
+          <div style={{ marginTop: '1rem' }}>
+            <Button type="submit" disabled={saving}>{saving ? 'Adding…' : '+ Add coverage location'}</Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+function EmbeddedServicesManager({ providerKind, onServicesChanged }: { providerKind: ProviderKind; onServicesChanged?: () => void }) {
+  const { showToast } = useToast()
+  const categoriesState = useCategories()
+  const data = useApiData(() => profilesApi.listProviderServices(), [])
+  const services: ApiProviderService[] = data.data ?? []
+  const categories = categoriesState.data ?? []
+  const available = categories.filter((category) => !services.some((service) => service.category === category.code))
+  const [newCategory, setNewCategory] = useState('')
+  const [error, setError] = useState('')
+  const [editing, setEditing] = useState<ApiProviderService | null>(null)
+  const [busy, setBusy] = useState(false)
+
+  const isIndividual = providerKind === 'INDIVIDUAL_SERVICE_PROVIDER'
+  const canAddMore = !isIndividual || services.length === 0
+
+  async function add(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!newCategory) {
+      setError('Choose a category to add.')
+      return
+    }
+    if (isIndividual && services.length >= 1) {
+      setError('Individual Service Providers can offer only one primary service category.')
+      return
+    }
+    setBusy(true)
+    setError('')
+    try {
+      await profilesApi.createProviderService({ category: newCategory })
+      setNewCategory('')
+      showToast('Service added. Configure pricing and description.', 'success')
+      data.reload()
+      onServicesChanged?.()
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Could not add service.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="services-manager">
+      <div style={{ marginBottom: '1.5rem' }}>
+        <h3>Services & Packages ({services.length})</h3>
+        <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--color-muted)' }}>
+          {isIndividual
+            ? 'Individual Service Providers offer one specialized service. Keep starting prices and details accurate.'
+            : 'List all services, packages, and starting prices you offer for events.'}
+        </p>
+      </div>
+
+      {data.error && <ErrorState description={data.error} onRetry={data.reload} />}
+      {data.loading && <Spinner label="Loading services" />}
+
+      {!data.loading && services.length === 0 && (
+        <EmptyState title="No services configured" description="Add a service category to display on your profile and receive quote requests." />
+      )}
+
+      {services.length > 0 && (
+        <div className="service-manage-list" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.5rem' }}>
+          {services.map((service) => (
+            <div className={`card service-manage ${service.is_active ? '' : 'service-manage--inactive'}`} key={service.id} style={{ padding: '1rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                    <h4 style={{ margin: 0 }}>{service.title || service.category_name}</h4>
+                    <Badge tone={service.is_active ? 'success' : 'neutral'}>{service.is_active ? 'Active' : 'Hidden'}</Badge>
+                  </div>
+                  <small style={{ color: 'var(--color-muted)' }}>
+                    {service.category_name} · {service.base_price_paise !== null ? `Starting from ${formatPaise(service.base_price_paise)}` : 'Price on request'}
+                  </small>
+                  {service.description && <p style={{ fontSize: '0.875rem', margin: '0.5rem 0 0 0' }}>{service.description}</p>}
+                </div>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <Button type="button" size="sm" variant="quiet" onClick={() => setEditing(service)}>Edit</Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="quiet"
+                    onClick={() =>
+                      void profilesApi.updateProviderService(service.id, { is_active: !service.is_active }).then(() => {
+                        data.reload()
+                        onServicesChanged?.()
+                      })
+                    }
+                  >
+                    {service.is_active ? 'Hide' : 'Show'}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {canAddMore ? (
+        <div className="card customer-form" style={{ padding: '1.25rem' }}>
+          <h4 style={{ margin: '0 0 1rem 0' }}>Add a service category</h4>
+          {available.length === 0 ? (
+            <p className="muted-note">All catalogue categories are already in your services.</p>
+          ) : (
+            <form onSubmit={add} style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+              <div style={{ flex: 1, minWidth: '220px' }}>
+                <Select label="Category" name="newCategory" value={newCategory} onChange={(event) => setNewCategory(event.target.value)}>
+                  <option value="">Choose a category</option>
+                  {available.map((category) => (
+                    <option key={category.code} value={category.code}>
+                      {category.name}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+              <Button type="submit" disabled={busy}>{busy ? 'Adding…' : '+ Add Service'}</Button>
+            </form>
+          )}
+          {error && <p className="customer-error" role="alert">{error}</p>}
+        </div>
+      ) : (
+        <p className="muted-note" style={{ fontSize: '0.875rem' }}>
+          Individual Service Providers can offer only one primary category. Change your profile role in "Profile Details" if you manage multiple categories.
+        </p>
+      )}
+
+      {editing && (
+        <ServiceDialog
+          service={editing}
+          onClose={() => setEditing(null)}
+          onSaved={() => {
+            setEditing(null)
+            data.reload()
+            onServicesChanged?.()
+            showToast('Service updated.', 'success')
+          }}
+        />
+      )}
+    </div>
+  )
+}
+
+function PortfolioManager({ categories, onItemsChanged }: { categories: { code: string; name: string }[]; onItemsChanged?: () => void }) {
+  const { showToast } = useToast()
+  const data = useApiData(() => profilesApi.listPortfolioItems(), [])
+  const items = data.data ?? []
+  const [showAdd, setShowAdd] = useState(false)
+  const [title, setTitle] = useState('')
+  const [description, setDescription] = useState('')
+  const [category, setCategory] = useState('')
+  const [eventDate, setEventDate] = useState('')
+  const [mediaKind, setMediaKind] = useState<PortfolioMediaKind>('IMAGE')
+  const [externalUrl, setExternalUrl] = useState('')
+  const [file, setFile] = useState<File | null>(null)
+  const [visibility, setVisibility] = useState<PortfolioVisibility>('PUBLIC')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+
+  async function handleAdd(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!title.trim()) { setError('Title is required.'); return }
+    setSaving(true); setError('')
+    try {
+      const formData = new FormData()
+      formData.append('title', title.trim())
+      if (description.trim()) formData.append('description', description.trim())
+      if (category) formData.append('category', category)
+      if (eventDate) formData.append('event_date', eventDate)
+      formData.append('media_kind', mediaKind)
+      if (externalUrl.trim()) formData.append('external_url', externalUrl.trim())
+      formData.append('visibility', visibility)
+      if (file) formData.append('media', file)
+
+      await profilesApi.createPortfolioItem(formData)
+      showToast('Portfolio item added.', 'success')
+      setShowAdd(false)
+      setTitle(''); setDescription(''); setCategory(''); setEventDate(''); setFile(null); setExternalUrl('')
+      data.reload()
+      onItemsChanged?.()
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Could not add portfolio item.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleDelete(id: string) {
+    try {
+      await profilesApi.deletePortfolioItem(id)
+      showToast('Portfolio item removed.', 'success')
+      data.reload()
+      onItemsChanged?.()
+    } catch (caught) {
+      showToast(caught instanceof Error ? caught.message : 'Could not delete item.', 'error')
+    }
+  }
+
+  return (
+    <div className="portfolio-manager">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+        <h3>Work Showcase ({items.length})</h3>
+        <Button type="button" onClick={() => setShowAdd(!showAdd)}>{showAdd ? 'Close form' : '+ Add showcase item'}</Button>
+      </div>
+
+      {showAdd && (
+        <div className="card" style={{ padding: '1.25rem', marginBottom: '1.5rem', border: '1px solid var(--color-border)' }}>
+          <form onSubmit={handleAdd} noValidate>
+            <h4 style={{ margin: '0 0 1rem 0' }}>Add Portfolio Showcase</h4>
+            <div className="event-form-grid">
+              <Input label="Title" name="portfolioTitle" required value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Grand Ballroom Reception" />
+              <Select label="Category" name="portfolioCategory" value={category} onChange={(e) => setCategory(e.target.value)}>
+                <option value="">Choose category</option>
+                {categories.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}
+              </Select>
+            </div>
+            <div className="event-form-grid">
+              <Select label="Media Type" name="mediaKind" value={mediaKind} onChange={(e) => setMediaKind(e.target.value as PortfolioMediaKind)}>
+                <option value="IMAGE">Image / Photo</option>
+                <option value="VIDEO">Video Link (YouTube / Vimeo)</option>
+                <option value="DOCUMENT">Document / Brochure (PDF)</option>
+                <option value="LINK">External Link</option>
+              </Select>
+              <Select label="Visibility" name="visibility" value={visibility} onChange={(e) => setVisibility(e.target.value as PortfolioVisibility)}>
+                <option value="PUBLIC">Public — visible on public profile</option>
+                <option value="PRIVATE">Private — client reference only</option>
+              </Select>
+            </div>
+            {mediaKind === 'IMAGE' || mediaKind === 'DOCUMENT' ? (
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.25rem' }}>Upload File</label>
+                <input type="file" onChange={(e) => setFile(e.target.files?.[0] || null)} />
+              </div>
+            ) : (
+              <Input label="External URL" name="externalUrl" placeholder="https://..." value={externalUrl} onChange={(e) => setExternalUrl(e.target.value)} />
+            )}
+            <Input label="Event Date (optional)" name="portfolioDate" type="date" value={eventDate} onChange={(e) => setEventDate(e.target.value)} />
+            <Textarea label="Description" name="portfolioDescription" rows={3} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Brief description of the work and outcome..." />
+            {error && <p className="customer-error" role="alert">{error}</p>}
+            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
+              <Button type="submit" disabled={saving}>{saving ? 'Adding…' : 'Add Item'}</Button>
+              <Button type="button" variant="secondary" onClick={() => setShowAdd(false)}>Cancel</Button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {items.length === 0 ? (
+        <EmptyState title="No showcase items yet" description="Add photos, videos or documents from past events to attract more clients." />
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
+          {items.map((item) => (
+            <div key={item.id} className="card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                  <Badge>{item.media_kind}</Badge>
+                  <Badge tone={item.visibility === 'PUBLIC' ? 'success' : 'neutral'}>{item.visibility}</Badge>
+                </div>
+                <h4 style={{ margin: '0 0 0.5rem 0' }}>{item.title}</h4>
+                {item.description && <p style={{ fontSize: '0.875rem', margin: '0 0 0.5rem 0', color: 'var(--color-muted)' }}>{item.description}</p>}
+                {item.external_url && (
+                  <a href={item.external_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.85rem' }}>
+                    View Link ↗
+                  </a>
+                )}
+                {item.media && (
+                  <a href={item.media} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.85rem' }}>
+                    View Media ↗
+                  </a>
+                )}
+              </div>
+              <div style={{ marginTop: '1rem', borderTop: '1px solid var(--color-border)', paddingTop: '0.5rem', display: 'flex', justifyContent: 'flex-end' }}>
+                <Button type="button" size="sm" variant="quiet" onClick={() => void handleDelete(item.id)}>Remove</Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function TeamManager() {
+  const { showToast } = useToast()
+  const data = useApiData(() => profilesApi.listTeamMembers(), [])
+  const team = data.data ?? []
+  const [showAdd, setShowAdd] = useState(false)
+  const [email, setEmail] = useState('')
+  const [permissions, setPermissions] = useState<ProfileTeamPermission[]>([
+    'MANAGE_PORTFOLIO',
+    'VIEW_EVENTS',
+  ])
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+
+  const allPermissions: { key: ProfileTeamPermission; label: string }[] = [
+    { key: 'MANAGE_BUSINESS_PROFILE', label: 'Manage Business Profile & Details' },
+    { key: 'MANAGE_PORTFOLIO', label: 'Manage Portfolio & Showcase' },
+    { key: 'MANAGE_SERVICES', label: 'Manage Services & Pricing' },
+    { key: 'MANAGE_TEAM', label: 'Manage Team Members' },
+    { key: 'VIEW_EVENTS', label: 'View Client Events & Briefs' },
+    { key: 'MANAGE_EVENTS', label: 'Manage Quotations & Events' },
+  ]
+
+  function togglePermission(key: ProfileTeamPermission) {
+    setPermissions((prev) => (prev.includes(key) ? prev.filter((p) => p !== key) : [...prev, key]))
+  }
+
+  async function handleAdd(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!email.trim()) { setError('Email is required.'); return }
+    setSaving(true); setError('')
+    try {
+      await profilesApi.createTeamMember({ email: email.trim(), permissions })
+      showToast('Team assistant invited.', 'success')
+      setShowAdd(false)
+      setEmail('')
+      data.reload()
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Could not add team member.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleRemove(id: string) {
+    try {
+      await profilesApi.deleteTeamMember(id)
+      showToast('Team member access revoked.', 'success')
+      data.reload()
+    } catch (caught) {
+      showToast(caught instanceof Error ? caught.message : 'Could not revoke member.', 'error')
+    }
+  }
+
+  return (
+    <div className="team-manager">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+        <div>
+          <h3>Team & Assistant Delegation ({team.length})</h3>
+          <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--color-muted)' }}>Grant trusted team members permission to manage your profile, portfolio, and quotes.</p>
+        </div>
+        <Button type="button" onClick={() => setShowAdd(!showAdd)}>{showAdd ? 'Close form' : '+ Add Team Assistant'}</Button>
+      </div>
+
+      {showAdd && (
+        <div className="card" style={{ padding: '1.25rem', marginBottom: '1.5rem', border: '1px solid var(--color-border)' }}>
+          <form onSubmit={handleAdd} noValidate>
+            <h4 style={{ margin: '0 0 1rem 0' }}>Invite Team Assistant</h4>
+            <Input label="Assistant User Email" name="assistantEmail" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="assistant@example.com" />
+            <fieldset style={{ border: 'none', padding: 0, margin: '1rem 0' }}>
+              <legend style={{ fontWeight: 600, fontSize: '0.875rem', marginBottom: '0.5rem' }}>Permissions Granted:</legend>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '0.5rem' }}>
+                {allPermissions.map((p) => (
+                  <label key={p.key} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}>
+                    <input type="checkbox" checked={permissions.includes(p.key)} onChange={() => togglePermission(p.key)} />
+                    {p.label}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+            {error && <p className="customer-error" role="alert">{error}</p>}
+            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
+              <Button type="submit" disabled={saving}>{saving ? 'Adding…' : 'Grant Permissions'}</Button>
+              <Button type="button" variant="secondary" onClick={() => setShowAdd(false)}>Cancel</Button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {team.length === 0 ? (
+        <EmptyState title="No assistants added" description="Managers can delegate profile and event management permissions to staff or coordinators." />
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          {team.map((member) => (
+            <div key={member.id} className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem' }}>
+              <div>
+                <strong>{member.member_name || member.member_email}</strong> <span style={{ color: 'var(--color-muted)' }}>({member.member_email})</span>
+                <div style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
+                  {member.permissions.map((p) => (
+                    <Badge key={p}>{p.replace('MANAGE_', '').replace('VIEW_', '')}</Badge>
+                  ))}
+                </div>
+              </div>
+              <Button type="button" size="sm" variant="quiet" onClick={() => void handleRemove(member.id)}>Revoke</Button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function AssociationManager() {
+  const { showToast } = useToast()
+  const [query, setQuery] = useState('')
+  const [results, setResults] = useState<ApiManagerSearchResult[]>([])
+  const [searching, setSearching] = useState(false)
+  const networkData = useApiData(() => networkApi.listAssociations(), [])
+  const associations = networkData.data ?? []
+
+  async function handleSearch() {
+    if (!query.trim()) return
+    setSearching(true)
+    try {
+      const res = await profilesApi.searchManagers(query.trim())
+      setResults(res)
+    } catch {
+      // ignore
+    } finally {
+      setSearching(false)
+    }
+  }
+
+  async function handleRequest(managerUserId: string) {
+    try {
+      await networkApi.requestAssociation(managerUserId, 'Requesting association to collaborate on events.')
+      showToast('Association request sent.', 'success')
+      networkData.reload()
+    } catch (caught) {
+      showToast(caught instanceof Error ? caught.message : 'Could not send request.', 'error')
+    }
+  }
+
+  return (
+    <div className="association-manager">
+      <h3>Affiliated Managers ({associations.length})</h3>
+      <p style={{ fontSize: '0.875rem', color: 'var(--color-muted)', marginBottom: '1rem' }}>Associated Service Providers can partner with Event Management agencies to receive opportunities directly.</p>
+
+      {associations.length > 0 && (
+        <div style={{ marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          {associations.map((assoc) => (
+            <div key={assoc.id} className="card" style={{ padding: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <strong>{assoc.counterpart_profile?.display_name || 'Manager'}</strong>
+                {' '}<Badge tone="success">Associated</Badge>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="card" style={{ padding: '1rem' }}>
+        <h4>Find & Connect with Managers</h4>
+        <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+          <Input label="Manager search" name="assocQuery" placeholder="Search by name, company, or username..." value={query} onChange={(e) => setQuery(e.target.value)} />
+          <Button type="button" variant="secondary" onClick={() => void handleSearch()} disabled={searching}>
+            {searching ? 'Searching…' : 'Search'}
+          </Button>
+        </div>
+
+        {results.length > 0 && (
+          <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            {results.map((m) => (
+              <div key={m.id} className="card" style={{ padding: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <strong>{m.display_name}</strong> {m.business_name && <span>({m.business_name})</span>}
+                  {m.headline && <p style={{ fontSize: '0.85rem', margin: '0.25rem 0 0 0' }}>{m.headline}</p>}
+                </div>
+                <Button type="button" size="sm" onClick={() => void handleRequest(m.user_id)}>Request Association</Button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  )
 }
 
 function ServicesPage() {

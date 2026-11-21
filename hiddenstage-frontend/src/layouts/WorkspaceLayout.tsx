@@ -22,7 +22,7 @@ export function WorkspaceLayout({ audience }: { audience: WorkspaceAudience }) {
     <a className="skip-link" href="#workspace-content">Skip to content</a>
     {sidebarOpen && <button className="sidebar-scrim" aria-label="Close navigation" onClick={() => setSidebarOpen(false)} />}
     <aside className={`workspace-sidebar ${sidebarOpen ? 'workspace-sidebar--open' : ''}`}>
-      <div className="workspace-sidebar__brand"><Brand /><Button className="sidebar-close" variant="quiet" aria-label="Close navigation" onClick={() => setSidebarOpen(false)}>×</Button></div>
+      <div className="workspace-sidebar__brand"><Brand to={routes.home} inverse /><Button className="sidebar-close" variant="quiet" aria-label="Close navigation" onClick={() => setSidebarOpen(false)}>×</Button></div>
       <div className="workspace-sidebar__label">{config.title}</div>
       <nav aria-label={`${config.title} navigation`} className="workspace-nav">
         {config.items.map((item) => <NavLink key={item.href} to={item.href} end={item.href === config.home} onClick={() => setSidebarOpen(false)}><span className="workspace-nav__icon" aria-hidden="true">{item.icon}</span>{item.label}</NavLink>)}
@@ -45,7 +45,7 @@ export function WorkspaceLayout({ audience }: { audience: WorkspaceAudience }) {
     <div className="workspace-main">
       <header className="workspace-topbar">
         <Button variant="quiet" className="sidebar-toggle" aria-label="Open navigation" onClick={() => setSidebarOpen(true)}>☰</Button>
-        <div className="workspace-topbar__context"><span className="eyebrow">{config.eyebrow}</span><strong>{pageTitle}</strong></div>
+        <div className="workspace-topbar__context"><strong>{pageTitle}</strong></div>
         <div className="workspace-topbar__actions"><Button variant="quiet" className="notification-button" aria-label="Notifications are not part of this release" disabled>Notifications</Button><button className="account-menu" type="button" aria-label={`Sign out ${auth.status === 'authenticated' ? auth.user?.fullName ?? '' : ''}`.trim()} onClick={() => void authActions.logout().then(() => navigate(routes.home))}><Avatar name={auth.status === 'authenticated' ? auth.user?.fullName ?? 'Account' : 'Account'} size="sm" /><span className="account-menu__label">{auth.status === 'authenticated' ? auth.user?.fullName ?? 'Account' : 'Account'}</span><span aria-hidden="true">⌄</span></button></div>
       </header>
       <main className="workspace-content" id="workspace-content">

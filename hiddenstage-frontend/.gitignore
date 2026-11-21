@@ -29,3 +29,5 @@ test-results
 e2e-artifacts/
 test-results/
 playwright-report/
+
+.agents/*

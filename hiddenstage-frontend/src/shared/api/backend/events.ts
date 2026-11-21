@@ -14,6 +14,7 @@ export type EventWritePayload = {
   event_type: string
   description?: string
   event_date: string
+  end_date?: string
   start_time: string
   end_time: string
   guest_count: number

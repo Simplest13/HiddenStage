@@ -48,6 +48,12 @@ export const networkApi = {
       ...jsonBody({ worker_id: workerId, message }),
     })
   },
+  requestAssociation(managerId: string, message = '') {
+    return apiRequest<ApiNetworkInvitation>('/network/invitations/', {
+      method: 'POST',
+      ...jsonBody({ manager_id: managerId, message }),
+    })
+  },
   respondToInvitation(invitationId: string, accept: boolean) {
     return apiRequest<ApiNetworkInvitation>(
       `/network/invitations/${encodeURIComponent(invitationId)}/${accept ? 'accept' : 'decline'}/`,

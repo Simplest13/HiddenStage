@@ -27,12 +27,22 @@ class ServiceRequirementSerializer(serializers.ModelSerializer):
             "description",
             "budget_paise",
             "instructions",
+            "custom_service_name",
+            "custom_service_description",
+            "custom_review_status",
             "status",
             "position",
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["id", "status", "position", "created_at", "updated_at"]
+        read_only_fields = [
+            "id",
+            "status",
+            "position",
+            "custom_review_status",
+            "created_at",
+            "updated_at",
+        ]
 
     def validate_title(self, value):
         title = normalize_text(value)
@@ -88,6 +98,7 @@ class EventSerializer(serializers.ModelSerializer):
             "event_type",
             "description",
             "event_date",
+            "end_date",
             "start_time",
             "end_time",
             "guest_count",
@@ -119,6 +130,7 @@ class EventListSerializer(serializers.ModelSerializer):
             "name",
             "event_type",
             "event_date",
+            "end_date",
             "start_time",
             "end_time",
             "city",
@@ -137,6 +149,12 @@ class EventRequirementInputSerializer(serializers.Serializer):
     description = serializers.CharField(required=False, allow_blank=True, default="")
     budget_paise = serializers.IntegerField(required=False, allow_null=True, min_value=0)
     instructions = serializers.CharField(required=False, allow_blank=True, default="")
+    custom_service_name = serializers.CharField(
+        max_length=150, required=False, allow_blank=True, default=""
+    )
+    custom_service_description = serializers.CharField(
+        required=False, allow_blank=True, default=""
+    )
 
     def validate_category(self, value):
         code = normalize_text(value).lower()
@@ -158,6 +176,7 @@ class EventWriteSerializer(serializers.ModelSerializer):
             "event_type",
             "description",
             "event_date",
+            "end_date",
             "start_time",
             "end_time",
             "guest_count",
@@ -194,20 +213,38 @@ class EventWriteSerializer(serializers.ModelSerializer):
         instance = self.instance
         start = attrs.get("start_time") or (instance.start_time if instance else None)
         end = attrs.get("end_time") or (instance.end_time if instance else None)
+        event_date = attrs.get("event_date") or (instance.event_date if instance else None)
+        end_date = attrs.get("end_date") or (instance.end_date if instance else None)
+
+        if start and isinstance(start, str):
+            start = time.fromisoformat(start)
+        if end and isinstance(end, str):
+            end = time.fromisoformat(end)
+
         if start and end:
-            if isinstance(start, str):
-                start = time.fromisoformat(start)
-            if isinstance(end, str):
-                end = time.fromisoformat(end)
-            if end <= start:
+            if event_date and end_date:
+                if end_date < event_date:
+                    raise serializers.ValidationError(
+                        {"end_date": "The end date cannot be before the event date."}
+                    )
+                if end_date == event_date and end <= start:
+                    raise serializers.ValidationError(
+                        {"end_time": "The end time must be after the start time for same-day events."}
+                    )
+            elif end <= start:
                 raise serializers.ValidationError(
                     {"end_time": "The end time must be after the start time."}
                 )
-        event_date = attrs.get("event_date") or (instance.event_date if instance else None)
+
         status_value = attrs.get("status", EventStatus.DRAFT)
         if event_date and status_value == EventStatus.SUBMITTED:
             if event_date < timezone.localdate():
                 raise serializers.ValidationError(
                     {"event_date": "The event date cannot be in the past."}
+                )
+        if end_date and status_value == EventStatus.SUBMITTED:
+            if end_date < timezone.localdate():
+                raise serializers.ValidationError(
+                    {"end_date": "The end date cannot be in the past."}
                 )
         return attrs

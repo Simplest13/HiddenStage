@@ -91,10 +91,30 @@ DROP FUNCTION IF EXISTS hiddenstage_quotation_revision_immutable();
 """
 
 
+def apply_revision_guard(apps, schema_editor):
+    if schema_editor.connection.vendor == "postgresql":
+        schema_editor.execute(CREATE_REVISION_GUARD)
+
+
+def remove_revision_guard(apps, schema_editor):
+    if schema_editor.connection.vendor == "postgresql":
+        schema_editor.execute(DROP_GUARDS)
+
+
+def apply_item_guard(apps, schema_editor):
+    if schema_editor.connection.vendor == "postgresql":
+        schema_editor.execute(CREATE_ITEM_GUARD)
+
+
+def remove_item_guard(apps, schema_editor):
+    if schema_editor.connection.vendor == "postgresql":
+        schema_editor.execute(DROP_GUARDS)
+
+
 class Migration(migrations.Migration):
     dependencies = [("quotations", "0001_initial")]
 
     operations = [
-        migrations.RunSQL(CREATE_REVISION_GUARD, DROP_GUARDS),
-        migrations.RunSQL(CREATE_ITEM_GUARD, DROP_GUARDS),
+        migrations.RunPython(apply_revision_guard, reverse_code=remove_revision_guard),
+        migrations.RunPython(apply_item_guard, reverse_code=remove_item_guard),
     ]

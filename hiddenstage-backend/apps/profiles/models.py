@@ -104,16 +104,19 @@ class BusinessRepresentative(UUIDModel):
 
 
 class ProviderKind(models.TextChoices):
-    """How a provider participates in the marketplace.
-
-    Both kinds are independent marketplace participants: they declare services,
-    coverage, receive matched opportunities and can quote customers directly.
-    ``MANAGER`` additionally coordinates a team and can recruit ``WORKER``
-    accounts. A worker is never owned by a manager.
-    """
+    """How a provider participates in the marketplace."""
 
     MANAGER = "MANAGER", "Manager"
-    WORKER = "WORKER", "Independent worker"
+    INDIVIDUAL_SERVICE_PROVIDER = (
+        "INDIVIDUAL_SERVICE_PROVIDER",
+        "Individual service provider",
+    )
+    ASSOCIATED_SERVICE_PROVIDER = (
+        "ASSOCIATED_SERVICE_PROVIDER",
+        "Associated service provider",
+    )
+    TALENT = "TALENT", "Talent"
+    WORKER = "WORKER", "Worker"
 
 
 class VerificationStatus(models.TextChoices):
@@ -138,6 +141,8 @@ class CustomerProfile(UUIDModel):
     locality = models.CharField(max_length=120)
     city = models.CharField(max_length=80)
     state = models.CharField(max_length=80)
+    avatar = models.CharField(max_length=255, blank=True, null=True)
+    bio = models.TextField(blank=True, null=True)
     completed_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -170,9 +175,30 @@ class ProviderProfile(UUIDModel):
         related_name="provider_profiles",
     )
     display_name = models.CharField(max_length=150)
+    username = models.CharField(max_length=60, unique=True, null=True, blank=True)
+    headline = models.CharField(max_length=150, blank=True, null=True)
     kind = models.CharField(
-        max_length=20, choices=ProviderKind.choices, default=ProviderKind.MANAGER
+        max_length=40, choices=ProviderKind.choices, default=ProviderKind.MANAGER
     )
+    primary_category = models.ForeignKey(
+        ServiceCategory,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="primary_providers",
+    )
+    talent_category = models.CharField(max_length=80, blank=True, null=True)
+    specializations = models.TextField(blank=True, null=True)
+    performance_styles = models.TextField(blank=True, null=True)
+    experience_summary = models.TextField(blank=True, null=True)
+    languages = models.CharField(max_length=120, blank=True, null=True)
+    website = models.CharField(max_length=255, blank=True, null=True)
+    instagram = models.CharField(max_length=120, blank=True, null=True)
+    youtube = models.CharField(max_length=255, blank=True, null=True)
+    availability_note = models.CharField(max_length=255, blank=True, null=True)
+    logo = models.CharField(max_length=255, blank=True, null=True)
+    cover_image = models.CharField(max_length=255, blank=True, null=True)
+    is_public = models.BooleanField(default=True, null=True, blank=True)
     description = models.TextField(blank=True)
     contact = models.CharField(max_length=120)
     verification_status = models.CharField(
@@ -191,7 +217,15 @@ class ProviderProfile(UUIDModel):
                 name="provider_verification_status_valid",
             ),
             models.CheckConstraint(
-                condition=models.Q(kind__in=["MANAGER", "WORKER"]),
+                condition=models.Q(
+                    kind__in=[
+                        "MANAGER",
+                        "INDIVIDUAL_SERVICE_PROVIDER",
+                        "ASSOCIATED_SERVICE_PROVIDER",
+                        "TALENT",
+                        "WORKER",
+                    ]
+                ),
                 name="provider_kind_valid",
             ),
         ]
@@ -280,3 +314,100 @@ class ProviderCoverage(UUIDModel):
 
     def __str__(self):
         return f"{self.locality}, {self.city} {self.pin_code}"
+
+
+class PortfolioMediaKind(models.TextChoices):
+    IMAGE = "IMAGE", "Image"
+    VIDEO = "VIDEO", "Video"
+    DOCUMENT = "DOCUMENT", "Document"
+    LINK = "LINK", "Link"
+
+
+class PortfolioVisibility(models.TextChoices):
+    PUBLIC = "PUBLIC", "Public"
+    PRIVATE = "PRIVATE", "Private"
+
+
+class PortfolioItem(UUIDModel):
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="portfolio_items",
+    )
+    provider = models.ForeignKey(
+        ProviderProfile,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="portfolio_items",
+    )
+    title = models.CharField(max_length=150)
+    description = models.TextField(blank=True)
+    category = models.CharField(max_length=80, blank=True)
+    event_date = models.DateField(null=True, blank=True)
+    media = models.CharField(max_length=255, blank=True)
+    external_url = models.CharField(max_length=255, blank=True)
+    media_kind = models.CharField(
+        max_length=20,
+        choices=PortfolioMediaKind.choices,
+        default=PortfolioMediaKind.IMAGE,
+    )
+    visibility = models.CharField(
+        max_length=20,
+        choices=PortfolioVisibility.choices,
+        default=PortfolioVisibility.PUBLIC,
+    )
+    position = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["position", "-created_at"]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(visibility__in=["PUBLIC", "PRIVATE"]),
+                name="portfolio_visibility_valid",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(
+                    media_kind__in=["IMAGE", "VIDEO", "DOCUMENT", "LINK"]
+                ),
+                name="portfolio_media_kind_valid",
+            ),
+        ]
+
+    def __str__(self):
+        return self.title
+
+
+class ProfileTeamMember(UUIDModel):
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="team_members",
+    )
+    member = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="team_memberships",
+    )
+    permissions = models.JSONField(default=list)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["owner", "member"], name="uniq_profile_team_member"
+            ),
+            models.CheckConstraint(
+                condition=~models.Q(owner=models.F("member")),
+                name="profile_team_member_distinct_users",
+            ),
+        ]
+
+    def __str__(self):
+        return f"Team member {self.member_id} for owner {self.owner_id}"
+

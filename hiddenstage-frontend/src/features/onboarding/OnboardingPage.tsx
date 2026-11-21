@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { routes } from '../../app/routes/routePaths'
 import { useAuth, useAuthActions } from '../../app/auth/useAuth'
 import { profilesApi } from '../../shared/api/backend/profiles'
@@ -50,7 +50,7 @@ export default function OnboardingPage() {
 
   return <section className="customer-page customer-page--standalone">
     <header className="onboarding-topbar">
-      <Link to={routes.home} aria-label="HiddenStage home"><Brand /></Link>
+      <Brand />
       <span>Customer onboarding</span>
     </header>
     <div className="customer-page__narrow">

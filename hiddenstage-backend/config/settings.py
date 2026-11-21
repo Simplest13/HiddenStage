@@ -133,9 +133,15 @@ ASGI_APPLICATION = "config.asgi.application"
 
 def _database_from_url(url: str) -> dict[str, object]:
     parsed = urlsplit(url)
+    if parsed.scheme == "sqlite":
+        db_path = unquote(parsed.path)
+        return {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": db_path if db_path and db_path != "/" else ":memory:",
+        }
     if parsed.scheme not in {"postgres", "postgresql"}:
         raise ImproperlyConfigured(
-            "DATABASE_URL must use a postgres:// or postgresql:// scheme."
+            "DATABASE_URL must use a postgres://, postgresql://, or sqlite:// scheme."
         )
     db_name = unquote(parsed.path.lstrip("/"))
     if not db_name:
@@ -158,23 +164,49 @@ def _database_from_url(url: str) -> dict[str, object]:
     return config
 
 
-_database_url = os.environ.get("DATABASE_URL", "").strip()
-if _database_url:
-    DATABASES = {"default": _database_from_url(_database_url)}
-else:
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.postgresql",
-            "NAME": os.environ.get("POSTGRES_DB", "hiddenstage"),
-            "USER": os.environ.get("POSTGRES_USER", "hiddenstage"),
-            "PASSWORD": os.environ.get("POSTGRES_PASSWORD", "hiddenstage"),
-            "HOST": os.environ.get("POSTGRES_HOST", "127.0.0.1"),
-            "PORT": os.environ.get("POSTGRES_PORT", "5432"),
-            "CONN_MAX_AGE": env_int("POSTGRES_CONN_MAX_AGE", 60),
-            "CONN_HEALTH_CHECKS": True,
-            "OPTIONS": {},
+_is_test = "test" in sys.argv or any("pytest" in arg for arg in sys.argv)
+_is_migration_command = any(
+    arg in sys.argv for arg in ["migrate", "makemigrations", "squashmigrations", "showmigrations"]
+)
+
+# Automated tests must remain isolated from shared cloud database (D-006 / Neon policy).
+if _is_test:
+    _test_db_url = os.environ.get("TEST_DATABASE_URL", "").strip()
+    if _test_db_url:
+        DATABASES = {"default": _database_from_url(_test_db_url)}
+    else:
+        # Fall back to sqlite in-memory for isolated local test runs when no TEST_DATABASE_URL is provided. Never target shared Neon.
+        DATABASES = {
+            "default": {
+                "ENGINE": "django.db.backends.sqlite3",
+                "NAME": ":memory:",
+            }
         }
-    }
+else:
+    # Use unpooled direct endpoint for migrations when available, avoiding PgBouncer lock limits.
+    _unpooled_url = os.environ.get("DATABASE_URL_UNPOOLED", "").strip()
+    _database_url = os.environ.get("DATABASE_URL", "").strip()
+    if _is_migration_command and _unpooled_url:
+        _effective_url = _unpooled_url
+    else:
+        _effective_url = _database_url
+
+    if _effective_url:
+        DATABASES = {"default": _database_from_url(_effective_url)}
+    else:
+        DATABASES = {
+            "default": {
+                "ENGINE": "django.db.backends.postgresql",
+                "NAME": os.environ.get("POSTGRES_DB", "hiddenstage"),
+                "USER": os.environ.get("POSTGRES_USER", "hiddenstage"),
+                "PASSWORD": os.environ.get("POSTGRES_PASSWORD", "hiddenstage"),
+                "HOST": os.environ.get("POSTGRES_HOST", "127.0.0.1"),
+                "PORT": os.environ.get("POSTGRES_PORT", "5432"),
+                "CONN_MAX_AGE": env_int("POSTGRES_CONN_MAX_AGE", 60),
+                "CONN_HEALTH_CHECKS": True,
+                "OPTIONS": {},
+            }
+        }
 _pg_sslmode = os.environ.get("POSTGRES_SSLMODE", "").strip()
 if _pg_sslmode:
     DATABASES["default"]["OPTIONS"].setdefault("sslmode", _pg_sslmode)
