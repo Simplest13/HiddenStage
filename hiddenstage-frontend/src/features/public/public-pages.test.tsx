@@ -30,9 +30,9 @@ describe('public discovery pages', () => {
     await user.type(screen.getByLabelText('PIN code'), '560')
     expect(screen.getByRole('heading', { name: 'Studio Ambar (demo)' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'The Small Feast (demo)' })).not.toBeInTheDocument()
-    await user.click(screen.getByRole('link', { name: /view profile/i }))
+    await user.click(screen.getByRole('link', { name: 'Studio Ambar (demo)' }))
     expect(await screen.findByRole('heading', { name: 'Studio Ambar (demo)' })).toBeInTheDocument()
-    expect(screen.getByText(/Verified/i)).toBeInTheDocument()
+    expect(screen.getByText('Demo profile')).toBeInTheDocument()
     expect(screen.getByText('Sample table setting')).toBeInTheDocument()
   })
 
