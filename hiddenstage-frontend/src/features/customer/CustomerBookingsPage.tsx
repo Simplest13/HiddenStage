@@ -36,8 +36,8 @@ export function CustomerBookingsPage() {
       setLoading(true)
       const data = await bookingsApi.list()
       setBookings(data)
-    } catch {
-      // ignore
+    } catch (err: unknown) {
+      console.error('Failed to load customer bookings:', err)
     } finally {
       setLoading(false)
     }
@@ -58,8 +58,8 @@ export function CustomerBookingsPage() {
         setFeedbackText('')
       }, 1500)
       await loadBookings()
-    } catch (err: any) {
-      alert(err.message || 'Could not complete event.')
+    } catch (err: unknown) {
+      alert((err as Error)?.message || 'Could not complete event.')
     } finally {
       setCompleting(false)
     }

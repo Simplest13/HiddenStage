@@ -424,7 +424,10 @@ class CustomerNetworkSearchView(APIView):
         qs = (
             User.objects.filter(role="PROVIDER", is_active=True)
             .select_related("provider_profile")
-            .prefetch_related("provider_profile__coverage")
+            .prefetch_related(
+                "provider_profile__coverage",
+                "provider_profile__services__category",
+            )
         )
         if query:
             clean_q = query.lstrip("@")

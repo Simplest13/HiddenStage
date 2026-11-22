@@ -1,4 +1,5 @@
 from uuid import uuid4
+from django.db import transaction
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema
 from rest_framework import generics, status
@@ -205,34 +206,36 @@ class SimulatePaymentView(APIView):
 
     def post(self, request):
         invoice_id = request.data.get("invoice_id")
-        invoice = (
-            Invoice.objects.filter(customer=request.user, pk=invoice_id)
-            .select_related("event", "provider")
-            .first()
-        )
-        if not invoice:
-            return Response(
-                {"detail": "Invoice not found."}, status=status.HTTP_404_NOT_FOUND
+        with transaction.atomic():
+            invoice = (
+                Invoice.objects.select_for_update()
+                .filter(customer=request.user, pk=invoice_id)
+                .select_related("event", "provider")
+                .first()
             )
+            if not invoice:
+                return Response(
+                    {"detail": "Invoice not found."}, status=status.HTTP_404_NOT_FOUND
+                )
 
-        if invoice.status == "PAID":
-            return Response(
-                {"detail": "This invoice is already paid."},
-                status=status.HTTP_400_BAD_REQUEST,
+            if invoice.status == "PAID":
+                return Response(
+                    {"detail": "This invoice is already paid."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            ref = f"PAY-{uuid4().hex[:10].upper()}"
+            tx = PaymentTransaction.objects.create(
+                invoice=invoice,
+                customer=request.user,
+                amount_paise=invoice.amount_paise,
+                method="SIMULATED_ESCROW",
+                reference=ref,
+                status="COMPLETED",
+                paid_at=timezone.now(),
             )
-
-        ref = f"PAY-{uuid4().hex[:10].upper()}"
-        tx = PaymentTransaction.objects.create(
-            invoice=invoice,
-            customer=request.user,
-            amount_paise=invoice.amount_paise,
-            method="SIMULATED_ESCROW",
-            reference=ref,
-            status="COMPLETED",
-            paid_at=timezone.now(),
-        )
-        invoice.status = "PAID"
-        invoice.save(update_fields=["status"])
+            invoice.status = "PAID"
+            invoice.save(update_fields=["status"])
 
         amount_inr = invoice.amount_paise // 100
         Notification.objects.create(

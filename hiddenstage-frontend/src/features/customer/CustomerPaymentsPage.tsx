@@ -45,8 +45,8 @@ export function CustomerPaymentsPage() {
       setSummary(sumData)
       setInvoices(invData)
       setTransactions(txData)
-    } catch {
-      // ignore
+    } catch (err: unknown) {
+      console.error('Failed to load payments data:', err)
     } finally {
       setLoading(false)
     }
@@ -63,8 +63,8 @@ export function CustomerPaymentsPage() {
       setPaySuccess(res.detail || 'Escrow deposit completed successfully!')
       setPayModalInvoice(null)
       await loadData()
-    } catch (err: any) {
-      alert(err.message || 'Payment simulation failed')
+    } catch (err: unknown) {
+      alert((err as Error)?.message || 'Payment simulation failed')
     } finally {
       setPaying(false)
     }

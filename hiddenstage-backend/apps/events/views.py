@@ -373,22 +373,32 @@ class EventCompleteView(APIView):
 
     @extend_schema(request=None, responses={200: CustomerBookingSerializer})
     def post(self, request, pk):
+        import logging
+        from django.db import transaction
         from django.utils import timezone
         from apps.accounts.models import Notification
         from apps.commitments.models import CommitmentStatus
         from apps.network.models import ChatMessage, Conversation
 
-        event = get_owned_event(actor=request.user, event_id=pk)
-        commits = event.commitments.filter(status=CommitmentStatus.ACTIVE).select_related("provider")
-        if not commits.exists():
-            return Response(
-                {"detail": "Cannot mark an event as complete without active specialist commitments."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        logger = logging.getLogger(__name__)
 
-        event.status = EventStatus.CLOSED
-        event.closed_at = timezone.now()
-        event.save(update_fields=["status", "closed_at", "updated_at"])
+        with transaction.atomic():
+            event = Event.objects.select_for_update().filter(customer=request.user, pk=pk).first()
+            if not event:
+                return Response({"detail": "Event not found."}, status=status.HTTP_404_NOT_FOUND)
+
+            commits = list(
+                event.commitments.filter(status=CommitmentStatus.ACTIVE).select_related("provider")
+            )
+            if not commits:
+                return Response(
+                    {"detail": "Cannot mark an event as complete without active specialist commitments."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            event.status = EventStatus.CLOSED
+            event.closed_at = timezone.now()
+            event.save(update_fields=["status", "closed_at", "updated_at"])
 
         feedback = (request.data.get("feedback") or "").strip()
 
@@ -402,8 +412,8 @@ class EventCompleteView(APIView):
                     notification_type="BOOKING",
                     action_url=f"/provider/commitments/{c.pk}",
                 )
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("Failed to create provider completion notification: %s", e)
 
             if feedback:
                 try:
@@ -417,8 +427,8 @@ class EventCompleteView(APIView):
                         sender=request.user,
                         content=f"Event Completion Feedback for {event.name}:\n⭐ {feedback}",
                     )
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.warning("Failed to create chat feedback message: %s", e)
 
         try:
             Notification.objects.create(
@@ -429,7 +439,7 @@ class EventCompleteView(APIView):
                 notification_type="BOOKING",
                 action_url="/app/bookings",
             )
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning("Failed to create customer completion notification: %s", e)
 
         return Response(CustomerBookingSerializer(event).data)
