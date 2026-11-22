@@ -18,4 +18,10 @@ urlpatterns = [
         views.PasswordResetConfirmView.as_view(),
         name="password-reset-confirm",
     ),
+    path("check-username/", views.CheckUsernameView.as_view(), name="check-username"),
+    path("settings/", views.AccountSettingsView.as_view(), name="settings"),
+    path("password/change/", views.ChangePasswordView.as_view(), name="password-change"),
+    path("avatar/", views.AvatarUploadView.as_view(), name="avatar"),
+    path("notifications/", views.NotificationListView.as_view(), name="notifications"),
+    path("notifications/mark-read/", views.MarkNotificationsReadView.as_view(), name="notifications-mark-read"),
 ]

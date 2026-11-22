@@ -5,6 +5,7 @@ import { useAuth, useAuthActions } from '../../app/auth/useAuth'
 import type { SessionUser } from '../../app/auth/authTypes'
 import { Button, Input, Select } from '../../shared/ui'
 import { isApiError } from '../../shared/api/client'
+import { sessionApi } from '../../shared/api/backend/session'
 
 type AuthPage = 'login' | 'register' | 'verifyEmail' | 'forgotPassword' | 'resetPassword'
 
@@ -35,6 +36,37 @@ export default function AuthPages() {
   const [showConfirm, setShowConfirm] = useState(false)
   const [verificationState, setVerificationState] = useState<'idle' | 'working' | 'done' | 'failed'>('idle')
   const verificationStarted = useRef(false)
+  const [regUsername, setRegUsername] = useState('')
+  const [usernameChecking, setUsernameChecking] = useState(false)
+  const [usernameStatus, setUsernameStatus] = useState<{ available?: boolean; message?: string } | null>(null)
+
+  useEffect(() => {
+    if (page !== 'register') return
+    const clean = regUsername.trim().toLowerCase().replace(/^@/, '')
+    if (!clean) {
+      setUsernameStatus(null)
+      return
+    }
+    if (!/^[a-z0-9_]{3,30}$/.test(clean)) {
+      setUsernameStatus({
+        available: false,
+        message: '3-30 chars: lowercase letters, numbers, and underscores only.',
+      })
+      return
+    }
+    setUsernameChecking(true)
+    const timer = setTimeout(async () => {
+      try {
+        const res = await sessionApi.checkUsername(clean)
+        setUsernameStatus({ available: res.available, message: res.message })
+      } catch {
+        // ignore
+      } finally {
+        setUsernameChecking(false)
+      }
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [regUsername, page])
 
   useEffect(() => {
     if (auth.status === 'authenticated' && page !== 'verifyEmail') {
@@ -64,9 +96,14 @@ export default function AuthPages() {
       if (page === 'register') {
         if (password !== fields.get('confirmPassword')) throw new Error('Passwords do not match.')
         if (!fields.get('terms')) throw new Error('Accept the terms to continue.')
+        const cleanUser = regUsername.trim().toLowerCase().replace(/^@/, '')
+        if (cleanUser && usernameStatus && !usernameStatus.available) {
+          throw new Error(usernameStatus.message || 'Please choose an available username.')
+        }
         const role = String(fields.get('accountType') ?? 'CUSTOMER') === 'PROVIDER' ? 'PROVIDER' : 'CUSTOMER'
         const result = await actions.register({
           full_name: String(fields.get('fullName') ?? '').trim(),
+          username: cleanUser || undefined,
           email,
           password,
           phone: String(fields.get('phone') ?? '').trim(),
@@ -166,6 +203,28 @@ export default function AuthPages() {
     {resetWithoutToken && <div className="auth-page__notice" role="alert">This reset link is incomplete or has expired. <Link to={routes.auth.forgotPassword}>Request a new link</Link>.</div>}
     {!resetWithoutToken && showForm && <form className="auth-form" onSubmit={submit} noValidate>
       {page === 'register' && <Input label="Full name" name="fullName" autoComplete="name" required minLength={2} error={fieldErrors.full_name} />}
+      {page === 'register' && (
+        <div style={{ marginBottom: '0.5rem' }}>
+          <Input
+            label="Choose @username"
+            name="username"
+            value={regUsername}
+            onChange={(e) => setRegUsername(e.target.value.toLowerCase())}
+            placeholder="e.g. ananya_events"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+            error={fieldErrors.username || (usernameStatus && !usernameStatus.available ? usernameStatus.message : undefined)}
+          />
+          <div style={{ fontSize: '0.8rem', marginTop: '-0.25rem' }}>
+            {usernameChecking ? (
+              <span style={{ color: 'var(--color-fg-muted)' }}>Checking availability…</span>
+            ) : usernameStatus?.available ? (
+              <span style={{ color: '#16a34a', fontWeight: 600 }}>✓ @{regUsername.trim().replace(/^@/, '')} is available!</span>
+            ) : null}
+          </div>
+        </div>
+      )}
       {page === 'register' && <Select label="I am joining as" name="accountType" defaultValue="CUSTOMER" required>
         <option value="CUSTOMER">Customer — planning an event</option>
         <option value="PROVIDER">Event professional — quoting for work</option>

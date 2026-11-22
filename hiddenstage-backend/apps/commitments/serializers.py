@@ -1,6 +1,12 @@
 from rest_framework import serializers
 
-from apps.commitments.models import Commitment, CommitmentAudit, CommitmentLine
+from apps.commitments.models import (
+    Commitment,
+    CommitmentAudit,
+    CommitmentLine,
+    Invoice,
+    PaymentTransaction,
+)
 from apps.profiles.models import ProviderProfile
 
 
@@ -96,3 +102,60 @@ class AcceptanceRequestSerializer(serializers.Serializer):
 
 class ReleaseRequestSerializer(serializers.Serializer):
     reason = serializers.CharField(required=False, allow_blank=True, max_length=1000)
+
+
+class InvoiceSerializer(serializers.ModelSerializer):
+    event_name = serializers.CharField(source="event.name", read_only=True)
+    event_date = serializers.DateField(source="event.event_date", read_only=True)
+    provider_name = serializers.CharField(source="provider.full_name", read_only=True)
+    customer_name = serializers.CharField(source="customer.full_name", read_only=True)
+    provider_business = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Invoice
+        fields = [
+            "id",
+            "invoice_number",
+            "commitment",
+            "event",
+            "event_name",
+            "event_date",
+            "customer",
+            "customer_name",
+            "provider",
+            "provider_name",
+            "provider_business",
+            "issue_date",
+            "due_date",
+            "amount_paise",
+            "tax_paise",
+            "status",
+            "items",
+            "pdf_url",
+            "created_at",
+        ]
+        read_only_fields = fields
+
+    def get_provider_business(self, obj) -> str:
+        prof = getattr(obj.provider, "profile", None)
+        return prof.business_name if prof and prof.business_name else obj.provider.full_name
+
+
+class PaymentTransactionSerializer(serializers.ModelSerializer):
+    invoice_number = serializers.CharField(source="invoice.invoice_number", read_only=True)
+
+    class Meta:
+        model = PaymentTransaction
+        fields = [
+            "id",
+            "invoice",
+            "invoice_number",
+            "customer",
+            "amount_paise",
+            "method",
+            "reference",
+            "status",
+            "paid_at",
+            "created_at",
+        ]
+        read_only_fields = fields

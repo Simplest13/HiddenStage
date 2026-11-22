@@ -11,6 +11,18 @@ import sys
 from pathlib import Path
 from urllib.parse import parse_qsl, unquote, urlsplit
 
+if sys.platform == "win32":
+    import socket
+
+    _orig_getaddrinfo = socket.getaddrinfo
+
+    def _ipv4_getaddrinfo(*args, **kwargs):
+        if kwargs.get("family", 0) == 0:
+            kwargs = {**kwargs, "family": socket.AF_INET}
+        return _orig_getaddrinfo(*args, **kwargs)
+
+    socket.getaddrinfo = _ipv4_getaddrinfo
+
 from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
 

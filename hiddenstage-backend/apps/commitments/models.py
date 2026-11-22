@@ -8,6 +8,7 @@ past the application-level locks.
 
 from django.conf import settings
 from django.db import models
+from django.utils import timezone
 
 from apps.core.models import TimeStampedModel, UUIDModel, money_field, non_negative_check
 from apps.events.models import Event, ServiceRequirement
@@ -133,3 +134,64 @@ class CommitmentAudit(UUIDModel):
 
     def __str__(self):
         return f"{self.action} on {self.commitment_id}"
+
+
+class InvoiceStatus(models.TextChoices):
+    NOT_DUE = "NOT_DUE", "Not due"
+    PAYMENT_PENDING = "PAYMENT_PENDING", "Payment pending"
+    ADVANCE_PENDING = "ADVANCE_PENDING", "Advance pending"
+    PARTIALLY_PAID = "PARTIALLY_PAID", "Partially paid"
+    PAID = "PAID", "Paid"
+    OVERDUE = "OVERDUE", "Overdue"
+    REFUND_PENDING = "REFUND_PENDING", "Refund pending"
+    REFUNDED = "REFUNDED", "Refunded"
+    CANCELLED = "CANCELLED", "Cancelled"
+
+
+class Invoice(UUIDModel, TimeStampedModel):
+    commitment = models.ForeignKey(
+        Commitment, on_delete=models.CASCADE, related_name="invoices", null=True, blank=True
+    )
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="invoices")
+    customer = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="customer_invoices"
+    )
+    provider = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="provider_invoices"
+    )
+    invoice_number = models.CharField(max_length=50, unique=True)
+    issue_date = models.DateField(default=timezone.now)
+    due_date = models.DateField(null=True, blank=True)
+    amount_paise = money_field()
+    tax_paise = money_field(default=0)
+    status = models.CharField(
+        max_length=30, choices=InvoiceStatus.choices, default=InvoiceStatus.PAYMENT_PENDING
+    )
+    items = models.JSONField(default=list, blank=True)
+    pdf_url = models.CharField(max_length=500, blank=True)
+
+    class Meta:
+        ordering = ["-issue_date", "-created_at"]
+
+    def __str__(self):
+        return f"Invoice {self.invoice_number} ({self.status})"
+
+
+class PaymentTransaction(UUIDModel, TimeStampedModel):
+    invoice = models.ForeignKey(
+        Invoice, on_delete=models.CASCADE, related_name="transactions", null=True, blank=True
+    )
+    customer = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="customer_payments"
+    )
+    amount_paise = money_field()
+    method = models.CharField(max_length=50, default="SIMULATED_ESCROW")
+    reference = models.CharField(max_length=100, unique=True)
+    status = models.CharField(max_length=20, default="COMPLETED")
+    paid_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ["-paid_at"]
+
+    def __str__(self):
+        return f"Payment {self.reference} ({self.amount_paise} paise)"

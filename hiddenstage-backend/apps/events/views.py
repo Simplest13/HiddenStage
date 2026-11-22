@@ -9,7 +9,7 @@ from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import generics, status
 from rest_framework.exceptions import ValidationError
 from rest_framework.parsers import FormParser, MultiPartParser
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -18,10 +18,12 @@ from apps.core.permissions import IsCustomer
 from apps.events.attachments import scan_attachment, validate_attachment_upload
 from apps.events.models import Event, EventAttachment, EventStatus, ServiceRequirement
 from apps.events.serializers import (
+    CustomerBookingSerializer,
     EventAttachmentSerializer,
     EventListSerializer,
     EventSerializer,
     EventWriteSerializer,
+    PublicEventFeedSerializer,
     ServiceRequirementSerializer,
 )
 from apps.events.services import (
@@ -301,3 +303,60 @@ class EventAttachmentDeleteView(APIView):
         attachment.file.delete(save=False)
         attachment.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class CustomerBookingsListView(APIView):
+    permission_classes = [IsCustomer]
+
+    def get(self, request):
+        status_param = request.query_params.get("status")
+        queryset = (
+            Event.objects.filter(customer=request.user)
+            .prefetch_related(
+                "requirements",
+                "requirements__category",
+                "commitments",
+                "commitments__provider",
+                "invoices",
+            )
+            .order_by("-event_date", "-created_at")
+        )
+        if status_param and status_param != "ALL":
+            queryset = queryset.filter(status=status_param.upper())
+        serializer = CustomerBookingSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+
+class CustomerBookingDetailView(APIView):
+    permission_classes = [IsCustomer]
+
+    def get(self, request, pk):
+        event = (
+            Event.objects.filter(customer=request.user, pk=pk)
+            .prefetch_related(
+                "requirements",
+                "requirements__category",
+                "commitments",
+                "commitments__provider",
+                "invoices",
+            )
+            .first()
+        )
+        if not event:
+            return Response({"detail": "Booking not found."}, status=status.HTTP_404_NOT_FOUND)
+        serializer = CustomerBookingSerializer(event)
+        return Response(serializer.data)
+
+
+class PublicEventFeedView(APIView):
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    def get(self, request):
+        queryset = (
+            Event.objects.filter(status=EventStatus.SUBMITTED)
+            .prefetch_related("requirements", "requirements__category")
+            .order_by("-created_at")[:30]
+        )
+        serializer = PublicEventFeedSerializer(queryset, many=True)
+        return Response(serializer.data)

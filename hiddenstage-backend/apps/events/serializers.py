@@ -120,6 +120,175 @@ class EventSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
+class PublicFeedRequirementSerializer(serializers.ModelSerializer):
+    category_name = serializers.CharField(source="category.name", read_only=True)
+    category_code = serializers.CharField(source="category.code", read_only=True)
+
+    class Meta:
+        model = ServiceRequirement
+        fields = [
+            "id",
+            "category_code",
+            "category_name",
+            "title",
+            "description",
+            "budget_paise",
+        ]
+
+
+class PublicEventFeedSerializer(serializers.ModelSerializer):
+    requirements = PublicFeedRequirementSerializer(many=True, read_only=True)
+    anonymized_host = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Event
+        fields = [
+            "id",
+            "name",
+            "event_type",
+            "city",
+            "state",
+            "event_date",
+            "guest_count",
+            "requirements",
+            "anonymized_host",
+            "created_at",
+        ]
+
+    def get_anonymized_host(self, obj) -> str:
+        loc = obj.city or "India"
+        return f"Event Host in {loc}"
+
+
+class CustomerBookingSerializer(serializers.ModelSerializer):
+    requirements = ServiceRequirementSerializer(many=True, read_only=True)
+    commitments = serializers.SerializerMethodField()
+    quotations_count = serializers.SerializerMethodField()
+    lifecycle_stage = serializers.SerializerMethodField()
+    lifecycle_label = serializers.SerializerMethodField()
+    financial_summary = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Event
+        fields = [
+            "id",
+            "name",
+            "event_type",
+            "description",
+            "event_date",
+            "end_date",
+            "start_time",
+            "end_time",
+            "guest_count",
+            "pin_code",
+            "locality",
+            "city",
+            "state",
+            "venue_name",
+            "venue_address",
+            "status",
+            "submitted_at",
+            "requirements",
+            "commitments",
+            "quotations_count",
+            "lifecycle_stage",
+            "lifecycle_label",
+            "financial_summary",
+            "created_at",
+            "updated_at",
+        ]
+
+    def get_quotations_count(self, obj) -> int:
+        return getattr(obj, "quotations", []).count() if hasattr(obj, "quotations") else 0
+
+    def get_commitments(self, obj) -> list:
+        results = []
+        commits = obj.commitments.filter(status="ACTIVE").select_related("provider", "quotation")
+        for c in commits:
+            p_profile = getattr(c.provider, "profile", None)
+            results.append({
+                "id": str(c.id),
+                "provider_id": str(c.provider_id),
+                "provider_name": c.provider.full_name,
+                "provider_username": getattr(c.provider, "username", None),
+                "provider_avatar": c.provider.avatar.url if c.provider.avatar and hasattr(c.provider.avatar, "url") else None,
+                "business_name": getattr(p_profile, "business_name", c.provider.full_name) if p_profile else c.provider.full_name,
+                "quotation_id": str(c.quotation_id),
+                "total_paise": c.total_paise,
+                "accepted_at": c.accepted_at,
+                "status": c.status,
+            })
+        return results
+
+    def get_financial_summary(self, obj) -> dict:
+        total_booked = sum(c.total_paise for c in obj.commitments.filter(status="ACTIVE"))
+        invoices = obj.invoices.all()
+        total_invoiced = sum(i.amount_paise for i in invoices)
+        paid_invoices = invoices.filter(status="PAID")
+        total_paid = sum(i.amount_paise for i in paid_invoices)
+        return {
+            "total_booked_paise": total_booked,
+            "total_invoiced_paise": total_invoiced,
+            "total_paid_paise": total_paid,
+            "total_pending_paise": max(0, total_booked - total_paid),
+        }
+
+    def get_lifecycle_stage(self, obj) -> str:
+        # Determine 11-step lifecycle
+        today = timezone.now().date()
+        commits = obj.commitments.filter(status="ACTIVE")
+        invoices = obj.invoices.all()
+        has_commit = commits.exists()
+        
+        if obj.status == EventStatus.CLOSED or (obj.event_date and obj.event_date < today and has_commit):
+            # Check if all paid
+            total_booked = sum(c.total_paise for c in commits)
+            total_paid = sum(i.amount_paise for i in invoices.filter(status="PAID"))
+            if total_paid >= total_booked and total_booked > 0:
+                return "event_completed"
+            return "final_payment_pending"
+        
+        if has_commit:
+            # Check advance
+            paid_count = invoices.filter(status="PAID").count()
+            if paid_count > 0:
+                if obj.event_date and obj.event_date == today:
+                    return "service_in_progress"
+                return "advance_paid_booking_confirmed"
+            return "advance_payment_pending"
+        
+        # Quotation checks
+        quotes = getattr(obj, "quotations", None)
+        if quotes and quotes.exists():
+            if quotes.filter(revisions__revision_number__gt=1).exists():
+                return "quotation_revised"
+            return "quotation_received"
+        
+        # Invitation check
+        invs = getattr(obj, "invitations", None)
+        if invs and invs.exists():
+            return "invitation_sent"
+        
+        return "service_requested"
+
+    def get_lifecycle_label(self, obj) -> str:
+        stage = self.get_lifecycle_stage(obj)
+        labels = {
+            "service_requested": "Request Submitted",
+            "invitation_sent": "Invitations Sent",
+            "quotation_received": "Quotation Received",
+            "quotation_revised": "Revision in Progress",
+            "quotation_accepted": "Quotation Accepted",
+            "advance_payment_pending": "Advance Payment Pending",
+            "advance_paid_booking_confirmed": "Booking Confirmed",
+            "service_in_progress": "Service in Progress",
+            "final_payment_pending": "Final Payment Pending",
+            "event_completed": "Event Completed",
+            "review_submitted": "Review Submitted",
+        }
+        return labels.get(stage, stage.replace("_", " ").title())
+
+
 class EventListSerializer(serializers.ModelSerializer):
     requirement_count = serializers.IntegerField(read_only=True)
 

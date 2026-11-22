@@ -12,8 +12,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
   return <button ref={ref} className={`button button--${variant} button--${size} ${className}`} {...props}>{children}</button>
 })
 
-export function ButtonLink({ to, variant = 'primary', size = 'md', className = '', children }: { to: string; variant?: ButtonProps['variant']; size?: ButtonProps['size']; className?: string; children: ReactNode }) {
-  return <Link to={to} className={`button button--${variant} button--${size} ${className}`}>{children}</Link>
+export function ButtonLink({ to, variant = 'primary', size = 'md', className = '', style, children }: { to: string; variant?: ButtonProps['variant']; size?: ButtonProps['size']; className?: string; style?: React.CSSProperties; children: ReactNode }) {
+  return <Link to={to} className={`button button--${variant} button--${size} ${className}`} style={style}>{children}</Link>
 }
 
 type FieldProps = { label: string; hint?: string; error?: string; id?: string }
@@ -64,8 +64,8 @@ export function Radio({ label, ...props }: Omit<InputHTMLAttributes<HTMLInputEle
   return <label className="choice"><input type="radio" {...props} /><span className="choice__mark choice__mark--radio" aria-hidden="true" /><span>{label}</span></label>
 }
 
-export function Card({ children, className = '', as: Tag = 'div' }: { children: ReactNode; className?: string; as?: 'div' | 'article' | 'section' }) {
-  return <Tag className={`card ${className}`}>{children}</Tag>
+export function Card({ children, className = '', style, as: Tag = 'div' }: { children: ReactNode; className?: string; style?: React.CSSProperties; as?: 'div' | 'article' | 'section' }) {
+  return <Tag className={`card ${className}`} style={style}>{children}</Tag>
 }
 
 export function Badge({ children, tone = 'neutral' }: { children: ReactNode; tone?: 'neutral' | 'accent' | 'success' | 'warning' }) {

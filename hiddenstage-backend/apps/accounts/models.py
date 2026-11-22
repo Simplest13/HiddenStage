@@ -16,7 +16,12 @@ from django.db import models
 from django.utils import timezone
 
 from apps.core.models import UUIDModel
-from apps.core.validators import normalize_phone, normalize_text
+from apps.core.validators import (
+    normalize_phone,
+    normalize_text,
+    normalize_username,
+    validate_username,
+)
 
 
 class UserRole(models.TextChoices):
@@ -57,6 +62,13 @@ class UserManager(BaseUserManager):
 
 class User(AbstractBaseUser, PermissionsMixin, UUIDModel):
     email = models.EmailField(max_length=254, unique=True)
+    username = models.CharField(
+        max_length=50, unique=True, null=True, blank=True, db_index=True
+    )
+    avatar = models.FileField(upload_to="avatars/", null=True, blank=True)
+    theme_preference = models.CharField(
+        max_length=10, default="light", choices=[("light", "Light"), ("dark", "Dark")]
+    )
     full_name = models.CharField(max_length=150)
     phone = models.CharField(max_length=20, blank=True)
     role = models.CharField(max_length=20, choices=UserRole.choices, default=UserRole.CUSTOMER)
@@ -83,6 +95,8 @@ class User(AbstractBaseUser, PermissionsMixin, UUIDModel):
     def save(self, *args, **kwargs):
         self.email = normalize_email_address(self.email)
         self.full_name = normalize_text(self.full_name)
+        if self.username:
+            self.username = normalize_username(self.username)
         if self.phone:
             self.phone = normalize_phone(self.phone)
         super().save(*args, **kwargs)
@@ -174,6 +188,27 @@ class SingleUseToken(UUIDModel):
 class EmailVerificationToken(SingleUseToken):
     class Meta(SingleUseToken.Meta):
         abstract = False
+
+
+class Notification(UUIDModel):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="notifications")
+    event = models.ForeignKey("events.Event", on_delete=models.SET_NULL, null=True, blank=True, related_name="notifications")
+    title = models.CharField(max_length=200)
+    message = models.TextField()
+    notification_type = models.CharField(max_length=50, default="INFO")
+    action_url = models.CharField(max_length=300, blank=True)
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["user", "is_read"]),
+            models.Index(fields=["user", "-created_at"]),
+        ]
+
+    def __str__(self):
+        return f"Notification for {self.user_id}: {self.title}"
         verbose_name = "email verification token"
 
 

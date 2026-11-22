@@ -5,6 +5,13 @@ from apps.network import views
 app_name = "network"
 
 urlpatterns = [
+    path("network/connections/", views.CustomerNetworkListView.as_view(), name="customer-connections"),
+    path("network/connections/connect/", views.CustomerNetworkConnectView.as_view(), name="customer-connect"),
+    path("network/connections/<uuid:provider_id>/", views.CustomerNetworkDisconnectView.as_view(), name="customer-disconnect"),
+    path("network/search-providers/", views.CustomerNetworkSearchView.as_view(), name="customer-search-providers"),
+    path("network/conversations/", views.ConversationListView.as_view(), name="conversations"),
+    path("network/conversations/<uuid:pk>/", views.ConversationDetailView.as_view(), name="conversation-detail"),
+    path("network/conversations/<uuid:pk>/messages/", views.SendMessageView.as_view(), name="send-message"),
     path("network/workers/", views.WorkerDiscoveryView.as_view(), name="worker-discovery"),
     path(
         "network/workers/<uuid:user_id>/",

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, NavLink, Outlet } from 'react-router-dom'
 import { routes } from '../app/routes/routePaths'
 import { Avatar, ButtonLink } from '../shared/ui/primitives'
+import { ThemeToggle } from '../shared/ui/ThemeToggle'
 import { useAuth, useAuthActions } from '../app/auth/useAuth'
 import './layouts.css'
 
@@ -50,9 +51,11 @@ export function PublicLayout() {
         <nav id="public-nav" className={`site-nav ${menuOpen ? 'site-nav--open' : ''}`} aria-label="Main navigation">
           <NavLink to={routes.services} onClick={() => setMenuOpen(false)}>Explore services</NavLink>
           <NavLink to={routes.providers} onClick={() => setMenuOpen(false)}>Providers</NavLink>
+          <NavLink to={routes.myNetworks} onClick={() => setMenuOpen(false)}>My Networks</NavLink>
           <NavLink to={routes.howItWorks} onClick={() => setMenuOpen(false)}>How it works</NavLink>
           <NavLink to={routes.forProfessionals} onClick={() => setMenuOpen(false)}>For professionals</NavLink>
           <div className="site-nav__actions">
+            <ThemeToggle />
             {isLoading ? null : isAuthenticated ? (
               <div className="site-nav__auth-group" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.85rem' }}>
                 <Link
@@ -61,7 +64,15 @@ export function PublicLayout() {
                   aria-label={`Go to workspace (${auth.user.fullName})`}
                   title={`Signed in as ${auth.user.fullName} — Go to workspace`}
                 >
-                  <Avatar name={auth.user.fullName} size="sm" />
+                  {auth.user.avatarUrl ? (
+                    <img
+                      src={auth.user.avatarUrl}
+                      alt={auth.user.fullName}
+                      style={{ width: '1.85rem', height: '1.85rem', borderRadius: '50%', objectFit: 'cover' }}
+                    />
+                  ) : (
+                    <Avatar name={auth.user.fullName} size="sm" />
+                  )}
                 </Link>
                 <button
                   type="button"

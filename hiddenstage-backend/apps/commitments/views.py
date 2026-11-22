@@ -1,14 +1,19 @@
+from uuid import uuid4
+from django.utils import timezone
 from drf_spectacular.utils import extend_schema
 from rest_framework import generics, status
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.commitments.models import Commitment
+from apps.accounts.models import Notification
+from apps.commitments.models import Commitment, Invoice, PaymentTransaction
 from apps.commitments.serializers import (
     AcceptanceRequestSerializer,
     CommitmentDetailSerializer,
     CommitmentSerializer,
+    InvoiceSerializer,
+    PaymentTransactionSerializer,
     ReleaseRequestSerializer,
 )
 from apps.commitments.services import accept_quotation, release_commitment
@@ -94,4 +99,161 @@ class CommitmentReleaseView(APIView):
         )
         return Response(
             CommitmentDetailSerializer(_commitment_detail(commitment.pk)).data
+        )
+
+
+class CustomerPaymentsSummaryView(APIView):
+    permission_classes = [IsCustomer]
+
+    def get(self, request):
+        user = request.user
+        commits = Commitment.objects.filter(customer=user, status="ACTIVE").select_related("event")
+        invoices = Invoice.objects.filter(customer=user).select_related("event", "provider")
+
+        total_booked = sum(c.total_paise for c in commits)
+        paid_invoices = invoices.filter(status="PAID")
+        total_paid = sum(i.amount_paise for i in paid_invoices)
+
+        advance_pending = sum(
+            i.amount_paise
+            for i in invoices.filter(status__in=["PAYMENT_PENDING", "ADVANCE_PENDING"])
+        )
+        final_pending = max(0, total_booked - total_paid - advance_pending)
+
+        events_map = {}
+        for c in commits:
+            ev = c.event
+            if ev.id not in events_map:
+                events_map[ev.id] = {
+                    "event_id": str(ev.id),
+                    "event_name": ev.name,
+                    "event_date": ev.event_date,
+                    "total_booked_paise": 0,
+                    "total_paid_paise": 0,
+                    "invoices_count": 0,
+                    "status": ev.status,
+                }
+            events_map[ev.id]["total_booked_paise"] += c.total_paise
+
+        for inv in invoices:
+            ev_id = inv.event_id
+            if ev_id in events_map:
+                events_map[ev_id]["invoices_count"] += 1
+                if inv.status == "PAID":
+                    events_map[ev_id]["total_paid_paise"] += inv.amount_paise
+
+        return Response(
+            {
+                "total_booked_paise": total_booked,
+                "total_paid_paise": total_paid,
+                "advance_pending_paise": advance_pending,
+                "final_pending_paise": final_pending,
+                "event_breakdown": list(events_map.values()),
+            }
+        )
+
+
+class CustomerInvoicesListView(APIView):
+    permission_classes = [IsCustomer]
+
+    def get(self, request):
+        status_param = request.query_params.get("status")
+        event_id = request.query_params.get("event_id")
+        qs = Invoice.objects.filter(customer=request.user).select_related(
+            "event", "provider", "provider__profile"
+        )
+        if status_param and status_param != "ALL":
+            qs = qs.filter(status=status_param.upper())
+        if event_id:
+            qs = qs.filter(event_id=event_id)
+        serializer = InvoiceSerializer(qs, many=True)
+        return Response(serializer.data)
+
+
+class CustomerInvoiceDetailView(APIView):
+    permission_classes = [IsCustomer]
+
+    def get(self, request, pk):
+        invoice = (
+            Invoice.objects.filter(customer=request.user, pk=pk)
+            .select_related("event", "provider", "provider__profile")
+            .first()
+        )
+        if not invoice:
+            return Response(
+                {"detail": "Invoice not found."}, status=status.HTTP_404_NOT_FOUND
+            )
+        serializer = InvoiceSerializer(invoice)
+        return Response(serializer.data)
+
+
+class CustomerPaymentTransactionsListView(APIView):
+    permission_classes = [IsCustomer]
+
+    def get(self, request):
+        qs = PaymentTransaction.objects.filter(customer=request.user).select_related(
+            "invoice"
+        )
+        serializer = PaymentTransactionSerializer(qs, many=True)
+        return Response(serializer.data)
+
+
+class SimulatePaymentView(APIView):
+    permission_classes = [IsCustomer]
+
+    def post(self, request):
+        invoice_id = request.data.get("invoice_id")
+        invoice = (
+            Invoice.objects.filter(customer=request.user, pk=invoice_id)
+            .select_related("event", "provider")
+            .first()
+        )
+        if not invoice:
+            return Response(
+                {"detail": "Invoice not found."}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        if invoice.status == "PAID":
+            return Response(
+                {"detail": "This invoice is already paid."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        ref = f"PAY-{uuid4().hex[:10].upper()}"
+        tx = PaymentTransaction.objects.create(
+            invoice=invoice,
+            customer=request.user,
+            amount_paise=invoice.amount_paise,
+            method="SIMULATED_ESCROW",
+            reference=ref,
+            status="COMPLETED",
+            paid_at=timezone.now(),
+        )
+        invoice.status = "PAID"
+        invoice.save(update_fields=["status"])
+
+        amount_inr = invoice.amount_paise // 100
+        Notification.objects.create(
+            user=request.user,
+            event=invoice.event,
+            title="Payment Successful (Escrow)",
+            message=f"₹{amount_inr:,} paid securely for {invoice.event.name}. Funds are held safely in escrow.",
+            notification_type="PAYMENT",
+            action_url="/app/payments",
+        )
+        Notification.objects.create(
+            user=invoice.provider,
+            event=invoice.event,
+            title="Payment Received in Escrow",
+            message=f"₹{amount_inr:,} received for {invoice.event.name} from {request.user.full_name}. Funds held in escrow.",
+            notification_type="PAYMENT",
+            action_url="/app/payments",
+        )
+
+        return Response(
+            {
+                "detail": "Payment completed successfully.",
+                "transaction": PaymentTransactionSerializer(tx).data,
+                "invoice": InvoiceSerializer(invoice).data,
+            }
         )

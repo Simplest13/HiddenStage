@@ -261,3 +261,61 @@ class WorkerAssignment(UUIDModel, TimeStampedModel):
 
     def __str__(self):
         return f"{self.role} for {self.worker_id} on {self.event_date}"
+
+
+class CustomerConnection(UUIDModel, TimeStampedModel):
+    customer = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="customer_network"
+    )
+    provider = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="connected_customers"
+    )
+    notes = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["customer", "provider"], name="uniq_customer_provider_connection"
+            )
+        ]
+
+    def __str__(self):
+        return f"Connection: {self.customer_id} <-> {self.provider_id}"
+
+
+class Conversation(UUIDModel, TimeStampedModel):
+    customer = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="customer_conversations"
+    )
+    provider = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="provider_conversations"
+    )
+    event = models.ForeignKey(
+        "events.Event", on_delete=models.SET_NULL, null=True, blank=True, related_name="conversations"
+    )
+
+    class Meta:
+        ordering = ["-updated_at"]
+
+    def __str__(self):
+        return f"Conversation: {self.customer_id} with {self.provider_id}"
+
+
+class ChatMessage(UUIDModel, TimeStampedModel):
+    conversation = models.ForeignKey(
+        Conversation, on_delete=models.CASCADE, related_name="messages"
+    )
+    sender = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="sent_chat_messages"
+    )
+    content = models.TextField()
+    attachment = models.FileField(upload_to="chat_attachments/", null=True, blank=True)
+    is_read = models.BooleanField(default=False)
+    read_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["created_at"]
+
+    def __str__(self):
+        return f"Message {self.pk} in {self.conversation_id} from {self.sender_id}"

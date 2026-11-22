@@ -10,8 +10,11 @@ export type AccountRole = 'CUSTOMER' | 'PROVIDER'
 export type ApiUser = {
   id: string
   email: string
+  username?: string | null
   full_name: string
   phone: string
+  avatar_url?: string | null
+  theme_preference?: 'light' | 'dark'
   role: AccountRole
   is_staff?: boolean
   is_superuser?: boolean
@@ -22,6 +25,172 @@ export type ApiUser = {
   terms_accepted_at: string | null
   date_joined: string
   verification_email_sent?: boolean
+}
+
+export type ApiNotification = {
+  id: string
+  event?: string | null
+  title: string
+  message: string
+  notification_type: string
+  action_url?: string
+  is_read: boolean
+  created_at: string
+}
+
+export type ApiCustomerConnection = {
+  id: string
+  provider: string
+  provider_name: string
+  provider_username?: string | null
+  provider_avatar?: string | null
+  business_name: string
+  category: string
+  city: string
+  notes?: string
+  has_active_booking: boolean
+  unread_messages_count: number
+  created_at: string
+}
+
+export type ApiChatMessage = {
+  id: string
+  conversation: string
+  sender: string
+  sender_name: string
+  sender_username?: string | null
+  sender_avatar?: string | null
+  is_me: boolean
+  content: string
+  attachment?: string | null
+  is_read: boolean
+  read_at?: string | null
+  created_at: string
+}
+
+export type ApiConversation = {
+  id: string
+  customer: string
+  provider: string
+  event?: string | null
+  other_user: {
+    id: string
+    name: string
+    username?: string | null
+    avatar?: string | null
+    business_name: string
+  }
+  latest_message?: {
+    id: string
+    content: string
+    sender_id: string
+    created_at: string
+    is_read: boolean
+  } | null
+  unread_count: number
+  created_at: string
+  updated_at: string
+}
+
+export type ApiInvoice = {
+  id: string
+  invoice_number: string
+  commitment?: string | null
+  event: string
+  event_name: string
+  event_date?: string | null
+  customer: string
+  customer_name: string
+  provider: string
+  provider_name: string
+  provider_business: string
+  issue_date: string
+  due_date?: string | null
+  amount_paise: number
+  tax_paise: number
+  status: 'NOT_DUE' | 'PAYMENT_PENDING' | 'ADVANCE_PENDING' | 'PARTIALLY_PAID' | 'PAID' | 'OVERDUE' | 'REFUND_PENDING' | 'REFUNDED' | 'CANCELLED'
+  items: Array<{ description: string; amount_paise: number }>
+  pdf_url?: string
+  created_at: string
+}
+
+export type ApiPaymentTransaction = {
+  id: string
+  invoice?: string | null
+  invoice_number?: string
+  customer: string
+  amount_paise: number
+  method: string
+  reference: string
+  status: string
+  paid_at: string
+  created_at: string
+}
+
+export type ApiBookingCommitment = {
+  id: string
+  provider_id: string
+  provider_name: string
+  provider_username?: string | null
+  provider_avatar?: string | null
+  business_name: string
+  quotation_id: string
+  total_paise: number
+  accepted_at: string
+  status: string
+}
+
+export type ApiBooking = {
+  id: string
+  name: string
+  event_type: string
+  description: string
+  event_date: string | null
+  end_date: string | null
+  start_time: string | null
+  end_time: string | null
+  guest_count: number | null
+  pin_code: string
+  locality: string
+  city: string
+  state: string
+  venue_name: string
+  venue_address: string
+  status: string
+  submitted_at: string | null
+  requirements: ApiRequirement[]
+  commitments: ApiBookingCommitment[]
+  quotations_count: number
+  lifecycle_stage: string
+  lifecycle_label: string
+  financial_summary: {
+    total_booked_paise: number
+    total_invoiced_paise: number
+    total_paid_paise: number
+    total_pending_paise: number
+  }
+  created_at: string
+  updated_at: string
+}
+
+export type ApiPublicFeedEvent = {
+  id: string
+  name: string
+  event_type: string
+  city: string
+  state: string
+  event_date: string | null
+  guest_count: number | null
+  requirements: Array<{
+    id: string
+    category_code: string
+    category_name: string
+    title: string
+    description: string
+    budget_paise: number | null
+  }>
+  anonymized_host: string
+  created_at: string
 }
 
 export type ApiCategory = {

@@ -9,3 +9,7 @@ export function useAuthActions() {
   const { state: _state, ...actions } = useContext(AuthContext)
   return actions
 }
+
+export function useTheme() {
+  return useContext(AuthContext).theme
+}

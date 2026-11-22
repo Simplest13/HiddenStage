@@ -11,6 +11,23 @@ from django.core.exceptions import ValidationError
 
 PIN_CODE_RE = re.compile(r"^[1-9][0-9]{5}$")
 INDIAN_MOBILE_RE = re.compile(r"^[6-9][0-9]{9}$")
+USERNAME_RE = re.compile(r"^[a-zA-Z0-9_.]{3,50}$")
+
+
+def normalize_username(value: str) -> str:
+    """Normalize username: lowercase, stripped of leading @ and whitespace."""
+    if value is None:
+        return ""
+    return str(value).strip().lstrip("@").lower()
+
+
+def validate_username(value: str) -> None:
+    norm = normalize_username(value)
+    if not norm or not USERNAME_RE.match(norm):
+        raise ValidationError(
+            "Username must be 3-50 characters containing only letters, numbers, underscores, and periods.",
+            code="invalid_username",
+        )
 
 
 def normalize_text(value: str) -> str:

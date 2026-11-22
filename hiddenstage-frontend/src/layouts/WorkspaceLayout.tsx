@@ -4,6 +4,8 @@ import { routes } from '../app/routes/routePaths'
 import { Avatar } from '../shared/ui/primitives'
 import { Breadcrumb } from '../shared/ui/navigation'
 import { Button } from '../shared/ui/primitives'
+import { NotificationDropdown } from '../shared/ui/NotificationDropdown'
+import { ThemeToggle } from '../shared/ui/ThemeToggle'
 import { workspaceConfig, type WorkspaceAudience } from './workspaceConfig'
 import { Brand } from './PublicLayout'
 import { useAuth, useAuthActions } from '../app/auth/useAuth'
@@ -46,7 +48,43 @@ export function WorkspaceLayout({ audience }: { audience: WorkspaceAudience }) {
       <header className="workspace-topbar">
         <Button variant="quiet" className="sidebar-toggle" aria-label="Open navigation" onClick={() => setSidebarOpen(true)}>☰</Button>
         <div className="workspace-topbar__context"><strong>{pageTitle}</strong></div>
-        <div className="workspace-topbar__actions"><Button variant="quiet" className="notification-button" aria-label="Notifications are not part of this release" disabled>Notifications</Button><button className="account-menu" type="button" aria-label={`Sign out ${auth.status === 'authenticated' ? auth.user?.fullName ?? '' : ''}`.trim()} onClick={() => void authActions.logout().then(() => navigate(routes.home))}><Avatar name={auth.status === 'authenticated' ? auth.user?.fullName ?? 'Account' : 'Account'} size="sm" /><span className="account-menu__label">{auth.status === 'authenticated' ? auth.user?.fullName ?? 'Account' : 'Account'}</span><span aria-hidden="true">⌄</span></button></div>
+        <div className="workspace-topbar__actions">
+          <ThemeToggle />
+          <NotificationDropdown />
+          <button
+            className="account-menu"
+            type="button"
+            aria-label={`Account menu: ${auth.status === 'authenticated' ? auth.user?.fullName ?? '' : ''}`}
+            onClick={() => navigate(routes.app.settings)}
+          >
+            {auth.status === 'authenticated' && auth.user?.avatarUrl ? (
+              <img
+                src={auth.user.avatarUrl}
+                alt={auth.user.fullName}
+                style={{ width: '1.85rem', height: '1.85rem', borderRadius: '50%', objectFit: 'cover' }}
+              />
+            ) : (
+              <Avatar
+                name={auth.status === 'authenticated' ? auth.user?.fullName ?? 'Account' : 'Account'}
+                size="sm"
+              />
+            )}
+            <span className="account-menu__label">
+              {auth.status === 'authenticated'
+                ? auth.user?.username
+                  ? `@${auth.user.username}`
+                  : auth.user?.fullName ?? 'Account'
+                : 'Account'}
+            </span>
+          </button>
+          <Button
+            variant="quiet"
+            size="sm"
+            onClick={() => void authActions.logout().then(() => navigate(routes.home))}
+          >
+            Sign out
+          </Button>
+        </div>
       </header>
       <main className="workspace-content" id="workspace-content">
         <Breadcrumb items={[{ label: 'Workspace', href: config.home }, { label: pageTitle }]} />

@@ -8,6 +8,7 @@ export const routes = {
   serviceCategory: '/services/:categorySlug',
   providers: '/providers',
   providerDetail: '/providers/:providerId',
+  myNetworks: '/my-networks',
   howItWorks: '/how-it-works',
   forProfessionals: '/for-professionals',
   about: '/about',
@@ -24,6 +25,9 @@ export const routes = {
   },
   customer: {
     home: '/app',
+    bookings: '/app/bookings',
+    network: '/app/network',
+    payments: '/app/payments',
     onboarding: '/app/customer/onboarding',
     requests: '/app/events',
     newRequest: '/app/events/new',

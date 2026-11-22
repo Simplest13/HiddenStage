@@ -9,12 +9,16 @@ import { RequireAuthentication, RequireCustomerOnboarding, RequireVerifiedCustom
 import { Spinner } from '../../shared/ui/feedback'
 
 const PublicPages = lazy(() => import('../../features/public/PublicPages'))
+const HomepageMyNetworksPage = lazy(() => import('../../features/public/HomepageMyNetworksPage'))
 const AuthPages = lazy(() => import('../../features/auth/AuthPages'))
 const ProviderPages = lazy(() => import('../../features/provider/ProviderPages'))
 const NetworkPages = lazy(() => import('../../features/network/NetworkPages'))
 const OnboardingPages = lazy(() => import('../../features/onboarding/OnboardingPage'))
 const ProviderOnboardingPage = lazy(() => import('../../features/onboarding/ProviderOnboardingPage'))
 const CustomerPages = lazy(() => import('../../features/customer/CustomerPages'))
+const CustomerBookingsPage = lazy(() => import('../../features/customer/CustomerBookingsPage'))
+const CustomerNetworkPage = lazy(() => import('../../features/customer/CustomerNetworkPage'))
+const CustomerPaymentsPage = lazy(() => import('../../features/customer/CustomerPaymentsPage'))
 const QuotesPage = lazy(() => import('../../features/customer/QuotesPage'))
 const CommitmentsPage = lazy(() => import('../../features/customer/CommitmentsPage'))
 const EventPages = lazy(() => import('../../features/events/EventPages'))
@@ -35,6 +39,7 @@ function lazyPage(Component: LazyExoticComponent<ComponentType>) {
 
 const publicChildren: RouteObject[] = [
   { path: routes.home, element: lazyPage(PublicPages), handle: { page: 'home' } },
+  { path: routes.myNetworks, element: lazyPage(HomepageMyNetworksPage), handle: { page: 'myNetworks' } },
   { path: routes.services, element: lazyPage(PublicPages), handle: { page: 'services' } },
   { path: routes.serviceCategory, element: lazyPage(PublicPages), handle: { page: 'serviceCategory' } },
   { path: routes.providers, element: lazyPage(PublicPages), handle: { page: 'providers' } },
@@ -63,6 +68,9 @@ const protectedChildren: RouteObject[] = [
     ] },
     { element: <RequireCustomerOnboarding />, children: [
     { index: true, element: lazyPage(CustomerPages), handle: { page: 'customerHome' } },
+    { path: relativePath(routes.appBase, routes.customer.bookings), element: lazyPage(CustomerBookingsPage), handle: { page: 'customerBookings' } },
+    { path: relativePath(routes.appBase, routes.customer.network), element: lazyPage(CustomerNetworkPage), handle: { page: 'customerNetwork' } },
+    { path: relativePath(routes.appBase, routes.customer.payments), element: lazyPage(CustomerPaymentsPage), handle: { page: 'customerPayments' } },
     { path: relativePath(routes.appBase, routes.customer.requests), element: lazyPage(CustomerPages), handle: { page: 'customerRequests' } },
     { path: relativePath(routes.appBase, routes.customer.newRequest), element: lazyPage(EventPages), handle: { page: 'eventCreate' } },
     { path: relativePath(routes.appBase, routes.customer.requestDetail), element: lazyPage(EventWorkspace), handle: { page: 'eventDetail' } },

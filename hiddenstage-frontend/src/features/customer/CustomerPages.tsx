@@ -1,12 +1,13 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { Link, useMatches } from 'react-router-dom'
 import { Award, Calendar, CircleCheck, Folder, Sparkles } from 'kubai-icons-react'
 import { customerEventPath, routes } from '../../app/routes/routePaths'
-import { useAuth, useAuthActions } from '../../app/auth/useAuth'
-import { Badge, Button, ButtonLink, Card, EmptyState, ErrorState, Input, Select, Spinner } from '../../shared/ui'
+import { useAuth, useAuthActions, useTheme } from '../../app/auth/useAuth'
+import { Avatar, Button, ButtonLink, Card, EmptyState, ErrorState, Input, Select, Spinner } from '../../shared/ui'
 import { eventsApi } from '../../shared/api/backend/events'
 import { marketplaceApi } from '../../shared/api/backend/marketplace'
 import { profilesApi } from '../../shared/api/backend/profiles'
+import { sessionApi } from '../../shared/api/backend/session'
 import { useApiData } from '../../shared/api/backend/useApiData'
 import { formatDate, formatPaise, formatShortDate, formatTimeRange } from '../../shared/api/backend/format'
 import type { ApiEventListItem, ApiQuotation } from '../../shared/api/backend/types'
@@ -270,19 +271,52 @@ function RequestRow({ event }: { event: ApiEventListItem }) {
 
 function SettingsPage() {
   const auth = useAuth()
+  const authActions = useAuthActions()
+  const currentTheme = useTheme()
   const user = auth.status === 'authenticated' ? auth.user : undefined
   const profile = useApiData(() => profilesApi.getCustomerProfile(), [])
-  const portfolioData = useApiData(() => profilesApi.listPortfolioItems(), [])
-  const [values, setValues] = useState({ pinCode: '', locality: '', city: '', state: '', avatar: '', bio: '' })
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState('')
-  const [notice, setNotice] = useState('')
 
-  // Customer private event gallery state
-  const [showAddGallery, setShowAddGallery] = useState(false)
-  const [galleryTitle, setGalleryTitle] = useState('')
-  const [galleryFile, setGalleryFile] = useState<File | null>(null)
-  const [savingGallery, setSavingGallery] = useState(false)
+  // Identity Form State
+  const [fullName, setFullName] = useState(user?.fullName || '')
+  const [username, setUsername] = useState(user?.username || '')
+  const [email, setEmail] = useState(user?.email || '')
+  const [phone, setPhone] = useState(user?.phone || '')
+  const [usernameChecking, setUsernameChecking] = useState(false)
+  const [usernameStatus, setUsernameStatus] = useState<{ available?: boolean; message?: string }>({})
+  const [savingDetails, setSavingDetails] = useState(false)
+  const [detailsNotice, setDetailsNotice] = useState('')
+  const [detailsError, setDetailsError] = useState('')
+
+  // Avatar State
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(user?.avatarUrl || null)
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
+  const [avatarError, setAvatarError] = useState('')
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Password State
+  const [showPasswordForm, setShowPasswordForm] = useState(false)
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [savingPassword, setSavingPassword] = useState(false)
+  const [passwordNotice, setPasswordNotice] = useState('')
+  const [passwordError, setPasswordError] = useState('')
+
+  // Location/Profile State
+  const [values, setValues] = useState({ pinCode: '', locality: '', city: '', state: '', bio: '' })
+  const [savingLocation, setSavingLocation] = useState(false)
+  const [locationNotice, setLocationNotice] = useState('')
+  const [locationError, setLocationError] = useState('')
+
+  useEffect(() => {
+    if (user) {
+      setFullName(user.fullName || '')
+      setUsername(user.username || '')
+      setEmail(user.email || '')
+      setPhone(user.phone || '')
+      setAvatarPreview(user.avatarUrl || null)
+    }
+  }, [user])
 
   useEffect(() => {
     if (!profile.data) return
@@ -291,148 +325,513 @@ function SettingsPage() {
       locality: profile.data.locality,
       city: profile.data.city,
       state: profile.data.state,
-      avatar: profile.data.avatar || '',
       bio: profile.data.bio || '',
     })
   }, [profile.data])
 
-  function update(field: keyof typeof values, value: string) {
-    setValues((current) => ({ ...current, [field]: value }))
+  // Debounced username availability check
+  useEffect(() => {
+    const clean = username.trim().replace(/^@/, '')
+    if (!clean || clean === user?.username) {
+      setUsernameStatus({})
+      return
+    }
+    const timer = setTimeout(async () => {
+      try {
+        setUsernameChecking(true)
+        const res = await sessionApi.checkUsername(clean)
+        setUsernameStatus(res)
+      } catch {
+        setUsernameStatus({ available: false, message: 'Could not check username.' })
+      } finally {
+        setUsernameChecking(false)
+      }
+    }, 400)
+    return () => clearTimeout(timer)
+  }, [username, user?.username])
+
+  async function handleAvatarUpload(file: File) {
+    if (file.size > 5 * 1024 * 1024) {
+      setAvatarError('Image size must be 5MB or less.')
+      return
+    }
+    const ext = file.name.split('.').pop()?.toLowerCase()
+    if (!['jpg', 'jpeg', 'png', 'webp'].includes(ext || '')) {
+      setAvatarError('Only JPG, PNG, and WebP images are allowed.')
+      return
+    }
+    setAvatarError('')
+    setUploadingAvatar(true)
+    const localUrl = URL.createObjectURL(file)
+    setAvatarPreview(localUrl)
+    try {
+      await sessionApi.uploadAvatar(file)
+      await authActions.refresh()
+    } catch (err) {
+      setAvatarError(err instanceof Error ? err.message : 'Failed to upload photo.')
+    } finally {
+      setUploadingAvatar(false)
+    }
   }
 
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    if (!event.currentTarget.reportValidity()) return
-    setSaving(true); setError(''); setNotice('')
+  async function handleRemoveAvatar() {
+    setUploadingAvatar(true)
+    setAvatarError('')
+    try {
+      await sessionApi.removeAvatar()
+      setAvatarPreview(null)
+      await authActions.refresh()
+    } catch (err) {
+      setAvatarError(err instanceof Error ? err.message : 'Failed to remove photo.')
+    } finally {
+      setUploadingAvatar(false)
+    }
+  }
+
+  async function handleSaveDetails(e: FormEvent) {
+    e.preventDefault()
+    setSavingDetails(true)
+    setDetailsError('')
+    setDetailsNotice('')
+    try {
+      const cleanUsername = username.trim().replace(/^@/, '')
+      await sessionApi.updateSettings({
+        full_name: fullName.trim(),
+        username: cleanUsername || undefined,
+        email: email.trim(),
+        phone: phone.trim(),
+      })
+      await authActions.refresh()
+      setDetailsNotice('Account details updated successfully.')
+    } catch (err) {
+      setDetailsError(err instanceof Error ? err.message : 'Could not update account details.')
+    } finally {
+      setSavingDetails(false)
+    }
+  }
+
+  async function handlePasswordChange(e: FormEvent) {
+    e.preventDefault()
+    if (newPassword !== confirmPassword) {
+      setPasswordError('New password and confirmation do not match.')
+      return
+    }
+    if (newPassword.length < 8) {
+      setPasswordError('Password must be at least 8 characters long.')
+      return
+    }
+    setSavingPassword(true)
+    setPasswordError('')
+    setPasswordNotice('')
+    try {
+      await sessionApi.changePassword(currentPassword, newPassword)
+      setPasswordNotice('Password changed successfully.')
+      setCurrentPassword('')
+      setNewPassword('')
+      setConfirmPassword('')
+      setShowPasswordForm(false)
+    } catch (err) {
+      setPasswordError(err instanceof Error ? err.message : 'Could not update password.')
+    } finally {
+      setSavingPassword(false)
+    }
+  }
+
+  async function handleSaveLocation(e: FormEvent) {
+    e.preventDefault()
+    setSavingLocation(true)
+    setLocationError('')
+    setLocationNotice('')
     try {
       await profilesApi.saveCustomerProfile({
         pin_code: values.pinCode,
         locality: values.locality,
         city: values.city,
         state: values.state,
-        avatar: values.avatar.trim() || undefined,
         bio: values.bio.trim() || undefined,
       })
-      setNotice('Your profile and default location have been updated.')
+      setLocationNotice('Profile and default location updated.')
       profile.reload()
-    } catch (caught) { setError(caught instanceof Error ? caught.message : 'Could not save your profile.') }
-    finally { setSaving(false) }
-  }
-
-  async function handleAddGallery(e: FormEvent) {
-    e.preventDefault()
-    if (!galleryTitle.trim()) return
-    setSavingGallery(true)
-    try {
-      const formData = new FormData()
-      formData.append('title', galleryTitle.trim())
-      formData.append('media_kind', 'IMAGE')
-      formData.append('visibility', 'PRIVATE')
-      if (galleryFile) formData.append('media', galleryFile)
-      await profilesApi.createPortfolioItem(formData)
-      setGalleryTitle('')
-      setGalleryFile(null)
-      setShowAddGallery(false)
-      portfolioData.reload()
-    } catch {
-      // ignore
+    } catch (err) {
+      setLocationError(err instanceof Error ? err.message : 'Could not save profile.')
     } finally {
-      setSavingGallery(false)
+      setSavingLocation(false)
     }
   }
 
-  async function handleDeleteGallery(id: string) {
-    try {
-      await profilesApi.deletePortfolioItem(id)
-      portfolioData.reload()
-    } catch {
-      // ignore
-    }
-  }
-
-  return <section className="customer-page">
-    <div className="customer-page__heading">
-      <div><span className="eyebrow eyebrow--accent">ACCOUNT</span><h1>Account settings</h1><p>Your sign-in identity, profile picture, default location and personal gallery.</p></div>
-    </div>
-
-    <div className="settings-layout">
-      <div className="settings-main">
-        <Card className="detail-card">
-          <h2>Your details</h2>
-          <dl className="detail-list">
-            <div><dt>Full name</dt><dd>{user?.fullName ?? '—'}</dd></div>
-            <div><dt>Email</dt><dd>{user?.email ?? '—'} {user?.emailVerified ? <Badge tone="success">Verified</Badge> : <Badge tone="warning">Not verified</Badge>}</dd></div>
-            <div><dt>Mobile</dt><dd>{user?.phone || 'Not added'}</dd></div>
-          </dl>
-          <p className="form-note">Your name, email and mobile are tied to your sign-in. Contact HiddenStage if one of them needs to change.</p>
-        </Card>
-
-        <Card className="detail-card">
-          <h2>Customer profile & default location</h2>
-          <p className="detail-card__hint">Your profile details and location pre-fill new event requests.</p>
-          {profile.loading ? <Spinner label="Loading your profile" /> : <form className="customer-form" onSubmit={submit} noValidate>
-            <Input label="Profile picture URL (Avatar)" name="avatar" placeholder="https://..." value={values.avatar} onChange={(e) => update('avatar', e.target.value)} />
-            <Input label="Short Bio" name="bio" placeholder="A little about you or the kinds of events you organise..." value={values.bio} onChange={(e) => update('bio', e.target.value)} />
-            <Input label="PIN code" name="pinCode" inputMode="numeric" pattern="[0-9]{6}" maxLength={6} required value={values.pinCode} onChange={(event) => update('pinCode', event.target.value.replace(/\D/g, ''))} />
-            <Input label="Locality" name="locality" required minLength={2} value={values.locality} onChange={(event) => update('locality', event.target.value)} />
-            <div className="event-form-grid">
-              <Input label="City" name="city" required minLength={2} value={values.city} onChange={(event) => update('city', event.target.value)} />
-              <Input label="State" name="state" required minLength={2} value={values.state} onChange={(event) => update('state', event.target.value)} />
-            </div>
-            {error && <p className="customer-error" role="alert">{error}</p>}
-            {notice && <p className="form-success" role="status">{notice}</p>}
-            <div className="customer-form__actions"><Button type="submit" disabled={saving}>{saving ? 'Saving…' : 'Save profile'}</Button></div>
-          </form>}
-        </Card>
-
-        <Card className="detail-card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <h2>Private Event Gallery</h2>
-              <p className="detail-card__hint">Store private moodboards, references, and past event photos.</p>
-            </div>
-            <Button type="button" size="sm" onClick={() => setShowAddGallery(!showAddGallery)}>{showAddGallery ? 'Close' : '+ Add photo'}</Button>
-          </div>
-
-          {showAddGallery && (
-            <form onSubmit={handleAddGallery} style={{ marginTop: '1rem', padding: '1rem', border: '1px solid var(--color-border)', borderRadius: '8px' }}>
-              <Input label="Photo Title" name="galleryTitle" required value={galleryTitle} onChange={(e) => setGalleryTitle(e.target.value)} placeholder="e.g. Wedding Decor Inspiration" />
-              <div style={{ margin: '0.75rem 0' }}>
-                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.25rem' }}>Upload Image</label>
-                <input type="file" accept="image/*" onChange={(e) => setGalleryFile(e.target.files?.[0] || null)} />
-              </div>
-              <Button type="submit" disabled={savingGallery}>{savingGallery ? 'Saving…' : 'Add to Gallery'}</Button>
-            </form>
-          )}
-
-          <div style={{ marginTop: '1rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '0.75rem' }}>
-            {(portfolioData.data ?? []).map((item) => (
-              <div key={item.id} style={{ border: '1px solid var(--color-border)', borderRadius: '6px', padding: '0.5rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                <div>
-                  <strong style={{ fontSize: '0.875rem' }}>{item.title}</strong>
-                  {item.media && <p style={{ fontSize: '0.8rem', margin: '0.25rem 0' }}><a href={item.media} target="_blank" rel="noopener noreferrer">View file ↗</a></p>}
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
-                  <Button type="button" size="sm" variant="quiet" onClick={() => void handleDeleteGallery(item.id)}>Remove</Button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
+  return (
+    <section className="customer-page">
+      <div className="customer-page__heading">
+        <div>
+          <span className="eyebrow eyebrow--accent">ACCOUNT</span>
+          <h1>Account Settings</h1>
+          <p>Manage your profile picture, username identity, sign-in details, and display preferences.</p>
+        </div>
       </div>
 
-      <aside className="settings-side">
-        <Card className="detail-card">
-          <h2>Security</h2>
-          <p className="detail-card__hint">We never show your password. Use the reset flow to choose a new one.</p>
-          <ButtonLink to={routes.auth.forgotPassword} variant="secondary" size="sm">Reset password</ButtonLink>
-        </Card>
-        <Card className="detail-card">
-          <h2>Where details are shared</h2>
-          <p className="detail-card__hint">Suppliers see your event brief and area. Your name, phone and street address are shared only with a supplier you choose.</p>
-          <Link className="text-link" to={routes.privacy}>Read the privacy notice</Link>
-        </Card>
-      </aside>
-    </div>
-  </section>
+      <div className="settings-layout">
+        <div className="settings-main" style={{ display: 'grid', gap: '1.5rem' }}>
+          {/* Profile Picture Card */}
+          <Card className="detail-card">
+            <h2>Profile Picture</h2>
+            <p className="detail-card__hint">Your profile photo appears across conversations, proposals, and your account menu.</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginTop: '1rem', flexWrap: 'wrap' }}>
+              <div
+                style={{
+                  position: 'relative',
+                  width: '5.5rem',
+                  height: '5.5rem',
+                  borderRadius: '50%',
+                  overflow: 'hidden',
+                  background: 'var(--color-rose-soft)',
+                  border: '3px solid var(--color-orange)',
+                  boxShadow: '0 4px 14px rgba(255, 122, 0, 0.25)',
+                  display: 'grid',
+                  placeItems: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                {avatarPreview ? (
+                  <img
+                    src={avatarPreview}
+                    alt={user?.fullName ?? 'Avatar'}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                ) : (
+                  <Avatar name={user?.fullName ?? 'Account'} size="lg" />
+                )}
+                {uploadingAvatar && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      background: 'rgba(0,0,0,0.5)',
+                      display: 'grid',
+                      placeItems: 'center',
+                      color: '#fff',
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                    }}
+                  >
+                    …
+                  </div>
+                )}
+              </div>
+
+              <div style={{ display: 'grid', gap: '0.5rem' }}>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  accept="image/jpeg,image/png,image/webp"
+                  style={{ display: 'none' }}
+                  onChange={(e) => {
+                    const f = e.target.files?.[0]
+                    if (f) void handleAvatarUpload(f)
+                  }}
+                />
+                <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
+                  <Button
+                    type="button"
+                    size="sm"
+                    disabled={uploadingAvatar}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    {avatarPreview ? 'Replace Photo' : 'Upload Photo'}
+                  </Button>
+                  {avatarPreview && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="quiet"
+                      disabled={uploadingAvatar}
+                      onClick={() => void handleRemoveAvatar()}
+                    >
+                      Remove
+                    </Button>
+                  )}
+                </div>
+                <span style={{ fontSize: '0.75rem', color: 'var(--color-muted)' }}>
+                  JPG, PNG or WebP under 5MB. Circular preview automatically applied.
+                </span>
+                {avatarError && <span style={{ fontSize: '0.78rem', color: 'var(--color-danger)' }}>{avatarError}</span>}
+              </div>
+            </div>
+          </Card>
+
+          {/* Account Identity Form */}
+          <Card className="detail-card">
+            <h2>Personal Information &amp; Username</h2>
+            <p className="detail-card__hint">Your username lets specialists identify you cleanly on HiddenStage.</p>
+
+            <form onSubmit={handleSaveDetails} className="customer-form" style={{ marginTop: '1rem' }}>
+              <div className="field">
+                <label className="field__label" htmlFor="settings-username">
+                  Username
+                </label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+                  <span
+                    style={{
+                      padding: '0.65rem 0.8rem',
+                      background: 'var(--color-tint)',
+                      border: '1px solid var(--color-line)',
+                      borderRight: 'none',
+                      borderRadius: 'var(--radius-sm) 0 0 var(--radius-sm)',
+                      color: 'var(--color-muted)',
+                      fontWeight: 700,
+                      fontSize: '0.95rem',
+                    }}
+                  >
+                    @
+                  </span>
+                  <input
+                    id="settings-username"
+                    className="control"
+                    style={{ borderRadius: '0 var(--radius-sm) var(--radius-sm) 0' }}
+                    value={username.replace(/^@/, '')}
+                    onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_.]/g, ''))}
+                    placeholder="your_unique_username"
+                    maxLength={50}
+                  />
+                </div>
+                {usernameChecking ? (
+                  <span className="field__hint">Checking availability…</span>
+                ) : usernameStatus.message ? (
+                  <span
+                    className={usernameStatus.available ? 'field__hint' : 'field__error'}
+                    style={{ color: usernameStatus.available ? 'var(--color-success)' : undefined }}
+                  >
+                    {usernameStatus.available ? '✓ ' : '✗ '}
+                    {usernameStatus.message}
+                  </span>
+                ) : (
+                  <span className="field__hint">Lowercase letters, numbers, underscores and periods allowed.</span>
+                )}
+              </div>
+
+              <Input
+                label="Full Name"
+                name="fullName"
+                required
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+              />
+
+              <Input
+                label="Email Address"
+                name="email"
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+
+              <Input
+                label="Mobile Number"
+                name="phone"
+                placeholder="10-digit Indian mobile (e.g. 9876543210)"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+              />
+
+              {detailsError && <p className="customer-error" role="alert">{detailsError}</p>}
+              {detailsNotice && <p className="form-success" role="status">{detailsNotice}</p>}
+
+              <div className="customer-form__actions">
+                <Button type="submit" disabled={savingDetails}>
+                  {savingDetails ? 'Saving…' : 'Save Account Details'}
+                </Button>
+              </div>
+            </form>
+          </Card>
+
+          {/* Customer Profile & Default Location */}
+          <Card className="detail-card">
+            <h2>Default Location &amp; Bio</h2>
+            <p className="detail-card__hint">Pre-fills location information when submitting new service requests.</p>
+            {profile.loading ? (
+              <Spinner label="Loading your profile" />
+            ) : (
+              <form className="customer-form" onSubmit={handleSaveLocation} style={{ marginTop: '1rem' }}>
+                <Input
+                  label="Short Bio"
+                  name="bio"
+                  placeholder="Tell specialists about your preferred event styles or requirements…"
+                  value={values.bio}
+                  onChange={(e) => setValues((v) => ({ ...v, bio: e.target.value }))}
+                />
+                <Input
+                  label="PIN Code"
+                  name="pinCode"
+                  inputMode="numeric"
+                  pattern="[0-9]{6}"
+                  maxLength={6}
+                  required
+                  value={values.pinCode}
+                  onChange={(e) => setValues((v) => ({ ...v, pinCode: e.target.value.replace(/\D/g, '') }))}
+                />
+                <Input
+                  label="Locality"
+                  name="locality"
+                  required
+                  minLength={2}
+                  value={values.locality}
+                  onChange={(e) => setValues((v) => ({ ...v, locality: e.target.value }))}
+                />
+                <div className="event-form-grid">
+                  <Input
+                    label="City"
+                    name="city"
+                    required
+                    minLength={2}
+                    value={values.city}
+                    onChange={(e) => setValues((v) => ({ ...v, city: e.target.value }))}
+                  />
+                  <Input
+                    label="State"
+                    name="state"
+                    required
+                    minLength={2}
+                    value={values.state}
+                    onChange={(e) => setValues((v) => ({ ...v, state: e.target.value }))}
+                  />
+                </div>
+                {locationError && <p className="customer-error" role="alert">{locationError}</p>}
+                {locationNotice && <p className="form-success" role="status">{locationNotice}</p>}
+                <div className="customer-form__actions">
+                  <Button type="submit" disabled={savingLocation}>
+                    {savingLocation ? 'Saving…' : 'Save Default Location'}
+                  </Button>
+                </div>
+              </form>
+            )}
+          </Card>
+        </div>
+
+        <aside className="settings-side" style={{ display: 'grid', gap: '1.5rem' }}>
+          {/* Theme Preferences Card */}
+          <Card className="detail-card">
+            <h2>Theme Preference</h2>
+            <p className="detail-card__hint">Select your preferred viewing mode across HiddenStage.</p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginTop: '1rem' }}>
+              <button
+                type="button"
+                onClick={() => authActions.setTheme('light')}
+                style={{
+                  padding: '0.85rem 0.6rem',
+                  borderRadius: 'var(--radius-md)',
+                  border: currentTheme === 'light' ? '2px solid var(--color-orange)' : '1px solid var(--color-line)',
+                  background: '#FFF9FC',
+                  color: '#1a1215',
+                  cursor: 'pointer',
+                  textAlign: 'center',
+                  boxShadow: currentTheme === 'light' ? '0 4px 14px rgba(255, 122, 0, 0.2)' : 'none',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                <div style={{ fontSize: '1.4rem', marginBottom: '0.35rem' }}>🌸</div>
+                <strong style={{ display: 'block', fontSize: '0.85rem' }}>Light Pink</strong>
+                <span style={{ fontSize: '0.7rem', color: '#705860' }}>#FFF9FC Canvas</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => authActions.setTheme('dark')}
+                style={{
+                  padding: '0.85rem 0.6rem',
+                  borderRadius: 'var(--radius-md)',
+                  border: currentTheme === 'dark' ? '2px solid var(--color-orange)' : '1px solid var(--color-line)',
+                  background: '#111019',
+                  color: '#F4F0F8',
+                  cursor: 'pointer',
+                  textAlign: 'center',
+                  boxShadow: currentTheme === 'dark' ? '0 4px 14px rgba(255, 122, 0, 0.3)' : 'none',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                <div style={{ fontSize: '1.4rem', marginBottom: '0.35rem' }}>🌙</div>
+                <strong style={{ display: 'block', fontSize: '0.85rem' }}>Dark Mode</strong>
+                <span style={{ fontSize: '0.7rem', color: '#A8A0B8' }}>#111019 Canvas</span>
+              </button>
+            </div>
+          </Card>
+
+          {/* Password & Security Card */}
+          <Card className="detail-card">
+            <h2>Password &amp; Security</h2>
+            <p className="detail-card__hint">Protect your account with a secure password.</p>
+            <div style={{ marginTop: '0.85rem', display: 'grid', gap: '0.75rem' }}>
+              <div>
+                <span style={{ fontSize: '0.78rem', color: 'var(--color-muted)', display: 'block' }}>Password</span>
+                <strong style={{ fontSize: '1.1rem', letterSpacing: '0.15em' }}>••••••••••••</strong>
+              </div>
+
+              {!showPasswordForm ? (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setShowPasswordForm(true)}
+                >
+                  Change Password
+                </Button>
+              ) : (
+                <form onSubmit={handlePasswordChange} style={{ display: 'grid', gap: '0.65rem', marginTop: '0.5rem' }}>
+                  <Input
+                    label="Current Password"
+                    name="currentPassword"
+                    type="password"
+                    required
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                  />
+                  <Input
+                    label="New Password"
+                    name="newPassword"
+                    type="password"
+                    required
+                    minLength={8}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                  />
+                  <Input
+                    label="Confirm New Password"
+                    name="confirmPassword"
+                    type="password"
+                    required
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                  />
+                  {passwordError && <p className="customer-error" role="alert">{passwordError}</p>}
+                  {passwordNotice && <p className="form-success" role="status">{passwordNotice}</p>}
+                  <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.25rem' }}>
+                    <Button type="submit" size="sm" disabled={savingPassword}>
+                      {savingPassword ? 'Updating…' : 'Update Password'}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="quiet"
+                      size="sm"
+                      onClick={() => setShowPasswordForm(false)}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </form>
+              )}
+            </div>
+          </Card>
+
+          <Card className="detail-card">
+            <h2>Privacy &amp; Data Sharing</h2>
+            <p className="detail-card__hint">
+              Event specialists only see your event requirements and city. Direct contact details are shared only when you confirm quotations.
+            </p>
+            <Link className="text-link" to={routes.privacy}>
+              Read Privacy Policy →
+            </Link>
+          </Card>
+        </aside>
+      </div>
+    </section>
+  )
 }

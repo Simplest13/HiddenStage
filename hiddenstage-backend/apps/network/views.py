@@ -1,12 +1,19 @@
+from django.db.models import Q
+from django.utils import timezone
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.accounts.models import Notification, User
 from apps.core.permissions import IsProvider
 from apps.network.models import (
     AssociationStatus,
+    ChatMessage,
+    Conversation,
+    CustomerConnection,
     NetworkAssociation,
     NetworkInvitation,
     NetworkInvitationStatus,
@@ -16,6 +23,9 @@ from apps.network.serializers import (
     AssignmentCreateSerializer,
     AvailabilityQuerySerializer,
     AvailabilityResponseSerializer,
+    ChatMessageSerializer,
+    ConversationSerializer,
+    CustomerConnectionSerializer,
     NetworkAssociationEndSerializer,
     NetworkAssociationSerializer,
     NetworkInvitationCreateSerializer,
@@ -325,3 +335,249 @@ class AvailabilityView(APIView):
         payload.is_valid(raise_exception=True)
         result = check_availability(manager=request.user, **payload.validated_data)
         return Response(result)
+
+
+class CustomerNetworkListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        connections = (
+            CustomerConnection.objects.filter(customer=request.user)
+            .select_related("provider", "provider__profile")
+            .order_by("-created_at")
+        )
+        serializer = CustomerConnectionSerializer(
+            connections, many=True, context={"request": request}
+        )
+        return Response(serializer.data)
+
+
+class CustomerNetworkConnectView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        provider_id = request.data.get("provider_id")
+        username = request.data.get("username", "").strip().lstrip("@")
+        notes = request.data.get("notes", "")
+
+        provider = None
+        if provider_id:
+            provider = User.objects.filter(pk=provider_id, role="PROVIDER").first()
+        elif username:
+            provider = User.objects.filter(username__iexact=username, role="PROVIDER").first()
+
+        if not provider:
+            return Response(
+                {"detail": "Event professional not found."}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        if provider.id == request.user.id:
+            return Response(
+                {"detail": "Cannot connect to yourself."}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        conn, created = CustomerConnection.objects.get_or_create(
+            customer=request.user,
+            provider=provider,
+            defaults={"notes": notes},
+        )
+        if not created and notes:
+            conn.notes = notes
+            conn.save(update_fields=["notes"])
+
+        Notification.objects.create(
+            user=provider,
+            title="New Customer Connection",
+            message=f"{request.user.full_name} added you to their network.",
+            notification_type="CONNECTION",
+            action_url="/app/network",
+        )
+
+        serializer = CustomerConnectionSerializer(conn, context={"request": request})
+        return Response(
+            serializer.data,
+            status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
+        )
+
+
+class CustomerNetworkDisconnectView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, provider_id):
+        conn = CustomerConnection.objects.filter(
+            customer=request.user, provider_id=provider_id
+        ).first()
+        if not conn:
+            return Response(
+                {"detail": "Connection not found."}, status=status.HTTP_404_NOT_FOUND
+            )
+        conn.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class CustomerNetworkSearchView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        query = request.query_params.get("q", "").strip()
+        category = request.query_params.get("category", "").strip()
+        qs = (
+            User.objects.filter(role="PROVIDER", is_active=True)
+            .select_related("profile")
+            .prefetch_related("profile__coverage")
+        )
+        if query:
+            clean_q = query.lstrip("@")
+            qs = qs.filter(
+                Q(username__icontains=clean_q)
+                | Q(full_name__icontains=query)
+                | Q(profile__business_name__icontains=query)
+                | Q(profile__coverage__city__icontains=query)
+            ).distinct()
+        if category and category != "all":
+            qs = qs.filter(profile__categories__code__iexact=category).distinct()
+
+        results = []
+        user_conns = set(
+            CustomerConnection.objects.filter(customer=request.user).values_list(
+                "provider_id", flat=True
+            )
+        )
+        for u in qs[:25]:
+            prof = getattr(u, "profile", None)
+            cats = (
+                prof.declared_categories()
+                if prof and hasattr(prof, "declared_categories")
+                else []
+            )
+            cov = prof.coverage.first() if prof and hasattr(prof, "coverage") else None
+            results.append(
+                {
+                    "id": str(u.id),
+                    "name": u.full_name,
+                    "username": u.username,
+                    "avatar": u.avatar.url
+                    if u.avatar and hasattr(u.avatar, "url")
+                    else None,
+                    "business_name": prof.business_name
+                    if prof and prof.business_name
+                    else u.full_name,
+                    "category": cats[0] if cats else "Specialist",
+                    "city": cov.city if cov else "India",
+                    "is_connected": u.id in user_conns,
+                }
+            )
+        return Response(results)
+
+
+class ConversationListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        qs = (
+            Conversation.objects.filter(
+                Q(customer=request.user) | Q(provider=request.user)
+            )
+            .select_related("customer", "provider", "provider__profile")
+            .prefetch_related("messages")
+        )
+        serializer = ConversationSerializer(qs, many=True, context={"request": request})
+        return Response(serializer.data)
+
+    def post(self, request):
+        target_id = request.data.get("provider_id") or request.data.get("user_id")
+        event_id = request.data.get("event_id")
+        if not target_id:
+            return Response(
+                {"detail": "provider_id or user_id required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if request.user.role == "PROVIDER":
+            customer_id = target_id
+            provider_id = request.user.id
+        else:
+            customer_id = request.user.id
+            provider_id = target_id
+
+        conv, _ = Conversation.objects.get_or_create(
+            customer_id=customer_id,
+            provider_id=provider_id,
+            defaults={"event_id": event_id if event_id else None},
+        )
+        serializer = ConversationSerializer(conv, context={"request": request})
+        return Response(serializer.data)
+
+
+class ConversationDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        conv = Conversation.objects.filter(
+            Q(customer=request.user) | Q(provider=request.user),
+            pk=pk,
+        ).first()
+        if not conv:
+            return Response(
+                {"detail": "Conversation not found."}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        conv.messages.filter(is_read=False).exclude(sender=request.user).update(
+            is_read=True, read_at=timezone.now()
+        )
+
+        messages = conv.messages.all().select_related("sender")
+        msg_serializer = ChatMessageSerializer(
+            messages, many=True, context={"request": request}
+        )
+        conv_serializer = ConversationSerializer(conv, context={"request": request})
+        return Response(
+            {
+                "conversation": conv_serializer.data,
+                "messages": msg_serializer.data,
+            }
+        )
+
+
+class SendMessageView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        conv = Conversation.objects.filter(
+            Q(customer=request.user) | Q(provider=request.user),
+            pk=pk,
+        ).first()
+        if not conv:
+            return Response(
+                {"detail": "Conversation not found."}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        content = request.data.get("content", "").strip()
+        attachment = request.FILES.get("attachment")
+        if not content and not attachment:
+            return Response(
+                {"detail": "Message content or attachment required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        msg = ChatMessage.objects.create(
+            conversation=conv,
+            sender=request.user,
+            content=content,
+            attachment=attachment,
+        )
+        conv.save(update_fields=["updated_at"])
+
+        recipient = conv.provider if request.user == conv.customer else conv.customer
+        Notification.objects.create(
+            user=recipient,
+            title=f"New message from {request.user.full_name}",
+            message=content[:100] if content else "Sent an attachment",
+            notification_type="MESSAGE",
+            action_url="/app/network",
+        )
+
+        return Response(
+            ChatMessageSerializer(msg, context={"request": request}).data,
+            status=status.HTTP_201_CREATED,
+        )

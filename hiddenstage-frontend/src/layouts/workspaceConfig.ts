@@ -6,8 +6,13 @@ type WorkspaceSettings = { title: string; eyebrow: string; home: string; items: 
 
 export const workspaceConfig: Record<WorkspaceAudience, WorkspaceSettings> = {
   customer: { title: 'Your workspace', eyebrow: 'CUSTOMER', home: routes.customer.home, items: [
-    { href: routes.customer.home, label: 'Overview', icon: '◫' }, { href: routes.customer.requests, label: 'Event requests', icon: '✳' },
-    { href: routes.customer.quotes, label: 'Quotes', icon: '▤' }, { href: routes.customer.commitments, label: 'Commitments', icon: '◇' },
+    { href: routes.customer.home, label: 'Overview', icon: '◫' },
+    { href: routes.customer.bookings, label: 'My Bookings', icon: '📅' },
+    { href: routes.customer.requests, label: 'Event requests', icon: '✳' },
+    { href: routes.customer.network, label: 'My Network', icon: '👥' },
+    { href: routes.customer.payments, label: 'My Payments', icon: '💳' },
+    { href: routes.customer.quotes, label: 'Quotes', icon: '▤' },
+    { href: routes.customer.commitments, label: 'Commitments', icon: '◇' },
     { href: routes.app.settings, label: 'Account settings', icon: '◉' },
   ] },
   provider: { title: 'Your workspace', eyebrow: 'PROFESSIONAL', home: routes.provider.home, items: [

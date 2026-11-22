@@ -5,6 +5,9 @@ from apps.events import views
 app_name = "events"
 
 urlpatterns = [
+    path("events/feed/", views.PublicEventFeedView.as_view(), name="event-feed"),
+    path("events/bookings/", views.CustomerBookingsListView.as_view(), name="customer-bookings"),
+    path("events/bookings/<uuid:pk>/", views.CustomerBookingDetailView.as_view(), name="customer-booking-detail"),
     path("events/", views.EventListCreateView.as_view(), name="event-list"),
     path("events/<uuid:pk>/", views.EventDetailView.as_view(), name="event-detail"),
     path("events/<uuid:pk>/submit/", views.EventSubmitView.as_view(), name="event-submit"),

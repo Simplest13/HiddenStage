@@ -1,8 +1,9 @@
 import { apiRequest, ensureCsrfToken, jsonBody, resetCsrfToken } from '../client'
-import type { AccountRole, ApiUser } from './types'
+import type { AccountRole, ApiNotification, ApiUser } from './types'
 
 export type RegisterInput = {
   full_name: string
+  username?: string
   email: string
   password: string
   phone?: string
@@ -49,6 +50,50 @@ export const sessionApi = {
     return apiRequest<{ detail: string }>('/auth/password/reset/confirm/', {
       method: 'POST',
       ...jsonBody({ token, new_password: newPassword }),
+    })
+  },
+  checkUsername(username: string) {
+    return apiRequest<{ available: boolean; username: string; message: string }>(
+      `/auth/check-username/?username=${encodeURIComponent(username)}`
+    )
+  },
+  updateSettings(data: {
+    full_name?: string
+    email?: string
+    phone?: string
+    username?: string
+    theme_preference?: 'light' | 'dark'
+  }) {
+    return apiRequest<ApiUser>('/auth/settings/', { method: 'PATCH', ...jsonBody(data) })
+  },
+  changePassword(current_password: string, new_password: string) {
+    return apiRequest<{ detail: string }>('/auth/password/change/', {
+      method: 'POST',
+      ...jsonBody({ current_password, new_password }),
+    })
+  },
+  async uploadAvatar(file: File) {
+    await ensureCsrfToken()
+    const formData = new FormData()
+    formData.append('avatar', file)
+    return apiRequest<ApiUser>('/auth/avatar/', {
+      method: 'POST',
+      body: formData,
+    })
+  },
+  removeAvatar() {
+    return apiRequest<ApiUser>('/auth/avatar/', {
+      method: 'POST',
+      ...jsonBody({ action: 'remove' }),
+    })
+  },
+  getNotifications() {
+    return apiRequest<{ unread_count: number; results: ApiNotification[] }>('/auth/notifications/')
+  },
+  markNotificationsRead(ids?: string[], mark_all = false) {
+    return apiRequest<{ marked_read: number }>('/auth/notifications/mark-read/', {
+      method: 'POST',
+      ...jsonBody({ ids: ids || [], mark_all }),
     })
   },
 }

@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react'
 import { Link, useMatches, useNavigate } from 'react-router-dom'
 import { providerDetailPath, routes, serviceCategoryPath } from '../../app/routes/routePaths'
 import { Badge, Button, ButtonLink, Card, Input, Textarea } from '../../shared/ui/primitives'
@@ -7,6 +7,9 @@ import { ProviderDirectoryPage, ProviderProfilePage, ServiceDiscoveryPage } from
 import { categoryName, demoProviders, serviceCategories } from '../discovery/data/catalog'
 import { CategoryIcon } from '../../shared/ui/CategoryIcon'
 import { Award, Calendar, MapPin, Search, Users } from 'kubai-icons-react'
+import { publicFeedApi } from '../../shared/api/backend/ecosystem'
+import type { ApiPublicFeedEvent } from '../../shared/api/backend/types'
+import { formatShortDate } from '../../shared/api/backend/format'
 import spacesImg from '../../assets/hero/spaces.jpg'
 import foodImg from '../../assets/hero/food.jpg'
 import photoImg from '../../assets/hero/photography.jpg'
@@ -90,6 +93,78 @@ function ProviderPreview({ provider, index = 0 }: { provider: (typeof demoProvid
       <Link className="text-link" to={providerDetailPath(provider.id)}>View sample profile <span aria-hidden="true">→</span></Link>
     </div>
   </article>
+}
+
+function LiveEventFeed() {
+  const [feed, setFeed] = useState<ApiPublicFeedEvent[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    publicFeedApi.getFeed()
+      .then((data) => setFeed(data))
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [])
+
+  if (loading || !feed || feed.length === 0) return null
+
+  return (
+    <section className="section section--paper">
+      <div className="wrap">
+        <div className="section-head">
+          <div>
+            <span style={{ fontSize: '0.8rem', fontWeight: 800, letterSpacing: '0.08em', color: 'var(--color-orange, #e05822)', textTransform: 'uppercase' }}>
+              Live Marketplace Opportunities
+            </span>
+            <h2>Open event requests needing specialists</h2>
+            <p>Upcoming events from hosts seeking quotations. Verified specialists can review scopes and quote directly.</p>
+          </div>
+          <Link className="section-link" to={routes.forProfessionals}>
+            How to quote <span aria-hidden="true">→</span>
+          </Link>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.25rem' }}>
+          {feed.slice(0, 6).map((item) => (
+            <Card key={item.id} style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '1rem' }}>
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
+                  <Badge tone="accent">{item.event_type || 'Event'}</Badge>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--color-fg-muted)' }}>
+                    📍 {item.city}{item.state ? `, ${item.state}` : ''}
+                  </span>
+                </div>
+
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 700, margin: '0 0 0.5rem' }}>
+                  {item.name}
+                </h3>
+
+                <div style={{ fontSize: '0.88rem', color: 'var(--color-fg-muted)', marginBottom: '0.75rem', display: 'flex', gap: '1rem' }}>
+                  <span>📅 {item.event_date ? formatShortDate(item.event_date) : 'Flexible Date'}</span>
+                  {item.guest_count ? <span>👥 {item.guest_count} guests</span> : null}
+                </div>
+
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
+                  {item.requirements?.map((req) => (
+                    <Badge key={req.id} tone="neutral">{req.category_name || req.title}</Badge>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--color-border)', paddingTop: '0.85rem' }}>
+                <span style={{ fontSize: '0.8rem', color: 'var(--color-fg-muted)' }}>
+                  👤 {item.anonymized_host || `Host in ${item.city || 'India'}`}
+                </span>
+                <ButtonLink to={routes.forProfessionals} size="sm" variant="secondary">
+                  Quote for Event →
+                </ButtonLink>
+              </div>
+            </Card>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
 }
 
 function HomePage() {
@@ -235,6 +310,8 @@ function HomePage() {
         </div>
       </div>
     </section>
+
+    <LiveEventFeed />
 
     <section className="section">
       <div className="wrap">

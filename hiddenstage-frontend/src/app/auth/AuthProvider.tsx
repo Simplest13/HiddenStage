@@ -10,8 +10,11 @@ export function toSessionUser(user: ApiUser): SessionUser {
   return {
     id: user.id,
     fullName: user.full_name,
+    username: user.username,
     email: user.email,
     phone: user.phone,
+    avatarUrl: user.avatar_url,
+    themePreference: user.theme_preference ?? 'light',
     emailVerified: user.email_verified,
     // Older backends omit the field; required is the safe default.
     emailVerificationRequired: user.email_verification_required !== false,
@@ -28,11 +31,34 @@ function authenticated(user: SessionUser): AuthState {
 
 export function AuthProvider({ children, state }: { children: ReactNode; state?: AuthState }) {
   const [authState, setAuthState] = useState<AuthState>(state ?? { status: 'loading' })
+  const [theme, setThemeState] = useState<'light' | 'dark'>(() => {
+    const saved = localStorage.getItem('hiddenstage-theme')
+    return saved === 'dark' ? 'dark' : 'light'
+  })
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme)
+    localStorage.setItem('hiddenstage-theme', theme)
+  }, [theme])
+
+  const setTheme = useCallback((newTheme: 'light' | 'dark') => {
+    setThemeState(newTheme)
+    if (authState.status === 'authenticated') {
+      void sessionApi.updateSettings({ theme_preference: newTheme }).catch(() => {})
+    }
+  }, [authState.status])
+
+  const toggleTheme = useCallback(() => {
+    setTheme(theme === 'light' ? 'dark' : 'light')
+  }, [theme, setTheme])
 
   const refresh = useCallback(async () => {
     try {
       const user = toSessionUser(await sessionApi.me())
       setAuthState(authenticated(user))
+      if (user.themePreference && user.themePreference !== theme) {
+        setThemeState(user.themePreference)
+      }
       return user
     } catch (error) {
       // 401 is the normal signed-out state; anything else must not masquerade as one.
@@ -40,7 +66,7 @@ export function AuthProvider({ children, state }: { children: ReactNode; state?:
       setAuthState(anonymousAuthState)
       return null
     }
-  }, [])
+  }, [theme])
 
   useEffect(() => {
     if (state) return
@@ -49,7 +75,11 @@ export function AuthProvider({ children, state }: { children: ReactNode; state?:
       .then(([, meResult]) => {
         if (!active) return
         if (meResult.status === 'fulfilled') {
-          setAuthState(authenticated(toSessionUser(meResult.value)))
+          const user = toSessionUser(meResult.value)
+          setAuthState(authenticated(user))
+          if (user.themePreference) {
+            setThemeState(user.themePreference)
+          }
         } else {
           setAuthState(anonymousAuthState)
         }
@@ -97,11 +127,40 @@ export function AuthProvider({ children, state }: { children: ReactNode; state?:
     await refresh()
   }, [refresh])
 
-  const value = useMemo(() => ({
-    state: authState,
-    register, login, logout, refresh, verifyEmail, resendVerification,
-    requestPasswordReset, resetPassword, saveCustomerProfile, saveProviderProfile,
-  }), [authState, register, login, logout, refresh, verifyEmail, resendVerification, requestPasswordReset, resetPassword, saveCustomerProfile, saveProviderProfile])
+  const value = useMemo(
+    () => ({
+      state: authState,
+      theme,
+      setTheme,
+      toggleTheme,
+      register,
+      login,
+      logout,
+      refresh,
+      verifyEmail,
+      resendVerification,
+      requestPasswordReset,
+      resetPassword,
+      saveCustomerProfile,
+      saveProviderProfile,
+    }),
+    [
+      authState,
+      theme,
+      setTheme,
+      toggleTheme,
+      register,
+      login,
+      logout,
+      refresh,
+      verifyEmail,
+      resendVerification,
+      requestPasswordReset,
+      resetPassword,
+      saveCustomerProfile,
+      saveProviderProfile,
+    ]
+  )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

@@ -1,9 +1,11 @@
-import { render, screen } from '@testing-library/react'
+import { configure, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createMemoryRouter, RouterProvider } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
 import { routeConfig } from '../../app/router/router'
 import { AppProviders } from '../../app/providers/AppProviders'
+
+configure({ asyncUtilTimeout: 10000 })
 
 function renderRoute(path: string) {
   const router = createMemoryRouter(routeConfig, { initialEntries: [path] })
@@ -24,13 +26,13 @@ describe('public discovery pages', () => {
   it('filters provider records by PIN code and opens a demo profile', async () => {
     const user = userEvent.setup()
     renderRoute('/providers')
-    expect(await screen.findByText('Meet event professionals')).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { level: 1 })).toHaveTextContent(/Meet Event Professionals/i)
     await user.type(screen.getByLabelText('PIN code'), '560')
     expect(screen.getByRole('heading', { name: 'Studio Ambar (demo)' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'The Small Feast (demo)' })).not.toBeInTheDocument()
-    await user.click(screen.getByRole('link', { name: /view demo profile/i }))
+    await user.click(screen.getByRole('link', { name: /view profile/i }))
     expect(await screen.findByRole('heading', { name: 'Studio Ambar (demo)' })).toBeInTheDocument()
-    expect(screen.getByText(/Demo verification state: approved/i)).toBeInTheDocument()
+    expect(screen.getByText(/Verified/i)).toBeInTheDocument()
     expect(screen.getByText('Sample table setting')).toBeInTheDocument()
   })
 

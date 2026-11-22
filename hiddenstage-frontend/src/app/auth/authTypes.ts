@@ -4,8 +4,11 @@ export type AccountRole = 'CUSTOMER' | 'PROVIDER'
 export type SessionUser = {
   id: string
   fullName: string
+  username?: string | null
   email: string
   phone: string
+  avatarUrl?: string | null
+  themePreference?: 'light' | 'dark'
   emailVerified: boolean
   /** Deployment policy: false when this launch does not require verification. */
   emailVerificationRequired: boolean

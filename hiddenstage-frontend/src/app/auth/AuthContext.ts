@@ -7,6 +7,9 @@ export const anonymousAuthState: AuthState = { status: 'anonymous' }
 
 export type AuthActions = {
   state: AuthState
+  theme: 'light' | 'dark'
+  setTheme(theme: 'light' | 'dark'): void
+  toggleTheme(): void
   register(input: RegisterInput): Promise<RegisterResult>
   login(input: LoginInput): Promise<SessionUser>
   logout(): Promise<void>
@@ -23,6 +26,9 @@ const unavailable = async (): Promise<never> => { throw new Error('Authenticatio
 
 export const AuthContext = createContext<AuthActions>({
   state: { status: 'loading' },
+  theme: 'light',
+  setTheme: () => {},
+  toggleTheme: () => {},
   register: unavailable,
   login: unavailable,
   logout: async () => {},

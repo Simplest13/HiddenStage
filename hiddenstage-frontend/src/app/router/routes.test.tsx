@@ -21,7 +21,7 @@ function renderRoute(path: string, authState?: AuthState) {
 describe('application routes', () => {
   it('renders the public homepage', async () => {
     renderRoute('/')
-    expect(await screen.findByText(/Make room for/)).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { level: 1 })).toHaveTextContent(/Direct booking for/)
   })
 
   it('redirects an anonymous visitor away from a protected workspace', async () => {

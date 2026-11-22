@@ -3,6 +3,9 @@ from rest_framework import serializers
 
 from apps.network.models import (
     AssignmentStatus,
+    ChatMessage,
+    Conversation,
+    CustomerConnection,
     NetworkAssociation,
     NetworkInvitation,
     WorkerAssignment,
@@ -310,3 +313,154 @@ class AvailabilityResponseSerializer(serializers.Serializer):
     event_date = serializers.DateField()
     start_time = serializers.TimeField()
     end_time = serializers.TimeField()
+
+
+class CustomerConnectionSerializer(serializers.ModelSerializer):
+    provider_name = serializers.CharField(source="provider.full_name", read_only=True)
+    provider_username = serializers.CharField(source="provider.username", read_only=True)
+    provider_avatar = serializers.SerializerMethodField()
+    business_name = serializers.SerializerMethodField()
+    category = serializers.SerializerMethodField()
+    city = serializers.SerializerMethodField()
+    has_active_booking = serializers.SerializerMethodField()
+    unread_messages_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CustomerConnection
+        fields = [
+            "id",
+            "provider",
+            "provider_name",
+            "provider_username",
+            "provider_avatar",
+            "business_name",
+            "category",
+            "city",
+            "notes",
+            "has_active_booking",
+            "unread_messages_count",
+            "created_at",
+        ]
+
+    def get_provider_avatar(self, obj) -> str | None:
+        p = obj.provider
+        if p.avatar and hasattr(p.avatar, "url"):
+            return p.avatar.url
+        return None
+
+    def get_business_name(self, obj) -> str:
+        prof = getattr(obj.provider, "profile", None)
+        return prof.business_name if prof and prof.business_name else obj.provider.full_name
+
+    def get_category(self, obj) -> str:
+        prof = getattr(obj.provider, "profile", None)
+        if prof and hasattr(prof, "declared_categories"):
+            cats = prof.declared_categories()
+            if cats:
+                return cats[0]
+        return "Specialist"
+
+    def get_city(self, obj) -> str:
+        prof = getattr(obj.provider, "profile", None)
+        if prof and hasattr(prof, "coverage"):
+            first_cov = prof.coverage.first()
+            if first_cov:
+                return first_cov.city
+        return "India"
+
+    def get_has_active_booking(self, obj) -> bool:
+        from apps.commitments.models import Commitment
+        return Commitment.objects.filter(customer=obj.customer, provider=obj.provider, status="ACTIVE").exists()
+
+    def get_unread_messages_count(self, obj) -> int:
+        conv = Conversation.objects.filter(customer=obj.customer, provider=obj.provider).first()
+        if not conv:
+            return 0
+        return conv.messages.filter(is_read=False).exclude(sender=obj.customer).count()
+
+
+class ChatMessageSerializer(serializers.ModelSerializer):
+    sender_name = serializers.CharField(source="sender.full_name", read_only=True)
+    sender_username = serializers.CharField(source="sender.username", read_only=True)
+    sender_avatar = serializers.SerializerMethodField()
+    is_me = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ChatMessage
+        fields = [
+            "id",
+            "conversation",
+            "sender",
+            "sender_name",
+            "sender_username",
+            "sender_avatar",
+            "is_me",
+            "content",
+            "attachment",
+            "is_read",
+            "read_at",
+            "created_at",
+        ]
+        read_only_fields = ["id", "conversation", "sender", "is_read", "read_at", "created_at"]
+
+    def get_sender_avatar(self, obj) -> str | None:
+        u = obj.sender
+        if u.avatar and hasattr(u.avatar, "url"):
+            return u.avatar.url
+        return None
+
+    def get_is_me(self, obj) -> bool:
+        request = self.context.get("request")
+        if request and request.user:
+            return obj.sender_id == request.user.id
+        return False
+
+
+class ConversationSerializer(serializers.ModelSerializer):
+    other_user = serializers.SerializerMethodField()
+    latest_message = serializers.SerializerMethodField()
+    unread_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Conversation
+        fields = [
+            "id",
+            "customer",
+            "provider",
+            "event",
+            "other_user",
+            "latest_message",
+            "unread_count",
+            "created_at",
+            "updated_at",
+        ]
+
+    def get_other_user(self, obj) -> dict:
+        request = self.context.get("request")
+        target = obj.provider if request and request.user == obj.customer else obj.customer
+        prof = getattr(target, "profile", None)
+        return {
+            "id": str(target.id),
+            "name": target.full_name,
+            "username": target.username,
+            "avatar": target.avatar.url if target.avatar and hasattr(target.avatar, "url") else None,
+            "business_name": prof.business_name if prof and prof.business_name else target.full_name,
+        }
+
+    def get_latest_message(self, obj) -> dict | None:
+        msg = obj.messages.order_by("-created_at").first()
+        if not msg:
+            return None
+        return {
+            "id": str(msg.id),
+            "content": msg.content,
+            "sender_id": str(msg.sender_id),
+            "created_at": msg.created_at,
+            "is_read": msg.is_read,
+        }
+
+    def get_unread_count(self, obj) -> int:
+        request = self.context.get("request")
+        if not request:
+            return 0
+        return obj.messages.filter(is_read=False).exclude(sender=request.user).count()

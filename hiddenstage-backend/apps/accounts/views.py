@@ -19,18 +19,23 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from django.core.exceptions import ValidationError as DjangoValidationError
 from apps.accounts.emails import send_password_reset_email, send_verification_email
-from apps.accounts.models import EmailVerificationToken, PasswordResetToken, User
+from apps.accounts.models import EmailVerificationToken, Notification, PasswordResetToken, User
 from apps.accounts.policy import verification_required
 from apps.accounts.serializers import (
+    AccountSettingsSerializer,
+    ChangePasswordSerializer,
     EmailOnlySerializer,
     LoginSerializer,
+    NotificationSerializer,
     PasswordResetConfirmSerializer,
     RegisterSerializer,
     TokenSerializer,
     UserSerializer,
 )
 from apps.accounts.tokens import InvalidOrExpiredToken
+from apps.core.validators import normalize_username, validate_username
 
 logger = logging.getLogger(__name__)
 
@@ -215,3 +220,129 @@ class PasswordResetConfirmView(APIView):
             user.set_password(serializer.validated_data["new_password"])
             user.save(update_fields=["password"])
         return Response({"detail": "Your password has been updated. Sign in again."})
+
+
+class CheckUsernameView(APIView):
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    def get(self, request):
+        username = request.query_params.get("username", "").strip()
+        if not username:
+            return Response(
+                {"available": False, "username": "", "message": "Username is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        norm = normalize_username(username)
+        try:
+            validate_username(norm)
+        except DjangoValidationError as exc:
+            return Response(
+                {"available": False, "username": norm, "message": exc.messages[0]},
+                status=status.HTTP_200_OK,
+            )
+
+        qs = User.objects.filter(username__iexact=norm)
+        if request.user.is_authenticated:
+            qs = qs.exclude(pk=request.user.pk)
+
+        if qs.exists():
+            return Response(
+                {"available": False, "username": norm, "message": "Username is already taken."},
+                status=status.HTTP_200_OK,
+            )
+        return Response(
+            {"available": True, "username": norm, "message": "Username is available."},
+            status=status.HTTP_200_OK,
+        )
+
+
+class AccountSettingsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request):
+        serializer = AccountSettingsSerializer(
+            data=request.data, context={"request": request}, partial=True
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.update(request.user, serializer.validated_data)
+        return Response(UserSerializer(request.user).data)
+
+
+class ChangePasswordView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = ChangePasswordSerializer(data=request.data, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+        request.user.set_password(serializer.validated_data["new_password"])
+        request.user.save(update_fields=["password"])
+        login(request, request.user)
+        return Response({"detail": "Password updated successfully."})
+
+
+class AvatarUploadView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        action = request.data.get("action")
+        if action == "remove":
+            if user.avatar:
+                user.avatar.delete(save=False)
+                user.avatar = None
+                user.save(update_fields=["avatar"])
+            return Response(UserSerializer(user).data)
+
+        file_obj = request.FILES.get("avatar")
+        if not file_obj:
+            return Response(
+                {"detail": "No image file provided."}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if file_obj.size > 5 * 1024 * 1024:
+            return Response(
+                {"detail": "Image size must not exceed 5MB."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        name_lower = file_obj.name.lower()
+        if not any(name_lower.endswith(ext) for ext in [".jpg", ".jpeg", ".png", ".webp"]):
+            return Response(
+                {"detail": "Only JPG, PNG, and WebP images are supported."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if user.avatar:
+            user.avatar.delete(save=False)
+        user.avatar = file_obj
+        user.save(update_fields=["avatar"])
+        return Response(UserSerializer(user).data)
+
+
+class NotificationListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        notifications = Notification.objects.filter(user=request.user)
+        unread_count = notifications.filter(is_read=False).count()
+        serializer = NotificationSerializer(notifications[:50], many=True)
+        return Response(
+            {
+                "unread_count": unread_count,
+                "results": serializer.data,
+            }
+        )
+
+
+class MarkNotificationsReadView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        notification_ids = request.data.get("ids", [])
+        mark_all = request.data.get("mark_all", False)
+        qs = Notification.objects.filter(user=request.user, is_read=False)
+        if not mark_all and notification_ids:
+            qs = qs.filter(id__in=notification_ids)
+        updated_count = qs.update(is_read=True)
+        return Response({"marked_read": updated_count})
