@@ -17,6 +17,12 @@ export const bookingsApi = {
   get(id: string) {
     return apiRequest<ApiBooking>(`/events/bookings/${id}/`)
   },
+  complete(id: string, feedback = '') {
+    return apiRequest<ApiBooking>(`/events/${id}/complete/`, {
+      method: 'POST',
+      body: JSON.stringify({ feedback }),
+    })
+  },
 }
 
 export const publicFeedApi = {

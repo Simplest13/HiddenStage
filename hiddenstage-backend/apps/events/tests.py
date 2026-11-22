@@ -130,3 +130,43 @@ class EventApiTests(TestCase):
         self.assertEqual(response.status_code, 409, response.content)
         event.refresh_from_db()
         self.assertEqual(event.name, "Terrace supper")
+
+    def test_cannot_complete_event_without_commitments(self):
+        created = self.client.post(
+            EVENTS, event_payload(status="SUBMITTED"), format="json"
+        ).data
+        response = self.client.post(f"{EVENTS}{created['id']}/complete/", format="json")
+        self.assertEqual(response.status_code, 400, response.content)
+
+    def test_customer_can_complete_event_with_commitments(self):
+        from apps.commitments.services import accept_quotation
+        from apps.commitments.tests import invite_and_accept, make_event, submitted_quotation
+        from apps.network.models import ChatMessage
+
+        provider = make_provider("complete-provider@example.com")
+        event = make_event(self.customer)
+        invite_and_accept(event, provider)
+        quotation = submitted_quotation(provider, event)
+        revision = quotation.revisions.get()
+        accept_quotation(
+            actor=self.customer,
+            quotation_id=quotation.id,
+            revision_id=revision.id,
+            package_keys=[],
+            requirement_ids=[str(revision.items.first().requirement_id)],
+        )
+
+        response = self.client.post(
+            f"{EVENTS}{event.id}/complete/",
+            {"feedback": "Outstanding celebration and flawless service!"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 200, response.content)
+        event.refresh_from_db()
+        self.assertEqual(event.status, EventStatus.CLOSED)
+        self.assertIsNotNone(event.closed_at)
+        self.assertTrue(
+            ChatMessage.objects.filter(
+                content__contains="Outstanding celebration and flawless service!"
+            ).exists()
+        )

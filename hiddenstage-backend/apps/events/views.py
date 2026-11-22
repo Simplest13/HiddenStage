@@ -362,3 +362,72 @@ class PublicEventFeedView(APIView):
         )
         serializer = PublicEventFeedSerializer(queryset, many=True)
         return Response(serializer.data)
+
+
+class EventCompleteView(APIView):
+    """Customer confirms event delivery completion and optionally leaves feedback."""
+
+    permission_classes = [IsCustomer]
+
+    @extend_schema(request=None, responses={200: CustomerBookingSerializer})
+    def post(self, request, pk):
+        from django.utils import timezone
+        from apps.accounts.models import Notification
+        from apps.commitments.models import CommitmentStatus
+        from apps.network.models import ChatMessage, Conversation
+
+        event = get_owned_event(actor=request.user, event_id=pk)
+        commits = event.commitments.filter(status=CommitmentStatus.ACTIVE).select_related("provider")
+        if not commits.exists():
+            return Response(
+                {"detail": "Cannot mark an event as complete without active specialist commitments."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        event.status = EventStatus.CLOSED
+        event.closed_at = timezone.now()
+        event.save(update_fields=["status", "closed_at", "updated_at"])
+
+        feedback = (request.data.get("feedback") or "").strip()
+
+        for c in commits:
+            try:
+                Notification.objects.create(
+                    user=c.provider,
+                    event=event,
+                    title="Event Completed",
+                    message=f"{request.user.full_name} confirmed completion of {event.name}. Congratulations!",
+                    notification_type="BOOKING",
+                    action_url=f"/provider/commitments/{c.pk}",
+                )
+            except Exception:
+                pass
+
+            if feedback:
+                try:
+                    conv, _ = Conversation.objects.get_or_create(
+                        customer=request.user,
+                        provider=c.provider,
+                        defaults={"event": event},
+                    )
+                    ChatMessage.objects.create(
+                        conversation=conv,
+                        sender=request.user,
+                        content=f"Event Completion Feedback for {event.name}:\n⭐ {feedback}",
+                    )
+                except Exception:
+                    pass
+
+        try:
+            Notification.objects.create(
+                user=request.user,
+                event=event,
+                title="Event Completed",
+                message=f"You marked {event.name} as successfully completed. Invoices and records are finalized.",
+                notification_type="BOOKING",
+                action_url="/app/bookings",
+            )
+        except Exception:
+            pass
+
+        return Response(CustomerBookingSerializer(event).data)

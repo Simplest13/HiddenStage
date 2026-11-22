@@ -76,6 +76,26 @@ class SimpleAcceptanceTests(AcceptanceSetup):
         self.event.refresh_from_db()
         self.assertEqual(self.event.status, EventStatus.CLOSED)
 
+        # Automatic ecosystem synchronization checks
+        from apps.accounts.models import Notification
+        from apps.commitments.models import Invoice, InvoiceStatus
+        from apps.network.models import ChatMessage, Conversation, CustomerConnection
+
+        self.assertTrue(
+            CustomerConnection.objects.filter(customer=self.customer, provider=self.provider).exists()
+        )
+        conv = Conversation.objects.filter(
+            customer=self.customer, provider=self.provider, event=self.event
+        ).first()
+        self.assertIsNotNone(conv)
+        self.assertTrue(ChatMessage.objects.filter(conversation=conv).exists())
+        invoice = Invoice.objects.filter(commitment=commitment).first()
+        self.assertIsNotNone(invoice)
+        self.assertEqual(invoice.status, InvoiceStatus.ADVANCE_PENDING)
+        self.assertEqual(invoice.amount_paise, 1_500_000)
+        self.assertTrue(Notification.objects.filter(user=self.provider).exists())
+        self.assertTrue(Notification.objects.filter(user=self.customer).exists())
+
     def test_selection_is_required(self):
         quotation = submitted_quotation(self.provider, self.event)
         revision = quotation.revisions.get()

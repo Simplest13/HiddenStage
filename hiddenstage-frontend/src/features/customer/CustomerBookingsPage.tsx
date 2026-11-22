@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { routes } from '../../app/routes/routePaths'
+import { customerEventPath, routes } from '../../app/routes/routePaths'
 import { bookingsApi } from '../../shared/api/backend/ecosystem'
 import type { ApiBooking } from '../../shared/api/backend/types'
 import { formatPaise, formatShortDate } from '../../shared/api/backend/format'
@@ -25,6 +25,10 @@ export function CustomerBookingsPage() {
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<'ALL' | 'ACTIVE' | 'CONFIRMED' | 'COMPLETED'>('ALL')
   const [selectedBooking, setSelectedBooking] = useState<ApiBooking | null>(null)
+  const [completeBooking, setCompleteBooking] = useState<ApiBooking | null>(null)
+  const [feedbackText, setFeedbackText] = useState('')
+  const [completing, setCompleting] = useState(false)
+  const [feedbackSuccess, setFeedbackSuccess] = useState<string | null>(null)
   const navigate = useNavigate()
 
   async function loadBookings() {
@@ -42,6 +46,24 @@ export function CustomerBookingsPage() {
   useEffect(() => {
     void loadBookings()
   }, [])
+
+  async function handleCompleteEvent(booking: ApiBooking) {
+    try {
+      setCompleting(true)
+      await bookingsApi.complete(booking.id, feedbackText)
+      setFeedbackSuccess('Event marked as completed! Your feedback has been shared with your specialists.')
+      setTimeout(() => {
+        setCompleteBooking(null)
+        setFeedbackSuccess(null)
+        setFeedbackText('')
+      }, 1500)
+      await loadBookings()
+    } catch (err: any) {
+      alert(err.message || 'Could not complete event.')
+    } finally {
+      setCompleting(false)
+    }
+  }
 
   // KPI calculations
   const totalBookings = bookings.length
@@ -209,13 +231,29 @@ export function CustomerBookingsPage() {
                   </div>
 
                   <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
+                    <ButtonLink to={customerEventPath(b.id)} size="sm">
+                      {b.commitments && b.commitments.length > 0 ? 'Event Workspace' : (b.quotations_count > 0 ? 'Review Quotes' : 'Manage Event')}
+                    </ButtonLink>
+                    {b.commitments && b.commitments.length > 0 && b.lifecycle_stage !== 'event_completed' && b.lifecycle_stage !== 'review_submitted' && (
+                      <Button
+                        size="sm"
+                        variant="primary"
+                        onClick={() => {
+                          setCompleteBooking(b)
+                          setFeedbackText('')
+                          setFeedbackSuccess(null)
+                        }}
+                      >
+                        ✓ Mark Completed
+                      </Button>
+                    )}
                     <Button size="sm" variant="secondary" onClick={() => setSelectedBooking(b)}>
                       View Timeline
                     </Button>
                     <Button size="sm" variant="secondary" onClick={() => navigate(routes.customer.network)}>
                       Message Specialists
                     </Button>
-                    <Button size="sm" onClick={() => navigate(routes.customer.payments)}>
+                    <Button size="sm" variant="quiet" onClick={() => navigate(routes.customer.payments)}>
                       View Invoices
                     </Button>
                   </div>
@@ -461,6 +499,108 @@ export function CustomerBookingsPage() {
                 )
               })}
             </div>
+          </div>
+        </div>
+      )}
+      {/* Event Completion & Feedback Modal */}
+      {completeBooking && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.6)',
+            zIndex: 10000,
+            display: 'grid',
+            placeItems: 'center',
+            padding: '1.5rem',
+          }}
+          onClick={() => !completing && setCompleteBooking(null)}
+        >
+          <div
+            style={{
+              width: 'min(36rem, 100%)',
+              maxHeight: '85vh',
+              overflowY: 'auto',
+              background: 'var(--color-paper-bright)',
+              borderRadius: 'var(--radius-lg)',
+              padding: '1.8rem',
+              boxShadow: 'var(--shadow-lift)',
+              position: 'relative',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <div>
+                <span className="eyebrow eyebrow--accent">EVENT COMPLETION</span>
+                <h2 style={{ margin: '0.2rem 0 0', fontSize: '1.35rem' }}>{completeBooking.name}</h2>
+              </div>
+              <Button size="sm" variant="quiet" disabled={completing} onClick={() => setCompleteBooking(null)}>
+                ✕ Close
+              </Button>
+            </div>
+
+            {feedbackSuccess ? (
+              <div
+                style={{
+                  padding: '1rem',
+                  background: 'rgba(46, 125, 50, 0.1)',
+                  color: 'var(--color-success, #2e7d32)',
+                  borderRadius: 'var(--radius-md)',
+                  fontWeight: 600,
+                  fontSize: '0.9rem',
+                  textAlign: 'center',
+                  margin: '1rem 0',
+                }}
+              >
+                ✓ {feedbackSuccess}
+              </div>
+            ) : (
+              <>
+                <p style={{ fontSize: '0.88rem', color: 'var(--color-ink)', lineHeight: 1.5, margin: '0 0 1rem' }}>
+                  Marking your event completed confirms that your booked specialists have delivered their services.
+                  You can also leave a note of appreciation or review feedback that will be delivered directly to their
+                  communication channel.
+                </p>
+
+                <div style={{ marginBottom: '1.25rem' }}>
+                  <label
+                    htmlFor="feedback-textarea"
+                    style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.4rem', color: 'var(--color-ink)' }}
+                  >
+                    SPECIALIST APPRECIATION &amp; FEEDBACK (OPTIONAL)
+                  </label>
+                  <textarea
+                    id="feedback-textarea"
+                    rows={4}
+                    value={feedbackText}
+                    onChange={(e) => setFeedbackText(e.target.value)}
+                    placeholder="Thank you for an incredible performance! Arrived on time, set up seamlessly, and kept our guests engaged throughout..."
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem',
+                      borderRadius: 'var(--radius-md)',
+                      border: '1px solid var(--color-line)',
+                      fontSize: '0.88rem',
+                      fontFamily: 'inherit',
+                      resize: 'vertical',
+                    }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+                  <Button variant="secondary" disabled={completing} onClick={() => setCompleteBooking(null)}>
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="primary"
+                    disabled={completing}
+                    onClick={() => void handleCompleteEvent(completeBooking)}
+                  >
+                    {completing ? 'Confirming...' : 'Confirm Completion'}
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

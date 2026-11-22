@@ -12,6 +12,7 @@ urlpatterns = [
     path("events/<uuid:pk>/", views.EventDetailView.as_view(), name="event-detail"),
     path("events/<uuid:pk>/submit/", views.EventSubmitView.as_view(), name="event-submit"),
     path("events/<uuid:pk>/withdraw/", views.EventWithdrawView.as_view(), name="event-withdraw"),
+    path("events/<uuid:pk>/complete/", views.EventCompleteView.as_view(), name="event-complete"),
     path(
         "events/<uuid:event_pk>/requirements/",
         views.RequirementListCreateView.as_view(),

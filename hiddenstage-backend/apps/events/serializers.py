@@ -240,22 +240,28 @@ class CustomerBookingSerializer(serializers.ModelSerializer):
         invoices = obj.invoices.all()
         has_commit = commits.exists()
         
-        if obj.status == EventStatus.CLOSED or (obj.event_date and obj.event_date < today and has_commit):
-            # Check if all paid
+        if has_commit:
             total_booked = sum(c.total_paise for c in commits)
             total_paid = sum(i.amount_paise for i in invoices.filter(status="PAID"))
-            if total_paid >= total_booked and total_booked > 0:
-                return "event_completed"
-            return "final_payment_pending"
-        
-        if has_commit:
-            # Check advance
-            paid_count = invoices.filter(status="PAID").count()
-            if paid_count > 0:
-                if obj.event_date and obj.event_date == today:
-                    return "service_in_progress"
+            is_past = obj.event_date < today if obj.event_date else False
+            is_today = obj.event_date == today if obj.event_date else False
+
+            # If event date has passed or customer confirmed event completion (closed_at set)
+            if is_past or (obj.closed_at and (obj.event_date is None or obj.event_date <= today)):
+                if total_paid >= total_booked and total_booked > 0:
+                    return "event_completed"
+                return "final_payment_pending"
+
+            # If today is event day
+            if is_today:
+                return "service_in_progress"
+
+            # Future event with active commitment
+            if total_paid > 0:
                 return "advance_paid_booking_confirmed"
-            return "advance_payment_pending"
+            if invoices.filter(status__in=["PAYMENT_PENDING", "ADVANCE_PENDING"]).exists():
+                return "advance_payment_pending"
+            return "quotation_accepted"
         
         # Quotation checks
         quotes = getattr(obj, "quotations", None)

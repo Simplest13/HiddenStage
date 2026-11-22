@@ -11,10 +11,14 @@ most defended transaction in the system:
   as a 409 instead of a duplicate obligation.
 """
 
+import uuid
+from datetime import timedelta
+
 from django.db import IntegrityError, OperationalError, connection, transaction
 from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
+from apps.accounts.models import Notification
 from apps.accounts.policy import verification_satisfied
 from apps.commitments.models import (
     Commitment,
@@ -22,9 +26,12 @@ from apps.commitments.models import (
     CommitmentAudit,
     CommitmentLine,
     CommitmentStatus,
+    Invoice,
+    InvoiceStatus,
 )
 from apps.core.exceptions import BusinessRuleViolation, Conflict
 from apps.events.models import EventStatus, RequirementStatus, mark_requirements_committed
+from apps.network.models import ChatMessage, Conversation, CustomerConnection
 from apps.quotations.models import (
     Quotation,
     QuotationRevision,
@@ -57,9 +64,10 @@ def _resolve_selection(revision, package_keys, requirement_ids):
             {"package_keys": f"Unknown package(s): {', '.join(unknown_packages)}."}
         )
 
-    items_by_requirement = {item.requirement_id: item for item in items}
+    items_by_requirement = {str(item.requirement_id): item for item in items}
+    req_ids_str = [str(r) for r in requirement_ids]
     unknown_requirements = sorted(
-        {req_id for req_id in requirement_ids if req_id not in items_by_requirement},
+        {req_id for req_id in req_ids_str if req_id not in items_by_requirement},
         key=str,
     )
     if unknown_requirements:
@@ -73,7 +81,7 @@ def _resolve_selection(revision, package_keys, requirement_ids):
 
     packaged_selected_directly = [
         str(items_by_requirement[req_id].package_key)
-        for req_id in requirement_ids
+        for req_id in req_ids_str
         if items_by_requirement[req_id].package_key
     ]
     if packaged_selected_directly:
@@ -90,7 +98,7 @@ def _resolve_selection(revision, package_keys, requirement_ids):
     selected.update(
         {
             items_by_requirement[req_id].id: items_by_requirement[req_id]
-            for req_id in requirement_ids
+            for req_id in req_ids_str
         }
     )
     if not selected:
@@ -204,6 +212,73 @@ def accept_quotation(
         f"({len(selected)} line(s), {total} paise).",
     )
     mark_requirements_committed(event, requirement_ids_selected)
+
+    # 1. Automatic CustomerConnection & Conversation sync
+    try:
+        CustomerConnection.objects.get_or_create(
+            customer=actor,
+            provider=commitment.provider,
+            defaults={"notes": f"Connected via event: {event.name}"},
+        )
+        conv, _ = Conversation.objects.get_or_create(
+            customer=actor,
+            provider=commitment.provider,
+            defaults={"event": event},
+        )
+        if not conv.event:
+            conv.event = event
+            conv.save(update_fields=["event", "updated_at"])
+        ChatMessage.objects.create(
+            conversation=conv,
+            sender=actor,
+            content=f"Quotation accepted for {event.name} ({len(selected)} service line(s)). We are now connected!",
+        )
+    except Exception:
+        pass
+
+    # 2. Advance Invoice generation for customer payment tracking
+    try:
+        inv_num = f"INV-{timezone.now().strftime('%Y%m')}-{uuid.uuid4().hex[:6].upper()}"
+        due_date = event.event_date if event.event_date else (timezone.now().date() + timedelta(days=7))
+        Invoice.objects.create(
+            commitment=commitment,
+            event=event,
+            customer=actor,
+            provider=commitment.provider,
+            invoice_number=inv_num,
+            issue_date=timezone.now().date(),
+            due_date=due_date,
+            amount_paise=total,
+            status=InvoiceStatus.ADVANCE_PENDING,
+            items=[
+                {"title": item.title, "amount_paise": item.amount_paise}
+                for item in selected
+            ],
+        )
+    except Exception:
+        pass
+
+    # 3. Notification dispatch to both parties
+    try:
+        Notification.objects.create(
+            user=commitment.provider,
+            event=event,
+            title="Quotation Accepted",
+            message=f"{actor.full_name} accepted your quotation for {event.name} ({len(selected)} service(s)).",
+            notification_type="BOOKING",
+            action_url=f"/provider/commitments/{commitment.pk}",
+        )
+        Notification.objects.create(
+            user=actor,
+            event=event,
+            title="Booking Confirmed",
+            message=f"Commitment confirmed with {commitment.provider.full_name} for {event.name}.",
+            notification_type="BOOKING",
+            action_url="/app/payments",
+        )
+    except Exception:
+        pass
+
     return commitment
 
 
