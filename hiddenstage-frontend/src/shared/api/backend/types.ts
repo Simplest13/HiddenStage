@@ -470,10 +470,10 @@ export type ApiProviderProfile = {
   kind: ProviderKind
   primary_category?: string | null
   talent_category?: string
-  specializations?: string[]
-  performance_styles?: string[]
+  specializations?: string[] | string
+  performance_styles?: string[] | string
   experience_summary?: string
-  languages?: string[]
+  languages?: string[] | string
   website?: string
   instagram?: string
   youtube?: string
@@ -481,6 +481,9 @@ export type ApiProviderProfile = {
   logo?: string | null
   cover_image?: string | null
   is_public?: boolean
+  onboarding_step?: number
+  onboarding_completed_at?: string | null
+  role_data?: Record<string, unknown>
   description: string
   contact: string
   categories: string[]

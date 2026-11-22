@@ -102,6 +102,32 @@
 .provider-onboarding__coverage { margin-top: 0.3rem; }
 .provider-onboarding__location { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.7rem; padding: 0.9rem 0; border-bottom: 1px solid var(--color-line); }
 .provider-onboarding__location strong { grid-column: 1 / -1; color: var(--color-indigo); font-size: 0.82rem; }
+.onboarding-progress { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.45rem; margin: 1.25rem 0; }
+.onboarding-progress button { display: grid; gap: 0.15rem; min-height: 4.8rem; padding: 0.65rem; border: 1px solid var(--color-line); border-radius: var(--radius-md); background: var(--color-paper-bright); color: var(--color-muted); text-align: left; cursor: pointer; }
+.onboarding-progress button > span { display: grid; place-items: center; width: 1.45rem; height: 1.45rem; border-radius: 50%; border: 1px solid var(--color-line); font-size: 0.72rem; }
+.onboarding-progress button strong { color: var(--color-ink); font-size: 0.78rem; }
+.onboarding-progress button small { font-size: 0.68rem; }
+.onboarding-progress button.is-active { border-color: var(--color-burgundy); background: var(--color-accent-soft); }
+.onboarding-progress button.is-complete > span { border-color: var(--color-burgundy); background: var(--color-burgundy); color: #fff; }
+.role-choice { display: grid; gap: 0.75rem; border: 0; margin: 0; padding: 0; }
+.role-choice legend { margin-bottom: 0.6rem; font-weight: 700; color: var(--color-indigo); }
+.role-choice__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.65rem; }
+.role-choice__grid label { display: grid; gap: 0.35rem; padding: 1rem; border: 1px solid var(--color-line); border-radius: var(--radius-md); background: var(--color-paper-bright); cursor: pointer; }
+.role-choice__grid label input { accent-color: var(--color-burgundy); }
+.role-choice__grid label strong { color: var(--color-ink); }
+.role-choice__grid label span { color: var(--color-muted); font-size: 0.82rem; line-height: 1.45; }
+.role-choice__grid label.is-selected { border-color: var(--color-burgundy); background: var(--color-accent-soft); box-shadow: 0 0 0 1px var(--color-burgundy); }
+.role-choice__grid--compact { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.provider-onboarding__check { display: flex; align-items: center; gap: 0.55rem; color: var(--color-muted); font-size: 0.84rem; }
+.provider-onboarding__check input { accent-color: var(--color-burgundy); }
+.manager-association { display: grid; gap: 0.65rem; padding: 1rem; border: 1px solid var(--color-line); border-radius: var(--radius-md); }
+.manager-association > button { display: block; width: 100%; padding: 0.75rem; border: 1px solid var(--color-line); border-radius: var(--radius-sm); background: var(--color-paper-bright); text-align: left; cursor: pointer; }
+.manager-association > button.is-selected { border-color: var(--color-burgundy); background: var(--color-accent-soft); }
+.onboarding-review dl { display: grid; gap: 0.6rem; margin: 0; }
+.onboarding-review dl div { display: grid; grid-template-columns: 10rem 1fr; gap: 1rem; padding: 0.75rem; border-bottom: 1px solid var(--color-line); }
+.onboarding-review dt { color: var(--color-muted); font-size: 0.78rem; }
+.onboarding-review dd { margin: 0; color: var(--color-ink); font-weight: 650; }
+.onboarding-actions { flex-wrap: wrap; }
 .auth-terms { display: flex; align-items: flex-start; gap: 0.55rem; color: var(--color-muted); font-size: 0.8rem; line-height: 1.55; }
 .auth-terms input { flex: 0 0 auto; margin-top: 0.2rem; accent-color: var(--color-burgundy); }
 .auth-terms a { color: var(--color-burgundy); }
@@ -271,6 +297,10 @@
 }
 
 @media (max-width: 560px) {
+  .onboarding-progress { grid-template-columns: repeat(5, 4.4rem); overflow-x: auto; }
+  .role-choice__grid, .role-choice__grid--compact { grid-template-columns: 1fr; }
+  .provider-onboarding__location { grid-template-columns: 1fr; }
+  .onboarding-review dl div { grid-template-columns: 1fr; gap: 0.25rem; }
   .site-footer { padding-top: 2.5rem; }
   .site-footer__links { grid-template-columns: 1fr 1fr; gap: 1.25rem; }
   .site-footer__bottom { flex-direction: column; }

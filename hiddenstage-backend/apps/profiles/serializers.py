@@ -1,5 +1,7 @@
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.core.validators import URLValidator
 from django.db import transaction
+from django.utils import timezone
 from rest_framework import serializers
 
 from apps.core.validators import normalize_pin_code, normalize_text, validate_pin_code
@@ -117,6 +119,7 @@ class ProviderProfileSerializer(serializers.ModelSerializer):
     coverage = ProviderCoverageSerializer(many=True, required=False)
     services = ProviderServiceSerializer(many=True, read_only=True)
     verification_status = serializers.CharField(read_only=True)
+    onboarding_completed_at = serializers.DateTimeField(read_only=True)
 
     class Meta:
         model = ProviderProfile
@@ -139,6 +142,9 @@ class ProviderProfileSerializer(serializers.ModelSerializer):
             "logo",
             "cover_image",
             "is_public",
+            "onboarding_step",
+            "onboarding_completed_at",
+            "role_data",
             "description",
             "contact",
             "categories",
@@ -172,10 +178,61 @@ class ProviderProfileSerializer(serializers.ModelSerializer):
             )
         return codes
 
+    def validate_website(self, value):
+        if value:
+            try:
+                URLValidator()(value)
+            except DjangoValidationError:
+                raise serializers.ValidationError("Enter a valid public website URL.")
+        return value
+
+    def validate_instagram(self, value):
+        if value:
+            try:
+                URLValidator()(value)
+            except DjangoValidationError:
+                raise serializers.ValidationError("Enter a valid Instagram URL.")
+        return value
+
+    def validate_youtube(self, value):
+        if value:
+            try:
+                URLValidator()(value)
+            except DjangoValidationError:
+                raise serializers.ValidationError("Enter a valid YouTube URL.")
+        return value
+
     def validate(self, attrs):
         instance = self.instance
         categories = attrs.get("categories")
         kind = attrs.get("kind") or (instance.kind if instance else None)
+        role_data = attrs.get("role_data")
+        if role_data is not None:
+            if not isinstance(role_data, dict):
+                raise serializers.ValidationError({"role_data": "Role-specific data must be an object."})
+            onboarding_step = attrs.get("onboarding_step")
+            if onboarding_step is not None and onboarding_step > 4:
+                raise serializers.ValidationError({"onboarding_step": "Onboarding step must be between 0 and 4."})
+            for field_name in ("website", "instagram", "youtube", "portfolio_url", "spotify", "facebook", "linkedin"):
+                value = role_data.get(field_name)
+                if value:
+                    try:
+                        URLValidator()(value)
+                    except DjangoValidationError:
+                        raise serializers.ValidationError(
+                            {field_name: "Enter a valid public profile URL."}
+                        )
+            social_links = role_data.get("social_links")
+            if isinstance(social_links, list):
+                for link in social_links:
+                    if not isinstance(link, dict) or not link.get("url"):
+                        continue
+                    try:
+                        URLValidator()(str(link["url"]))
+                    except DjangoValidationError:
+                        raise serializers.ValidationError(
+                            {"social_links": "Every social profile link must be a valid public URL."}
+                        )
         if kind == "INDIVIDUAL_SERVICE_PROVIDER":
             check_categories = (
                 categories
@@ -240,6 +297,9 @@ class ProviderProfileSerializer(serializers.ModelSerializer):
         if coverage_rows:
             self._sync_coverage(profile, coverage_rows)
         profile.refresh_completion()
+        if profile.onboarding_step >= 4 and profile.is_complete() and profile.onboarding_completed_at is None:
+            profile.onboarding_completed_at = timezone.now()
+            profile.save(update_fields=["onboarding_completed_at"])
         return profile
 
     def update(self, instance, validated_data):
@@ -257,6 +317,9 @@ class ProviderProfileSerializer(serializers.ModelSerializer):
         if coverage_rows is not None:
             self._sync_coverage(instance, coverage_rows)
         instance.refresh_completion()
+        if instance.onboarding_step >= 4 and instance.is_complete() and instance.onboarding_completed_at is None:
+            instance.onboarding_completed_at = timezone.now()
+            instance.save(update_fields=["onboarding_completed_at"])
         return instance
 
 

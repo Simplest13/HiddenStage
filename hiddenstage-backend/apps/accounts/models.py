@@ -29,6 +29,12 @@ class UserRole(models.TextChoices):
     PROVIDER = "PROVIDER", "Provider"
 
 
+class ThemePreference(models.TextChoices):
+    LIGHT = "LIGHT", "Light"
+    DARK = "DARK", "Dark"
+    SYSTEM = "SYSTEM", "System"
+
+
 def normalize_email_address(email: str) -> str:
     return (email or "").strip().lower()
 
@@ -72,6 +78,11 @@ class User(AbstractBaseUser, PermissionsMixin, UUIDModel):
     full_name = models.CharField(max_length=150)
     phone = models.CharField(max_length=20, blank=True)
     role = models.CharField(max_length=20, choices=UserRole.choices, default=UserRole.CUSTOMER)
+    theme_preference = models.CharField(
+        max_length=20,
+        choices=ThemePreference.choices,
+        default=ThemePreference.LIGHT,
+    )
     email_verified_at = models.DateTimeField(null=True, blank=True)
     terms_accepted_at = models.DateTimeField(null=True, blank=True)
     is_active = models.BooleanField(default=True)

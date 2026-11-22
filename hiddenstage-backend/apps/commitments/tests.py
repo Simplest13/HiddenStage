@@ -7,7 +7,7 @@ requests on real PostgreSQL must produce exactly one commitment.
 import threading
 from datetime import timedelta
 
-from django.db import DatabaseError, IntegrityError, close_old_connections, connections, transaction
+from django.db import DatabaseError, IntegrityError, close_old_connections, connection, connections, transaction
 from django.test import TestCase, TransactionTestCase, override_settings
 from django.utils import timezone
 from rest_framework.test import APIClient
@@ -359,6 +359,8 @@ class ConcurrentAcceptanceTests(TransactionTestCase):
             connections.close_all()
 
     def test_only_one_commitment_is_created(self):
+        if connection.vendor != "postgresql":
+            self.skipTest("Concurrent acceptance test requires PostgreSQL")
         barrier = threading.Barrier(2)
         results = []
         threads = [
@@ -377,6 +379,8 @@ class ConcurrentAcceptanceTests(TransactionTestCase):
         self.assertEqual(CommitmentAudit.objects.filter(action="ACCEPTED").count(), 1)
 
     def test_release_after_concurrent_acceptance_is_audited_once(self):
+        if connection.vendor != "postgresql":
+            self.skipTest("Concurrent acceptance test requires PostgreSQL")
         barrier = threading.Barrier(2)
         results = []
         threads = [
