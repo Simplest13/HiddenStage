@@ -317,7 +317,8 @@ class CustomerBookingsListView(APIView):
                 "requirements",
                 "requirements__category",
                 "commitments",
-                "commitments__provider",
+                "commitments__provider__provider_profile",
+                "commitments__quotation",
                 "invoices",
             )
             .order_by("-event_date", "-created_at")
@@ -339,7 +340,8 @@ class CustomerBookingDetailView(APIView):
                 "requirements",
                 "requirements__category",
                 "commitments",
-                "commitments__provider",
+                "commitments__provider__provider_profile",
+                "commitments__quotation",
                 "invoices",
             )
             .first()

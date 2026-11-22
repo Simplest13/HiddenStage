@@ -74,13 +74,16 @@ class PublicDirectoryView(APIView):
 
         results = []
         for p in queryset:
-            first_coverage = p.coverage.first()
+            coverages = list(p.coverage.all())
+            first_coverage = coverages[0] if coverages else None
+            services = list(p.services.all())
             active_prices = [
                 s.base_price_paise
-                for s in p.services.all()
+                for s in services
                 if s.is_active and s.base_price_paise is not None
             ]
             min_price = min(active_prices) if active_prices else None
+            declared_cats = p.declared_categories()
             results.append({
                 "id": p.id,
                 "display_name": p.display_name,
@@ -89,8 +92,8 @@ class PublicDirectoryView(APIView):
                 "kind": p.kind,
                 "description": p.description,
                 "verification_status": p.verification_status,
-                "categories": p.declared_categories(),
-                "primary_category": p.primary_category.code if p.primary_category else (p.declared_categories()[0] if p.declared_categories() else None),
+                "categories": declared_cats,
+                "primary_category": p.primary_category.code if p.primary_category else (declared_cats[0] if declared_cats else None),
                 "logo": p.logo,
                 "cover_image": p.cover_image,
                 "city": first_coverage.city if first_coverage else "",
@@ -98,7 +101,7 @@ class PublicDirectoryView(APIView):
                 "locality": first_coverage.locality if first_coverage else "",
                 "pin_code": first_coverage.pin_code if first_coverage else "",
                 "starting_price_paise": min_price,
-                "coverage_count": p.coverage.count(),
+                "coverage_count": len(coverages),
                 "rating": None,
                 "review_count": 0,
             })

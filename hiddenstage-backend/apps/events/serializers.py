@@ -198,14 +198,24 @@ class CustomerBookingSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
 
+    def _active_commits(self, obj):
+        if not hasattr(obj, "_cached_active_commits"):
+            obj._cached_active_commits = [c for c in obj.commitments.all() if c.status == "ACTIVE"]
+        return obj._cached_active_commits
+
+    def _all_invoices(self, obj):
+        if not hasattr(obj, "_cached_all_invoices"):
+            obj._cached_all_invoices = list(obj.invoices.all())
+        return obj._cached_all_invoices
+
     def get_quotations_count(self, obj) -> int:
         return getattr(obj, "quotations", []).count() if hasattr(obj, "quotations") else 0
 
     def get_commitments(self, obj) -> list:
         results = []
-        commits = obj.commitments.filter(status="ACTIVE").select_related("provider", "quotation")
+        commits = self._active_commits(obj)
         for c in commits:
-            p_profile = getattr(c.provider, "profile", None)
+            p_profile = getattr(c.provider, "provider_profile", None)
             results.append({
                 "id": str(c.id),
                 "provider_id": str(c.provider_id),
@@ -221,10 +231,11 @@ class CustomerBookingSerializer(serializers.ModelSerializer):
         return results
 
     def get_financial_summary(self, obj) -> dict:
-        total_booked = sum(c.total_paise for c in obj.commitments.filter(status="ACTIVE"))
-        invoices = obj.invoices.all()
+        commits = self._active_commits(obj)
+        total_booked = sum(c.total_paise for c in commits)
+        invoices = self._all_invoices(obj)
         total_invoiced = sum(i.amount_paise for i in invoices)
-        paid_invoices = invoices.filter(status="PAID")
+        paid_invoices = [i for i in invoices if i.status == "PAID"]
         total_paid = sum(i.amount_paise for i in paid_invoices)
         return {
             "total_booked_paise": total_booked,
@@ -236,13 +247,13 @@ class CustomerBookingSerializer(serializers.ModelSerializer):
     def get_lifecycle_stage(self, obj) -> str:
         # Determine 11-step lifecycle
         today = timezone.now().date()
-        commits = obj.commitments.filter(status="ACTIVE")
-        invoices = obj.invoices.all()
-        has_commit = commits.exists()
+        commits = self._active_commits(obj)
+        invoices = self._all_invoices(obj)
+        has_commit = len(commits) > 0
         
         if has_commit:
             total_booked = sum(c.total_paise for c in commits)
-            total_paid = sum(i.amount_paise for i in invoices.filter(status="PAID"))
+            total_paid = sum(i.amount_paise for i in invoices if i.status == "PAID")
             is_past = obj.event_date < today if obj.event_date else False
             is_today = obj.event_date == today if obj.event_date else False
 
@@ -259,7 +270,7 @@ class CustomerBookingSerializer(serializers.ModelSerializer):
             # Future event with active commitment
             if total_paid > 0:
                 return "advance_paid_booking_confirmed"
-            if invoices.filter(status__in=["PAYMENT_PENDING", "ADVANCE_PENDING"]).exists():
+            if any(i.status in ["PAYMENT_PENDING", "ADVANCE_PENDING"] for i in invoices):
                 return "advance_payment_pending"
             return "quotation_accepted"
         

@@ -26,7 +26,11 @@ from apps.quotations.services import (
 
 
 def _quotation_with_revisions(pk):
-    return Quotation.objects.prefetch_related("revisions__items__requirement").get(pk=pk)
+    return (
+        Quotation.objects.select_related("event", "provider", "provider__provider_profile")
+        .prefetch_related("revisions__items__requirement")
+        .get(pk=pk)
+    )
 
 
 def _revision_with_items(pk):
@@ -42,7 +46,7 @@ class ProviderQuotationListCreateView(generics.ListCreateAPIView):
         mark_expired_revisions(QuotationRevision.objects.filter(quotation__provider=self.request.user))
         return (
             Quotation.objects.filter(provider=self.request.user)
-            .select_related("event", "provider")
+            .select_related("event", "provider", "provider__provider_profile")
             .prefetch_related("revisions__items__requirement")
             .order_by("-updated_at")
         )
@@ -165,7 +169,7 @@ class EventQuotationListView(generics.ListAPIView):
         mark_expired_revisions(QuotationRevision.objects.filter(quotation__event=event))
         return (
             Quotation.objects.filter(event=event)
-            .select_related("event", "provider")
+            .select_related("event", "provider", "provider__provider_profile")
             .prefetch_related("revisions__items__requirement")
             .order_by("created_at")
         )

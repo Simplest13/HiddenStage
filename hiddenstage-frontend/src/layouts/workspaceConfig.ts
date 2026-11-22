@@ -39,12 +39,22 @@ export function getWorkspaceConfig(audience: WorkspaceAudience, providerKind?: P
   const config = workspaceConfig[audience]
   if (audience !== 'provider') return config
 
+  const roleTitles: Record<ProviderKind, { title: string; eyebrow: string }> = {
+    MANAGER: { title: 'Manager workspace', eyebrow: 'EVENT BUSINESS' },
+    WORKER: { title: 'Worker workspace', eyebrow: 'OPERATIONAL CREW' },
+    TALENT: { title: 'Talent workspace', eyebrow: 'TALENT & ARTIST' },
+    ASSOCIATED_SERVICE_PROVIDER: { title: 'Associate workspace', eyebrow: 'ASSOCIATE SPECIALIST' },
+    INDIVIDUAL_SERVICE_PROVIDER: { title: 'Provider workspace', eyebrow: 'SERVICE PROVIDER' },
+  }
+  const roleMeta = providerKind ? roleTitles[providerKind] : { title: config.title, eyebrow: config.eyebrow }
+
   const commonItems = config.items.filter(
     (item) => item.href !== routes.provider.network && item.href !== routes.provider.assignments,
   )
   if (providerKind === 'MANAGER') {
     return {
       ...config,
+      ...roleMeta,
       items: [
         ...commonItems,
         { href: routes.provider.network, label: 'My network', icon: '♧' },
@@ -56,6 +66,7 @@ export function getWorkspaceConfig(audience: WorkspaceAudience, providerKind?: P
   if (providerKind === 'WORKER') {
     return {
       ...config,
+      ...roleMeta,
       items: [
         ...commonItems,
         { href: routes.provider.network, label: 'My network', icon: '♧' },
@@ -63,5 +74,5 @@ export function getWorkspaceConfig(audience: WorkspaceAudience, providerKind?: P
       ],
     }
   }
-  return { ...config, items: commonItems }
+  return { ...config, ...roleMeta, items: commonItems }
 }

@@ -267,6 +267,81 @@ function DashboardPage({ workspaceProfile }: { workspaceProfile?: ApiProviderPro
         </div>
         <div className="network-dashboard__links"><Link to={routes.provider.network}>{isWorker ? 'My Manager network' : 'My network'}</Link><Link to={routes.provider.assignments}>Assignments</Link>{isManager && <Link to={routes.provider.networkDiscover}>Discover Workers</Link>}</div>
       </Card>}
+
+      {profile?.kind === 'ASSOCIATED_SERVICE_PROVIDER' && (
+        <Card className="dashboard-panel network-dashboard">
+          <div className="dashboard-panel__head">
+            <div>
+              <h2>Associated Managers &amp; Collaborations</h2>
+              <p>Manage your affiliations with event businesses and agencies while retaining independent quoting.</p>
+            </div>
+            <ButtonLink to={`${routes.provider.profile}?tab=association`} variant="quiet" size="sm">
+              Manage Associations
+            </ButtonLink>
+          </div>
+          <div className="network-dashboard__metrics">
+            <div><span>Active Associations</span><strong>{activeNetwork.length}</strong></div>
+            <div><span>Pending Requests</span><strong>{pendingNetwork.length}</strong></div>
+            <div><span>Direct Enquiries</span><strong>{pending.length}</strong></div>
+            <div><span>Engagements</span><strong>{activeCommitments.length}</strong></div>
+          </div>
+          <div className="network-dashboard__links">
+            <Link to={`${routes.provider.profile}?tab=association`}>Connect to Manager</Link>
+            <Link to={routes.provider.opportunities}>Browse Direct Opportunities</Link>
+            <Link to={routes.provider.services}>Manage Services</Link>
+          </div>
+        </Card>
+      )}
+
+      {profile?.kind === 'TALENT' && (
+        <Card className="dashboard-panel network-dashboard">
+          <div className="dashboard-panel__head">
+            <div>
+              <h2>Talent Media Portfolio &amp; Performance Gigs</h2>
+              <p>High-visibility showcase for singers, DJs, anchors, musicians, and artists.</p>
+            </div>
+            <ButtonLink to={`${routes.provider.profile}?tab=portfolio`} variant="quiet" size="sm">
+              Manage Portfolio
+            </ButtonLink>
+          </div>
+          <div className="network-dashboard__metrics">
+            <div><span>Booked Gigs</span><strong>{activeCommitments.length}</strong></div>
+            <div><span>Direct Enquiries</span><strong>{pending.length}</strong></div>
+            <div><span>Active Quotes</span><strong>{openQuotes.length}</strong></div>
+            <div><span>Open Opportunities</span><strong>{data.data?.opportunities.length ?? 0}</strong></div>
+          </div>
+          <div className="network-dashboard__links">
+            <Link to={`${routes.provider.profile}?tab=portfolio`}>Upload Performance Media</Link>
+            <Link to={routes.provider.opportunities}>Explore Matched Gigs</Link>
+            <Link to={routes.provider.quotes}>View Quotations</Link>
+          </div>
+        </Card>
+      )}
+
+      {profile?.kind === 'INDIVIDUAL_SERVICE_PROVIDER' && (
+        <Card className="dashboard-panel network-dashboard">
+          <div className="dashboard-panel__head">
+            <div>
+              <h2>Direct Service Bookings &amp; Local Coverage</h2>
+              <p>Independent specialist workflow: one primary craft, explicit city/locality coverage, direct organiser inquiries.</p>
+            </div>
+            <ButtonLink to={routes.provider.services} variant="quiet" size="sm">
+              Manage Pricing
+            </ButtonLink>
+          </div>
+          <div className="network-dashboard__metrics">
+            <div><span>Direct Bookings</span><strong>{activeCommitments.length}</strong></div>
+            <div><span>New Invitations</span><strong>{pending.length}</strong></div>
+            <div><span>Active Proposals</span><strong>{openQuotes.length}</strong></div>
+            <div><span>Matched Requests</span><strong>{data.data?.opportunities.length ?? 0}</strong></div>
+          </div>
+          <div className="network-dashboard__links">
+            <Link to={routes.provider.services}>Update Service Price</Link>
+            <Link to={routes.provider.coverage}>Update Service Area</Link>
+            <Link to={routes.provider.opportunities}>Review Opportunities</Link>
+          </div>
+        </Card>
+      )}
     </>}
   </section>
 }

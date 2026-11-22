@@ -68,12 +68,10 @@ class QuotationSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
     def get_provider_display_name(self, obj) -> str:
-        profile = (
-            ProviderProfile.objects.filter(user_id=obj.provider_id)
-            .only("display_name")
-            .first()
-        )
-        return profile.display_name if profile else obj.provider.full_name
+        profile = getattr(obj.provider, "provider_profile", None)
+        if profile and profile.display_name:
+            return profile.display_name
+        return obj.provider.full_name
 
     def get_provider_profile_id(self, obj) -> str | None:
         profile = getattr(obj.provider, "provider_profile", None)
