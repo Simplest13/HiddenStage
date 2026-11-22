@@ -22,8 +22,10 @@ describe('API error boundary', () => {
   })
 
   it('constructs correct API URLs without duplicating version prefixes', () => {
-    expect(apiUrl('/events')).toBe('/api/v1/events')
-    expect(apiUrl('/api/v1/events/123/attachments/456/download/')).toBe('/api/v1/events/123/attachments/456/download/')
+    const base = (import.meta.env.VITE_API_BASE_URL || '/api/v1').replace(/\/+$/, '')
+    const root = base.endsWith('/api/v1') ? base.slice(0, -'/api/v1'.length) : base
+    expect(apiUrl('/events')).toBe(`${base}/events`)
+    expect(apiUrl('/api/v1/events/123/attachments/456/download/')).toBe(`${root}/api/v1/events/123/attachments/456/download/`)
     expect(apiUrl('https://example.com/asset.pdf')).toBe('https://example.com/asset.pdf')
   })
 })

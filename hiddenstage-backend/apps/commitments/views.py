@@ -156,6 +156,7 @@ class CustomerPaymentsSummaryView(APIView):
 class CustomerInvoicesListView(APIView):
     permission_classes = [IsCustomer]
 
+    @extend_schema(operation_id="payments_invoices_list")
     def get(self, request):
         status_param = request.query_params.get("status")
         event_id = request.query_params.get("event_id")
@@ -173,6 +174,7 @@ class CustomerInvoicesListView(APIView):
 class CustomerInvoiceDetailView(APIView):
     permission_classes = [IsCustomer]
 
+    @extend_schema(operation_id="payments_invoices_detail")
     def get(self, request, pk):
         invoice = (
             Invoice.objects.filter(customer=request.user, pk=pk)

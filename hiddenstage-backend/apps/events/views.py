@@ -308,6 +308,7 @@ class EventAttachmentDeleteView(APIView):
 class CustomerBookingsListView(APIView):
     permission_classes = [IsCustomer]
 
+    @extend_schema(operation_id="events_bookings_list")
     def get(self, request):
         status_param = request.query_params.get("status")
         queryset = (
@@ -330,6 +331,7 @@ class CustomerBookingsListView(APIView):
 class CustomerBookingDetailView(APIView):
     permission_classes = [IsCustomer]
 
+    @extend_schema(operation_id="events_bookings_detail")
     def get(self, request, pk):
         event = (
             Event.objects.filter(customer=request.user, pk=pk)

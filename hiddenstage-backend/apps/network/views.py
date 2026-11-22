@@ -475,6 +475,7 @@ class CustomerNetworkSearchView(APIView):
 class ConversationListView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(operation_id="network_conversations_list")
     def get(self, request):
         qs = (
             Conversation.objects.filter(
@@ -514,6 +515,7 @@ class ConversationListView(APIView):
 class ConversationDetailView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(operation_id="network_conversations_detail")
     def get(self, request, pk):
         conv = Conversation.objects.filter(
             Q(customer=request.user) | Q(provider=request.user),
