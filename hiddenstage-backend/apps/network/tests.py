@@ -237,6 +237,45 @@ class AssignmentTests(TestCase):
         self.assertFalse(result["available"])
         self.assertTrue(result["conflict"])
 
+    def test_unassociated_manager_gets_only_limited_worker_availability(self):
+        respond_to_assignment(
+            worker=self.worker, assignment_id=self.assignment.id, accept=True
+        )
+        client = APIClient()
+        client.force_authenticate(self.manager_b)
+        response = client.get(
+            "/api/v1/assignments/availability/",
+            {
+                "worker_id": str(self.worker.id),
+                "event_date": self.assignment.event_date.isoformat(),
+                "start_time": "12:00:00",
+                "end_time": "14:00:00",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(
+            set(response.data),
+            {"available", "conflict", "event_date", "start_time", "end_time"},
+        )
+        self.assertFalse(response.data["available"])
+        self.assertTrue(response.data["conflict"])
+
+    def test_non_manager_cannot_query_worker_availability(self):
+        for user in (self.customer, self.worker):
+            client = APIClient()
+            client.force_authenticate(user)
+            response = client.get(
+                "/api/v1/assignments/availability/",
+                {
+                    "worker_id": str(self.worker.id),
+                    "event_date": self.assignment.event_date.isoformat(),
+                    "start_time": "12:00:00",
+                    "end_time": "14:00:00",
+                },
+            )
+            self.assertEqual(response.status_code, 403, response.content)
+
     def test_overlapping_assignment_cannot_be_accepted(self):
         first = respond_to_assignment(
             worker=self.worker, assignment_id=self.assignment.id, accept=True

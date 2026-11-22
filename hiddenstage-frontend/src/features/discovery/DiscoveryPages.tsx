@@ -803,14 +803,14 @@ export function ProviderProfilePage() {
               <h2>Team & Event Management Staff</h2>
               <p style={{ color: 'var(--color-text-muted)', marginBottom: '1.5rem' }}>Key event coordinators and production assistants on this manager's platform team.</p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '1rem' }}>
-                {(p.team_members || []).map((member) => (
-                  <div key={member.id} className="card" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                {(p.team_members || []).map((member, index) => (
+                  <div key={`${member}-${index}`} className="card" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                       <span className="pro-card__monogram" style={{ width: '42px', height: '42px', fontSize: '1rem', background: 'var(--color-burgundy)', color: '#fff', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        {providerInitials(member.name)}
+                        {providerInitials(member)}
                       </span>
                       <div>
-                        <strong>{member.name}</strong>
+                        <strong>{member}</strong>
                         <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>Event Production Team</div>
                       </div>
                     </div>

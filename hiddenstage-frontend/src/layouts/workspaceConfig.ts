@@ -1,4 +1,5 @@
 import { routes } from '../app/routes/routePaths'
+import type { ProviderKind } from '../shared/api/backend/types'
 
 export type WorkspaceAudience = 'customer' | 'provider' | 'business' | 'admin'
 type NavItem = { href: string; label: string; icon: string }
@@ -32,4 +33,35 @@ export const workspaceConfig: Record<WorkspaceAudience, WorkspaceSettings> = {
     { href: routes.admin.home, label: 'Overview', icon: '◫' }, { href: routes.admin.businesses, label: 'Business review', icon: '▣' },
     { href: routes.admin.reviews, label: 'Moderation', icon: '◈' }, { href: routes.admin.audit, label: 'Audit trail', icon: '≋' },
   ] },
+}
+
+export function getWorkspaceConfig(audience: WorkspaceAudience, providerKind?: ProviderKind | null): WorkspaceSettings {
+  const config = workspaceConfig[audience]
+  if (audience !== 'provider') return config
+
+  const commonItems = config.items.filter(
+    (item) => item.href !== routes.provider.network && item.href !== routes.provider.assignments,
+  )
+  if (providerKind === 'MANAGER') {
+    return {
+      ...config,
+      items: [
+        ...commonItems,
+        { href: routes.provider.network, label: 'My network', icon: '♧' },
+        { href: routes.provider.networkDiscover, label: 'Discover Workers', icon: '⌕' },
+        { href: routes.provider.assignments, label: 'Assignments', icon: '▣' },
+      ],
+    }
+  }
+  if (providerKind === 'WORKER') {
+    return {
+      ...config,
+      items: [
+        ...commonItems,
+        { href: routes.provider.network, label: 'My network', icon: '♧' },
+        { href: routes.provider.assignments, label: 'Assignments', icon: '▣' },
+      ],
+    }
+  }
+  return { ...config, items: commonItems }
 }

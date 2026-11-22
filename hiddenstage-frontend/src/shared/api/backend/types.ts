@@ -590,7 +590,7 @@ export type ApiProviderDetail = {
   completed_at?: string | null
   services?: ApiProviderService[]
   portfolio_items?: ApiPortfolioItem[]
-  team_members?: Array<{ id: string; name: string; permissions: string[] }>
+  team_members?: string[]
   rating?: number | null
   review_count?: number
 }

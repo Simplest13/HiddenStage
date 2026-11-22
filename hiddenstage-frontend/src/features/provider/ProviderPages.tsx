@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react'
-import { Link, useMatches, useParams, useSearchParams } from 'react-router-dom'
+import { Link, useMatches, useOutletContext, useParams, useSearchParams } from 'react-router-dom'
 import { Award, CircleCheck, FileText, Mail, ShieldCheck, Sparkles } from 'kubai-icons-react'
 import { customerEventPath, providerQuotePath, routes } from '../../app/routes/routePaths'
 import { useAuth } from '../../app/auth/useAuth'
@@ -33,6 +33,7 @@ import type {
 } from '../../shared/api/backend/types'
 import { isApiError } from '../../shared/api/client'
 import { CommitmentStatusBadge, InvitationStatusBadge, QuoteBreakdown, RevisionStatusBadge } from '../marketplace/MarketplaceUI'
+import { getProviderDashboardPresentation } from './providerDashboardConfig'
 import { latestRevision } from '../../shared/api/backend/quoteSelection'
 import '../customer/customer.css'
 import '../marketplace/marketplace.css'
@@ -49,6 +50,7 @@ const providerKindLabels = {
 } as const
 
 export default function ProviderPages() {
+  const workspaceProfile = useOutletContext<ApiProviderProfile | null | undefined>()
   const page = (useMatches().at(-1)?.handle as { page?: Page } | undefined)?.page ?? 'providerHome'
   if (page === 'providerProfile') return <ProfilePage />
   if (page === 'providerServices') return <ServicesPage />
@@ -58,7 +60,7 @@ export default function ProviderPages() {
   if (page === 'providerQuotes') return <QuotationsPage />
   if (page === 'providerQuoteEditor') return <QuoteEditorPage />
   if (page === 'providerCommitments') return <CommitmentsPage />
-  return <DashboardPage />
+  return <DashboardPage workspaceProfile={workspaceProfile} />
 }
 
 function useCategories() {
@@ -72,7 +74,7 @@ function PageHeading({ eyebrow: _eyebrow, title, intro, action }: { eyebrow?: st
   </div>
 }
 
-function DashboardPage() {
+function DashboardPage({ workspaceProfile }: { workspaceProfile?: ApiProviderProfile | null }) {
   const auth = useAuth()
   const data = useApiData(async () => {
     const [opportunities, invitations, quotations, commitments, profile, network, networkInvitations, assignments] = await Promise.all([
@@ -90,28 +92,118 @@ function DashboardPage() {
   const pending = (data.data?.invitations ?? []).filter((item) => item.status === 'PENDING')
   const openQuotes = (data.data?.quotations ?? []).filter((item) => item.status === 'OPEN')
   const activeCommitments = (data.data?.commitments ?? []).filter((item) => item.status === 'ACTIVE')
-  const profile = data.data?.profile
+  const profile = data.data?.profile ?? workspaceProfile ?? undefined
   const activeNetwork = (data.data?.network ?? []).filter((item) => item.status === 'ACTIVE')
   const pendingNetwork = (data.data?.networkInvitations ?? []).filter((item) => item.status === 'PENDING')
   const assignmentInvitations = (data.data?.assignments ?? []).filter((item) => item.status === 'SENT')
   const upcomingAssignments = (data.data?.assignments ?? []).filter((item) => ['ACCEPTED', 'IN_PROGRESS'].includes(item.status))
   const user = auth.status === 'authenticated' ? auth.user : undefined
+  const presentation = getProviderDashboardPresentation(profile?.kind)
+  const isManager = profile?.kind === 'MANAGER'
+  const isWorker = profile?.kind === 'WORKER'
 
   const providerName = profile?.display_name || (user?.fullName ? user.fullName : 'there')
+  const profileMetric = {
+    label: 'Profile',
+    value: profile ? verificationStatusLabels[profile.verification_status] : '—',
+    description: profile?.completed_at ? 'Published to matching organisers.' : 'Complete profile to be matched.',
+    icon: <ShieldCheck size={20} color="#ff7a00" />,
+  }
+  const dashboardMetrics = isManager
+    ? [
+      {
+        label: 'Active commitments',
+        value: activeCommitments.length,
+        description: 'Accepted engagements recorded for your business.',
+        icon: <Award size={20} color="#6b3e26" />,
+      },
+      {
+        label: 'Active Workers',
+        value: activeNetwork.length,
+        description: 'Workers in your active network.',
+        icon: <Sparkles size={20} color="#ff7a00" />,
+      },
+      {
+        label: 'Assignment invitations',
+        value: assignmentInvitations.length,
+        description: 'Assignments awaiting a Worker response.',
+        icon: <Mail size={20} color="#f8b6c1" />,
+      },
+      {
+        label: 'Upcoming assignments',
+        value: upcomingAssignments.length,
+        description: 'Accepted or in-progress Worker assignments.',
+        icon: <FileText size={20} color="#ff7a00" />,
+      },
+      profileMetric,
+    ]
+    : isWorker
+      ? [
+        {
+          label: 'Assignment invitations',
+          value: assignmentInvitations.length,
+          description: 'Assignments waiting for your response.',
+          icon: <Mail size={20} color="#f8b6c1" />,
+        },
+        {
+          label: 'Upcoming assignments',
+          value: upcomingAssignments.length,
+          description: 'Accepted or in-progress work.',
+          icon: <FileText size={20} color="#ff7a00" />,
+        },
+        {
+          label: 'Active Managers',
+          value: activeNetwork.length,
+          description: 'Managers in your active network.',
+          icon: <Sparkles size={20} color="#ff7a00" />,
+        },
+        {
+          label: 'Network invitations',
+          value: pendingNetwork.length,
+          description: 'Manager invitations awaiting your response.',
+          icon: <Award size={20} color="#6b3e26" />,
+        },
+        profileMetric,
+      ]
+      : [
+        {
+          label: profile?.kind === 'TALENT' ? 'Performance opportunities' : 'Opportunities',
+          value: data.data?.opportunities.length ?? 0,
+          description: 'Open requests matched to your profile.',
+          icon: <Sparkles size={20} color="#ff7a00" />,
+        },
+        {
+          label: profile?.kind === 'TALENT' ? 'Performance invitations' : 'Invitations',
+          value: pending.length,
+          description: 'Organisers waiting for your answer.',
+          icon: <Mail size={20} color="#f8b6c1" />,
+        },
+        {
+          label: profile?.kind === 'TALENT' ? 'Open quotations' : 'Open quotes',
+          value: openQuotes.length,
+          description: 'Quotes you can revise or track.',
+          icon: <FileText size={20} color="#ff7a00" />,
+        },
+        {
+          label: profile?.kind === 'ASSOCIATED_SERVICE_PROVIDER' ? 'Active engagements' : profile?.kind === 'TALENT' ? 'Booked performances' : 'Commitments',
+          value: activeCommitments.length,
+          description: 'Services an organiser has chosen.',
+          icon: <Award size={20} color="#6b3e26" />,
+        },
+        profileMetric,
+      ]
 
   return <section className="customer-page">
     <div className="dashboard-welcome-hero">
       <div className="dashboard-welcome-hero__body">
         <span className="dashboard-welcome-hero__tag">
           <Sparkles size={14} color="#f8b6c1" />
-          <span>Professional Workspace</span>
+          <span>{presentation.eyebrow}</span>
         </span>
         <h1>
-          Welcome back{providerName ? `, ${providerName}` : ''}.
-          <br />
-          Power your events with <em>direct bookings.</em>
+          Welcome back{providerName ? `, ${providerName}` : ''}. <em>{presentation.title}</em>
         </h1>
-        <p>Review organiser invitations, prepare transparent itemized quotations against briefs, and track confirmed engagements with 0% platform commission.</p>
+        <p>{presentation.intro}</p>
         <div className="dashboard-welcome-hero__chips">
           <span><CircleCheck size={13} color="#f8b6c1" /> Verified business</span>
           <span><CircleCheck size={13} color="#f8b6c1" /> 0% agency markup</span>
@@ -119,53 +211,23 @@ function DashboardPage() {
         </div>
       </div>
       <div className="dashboard-welcome-hero__actions">
-        <ButtonLink to={routes.provider.requests} size="lg" className="button--saffron-hero">Open invitations →</ButtonLink>
+        <ButtonLink to={presentation.primaryAction.to} size="lg" className="button--saffron-hero">{presentation.primaryAction.label} →</ButtonLink>
       </div>
     </div>
     {data.error && <ErrorState description={data.error} onRetry={data.reload} />}
     {data.loading && <Spinner label="Loading your workspace" />}
     {!data.loading && <>
       <div className="stat-grid stat-grid--five">
-        <Card className="dashboard-stat">
-          <div className="dashboard-stat__top">
-            <span className="stat-icon-wrap"><Sparkles size={20} color="#ff7a00" /></span>
-            <span className="dashboard-stat__label">Opportunities</span>
-          </div>
-          <strong>{data.data?.opportunities.length ?? 0}</strong>
-          <p>Open requests you can quote directly.</p>
-        </Card>
-        <Card className="dashboard-stat">
-          <div className="dashboard-stat__top">
-            <span className="stat-icon-wrap"><Mail size={20} color="#f8b6c1" /></span>
-            <span className="dashboard-stat__label">Invitations</span>
-          </div>
-          <strong>{pending.length}</strong>
-          <p>Organisers waiting for your answer.</p>
-        </Card>
-        <Card className="dashboard-stat">
-          <div className="dashboard-stat__top">
-            <span className="stat-icon-wrap"><FileText size={20} color="#ff7a00" /></span>
-            <span className="dashboard-stat__label">Open quotes</span>
-          </div>
-          <strong>{openQuotes.length}</strong>
-          <p>Quotes you can revise or track.</p>
-        </Card>
-        <Card className="dashboard-stat">
-          <div className="dashboard-stat__top">
-            <span className="stat-icon-wrap"><Award size={20} color="#6b3e26" /></span>
-            <span className="dashboard-stat__label">Commitments</span>
-          </div>
-          <strong>{activeCommitments.length}</strong>
-          <p>Services an organiser has chosen.</p>
-        </Card>
-        <Card className="dashboard-stat">
-          <div className="dashboard-stat__top">
-            <span className="stat-icon-wrap"><ShieldCheck size={20} color="#ff7a00" /></span>
-            <span className="dashboard-stat__label">Profile</span>
-          </div>
-          <strong className="dashboard-stat__text">{profile ? verificationStatusLabels[profile.verification_status] : '—'}</strong>
-          <p>{profile?.completed_at ? 'Published to matching organisers.' : 'Complete profile to be matched.'}</p>
-        </Card>
+        {dashboardMetrics.map((metric) => (
+          <Card className="dashboard-stat" key={metric.label}>
+            <div className="dashboard-stat__top">
+              <span className="stat-icon-wrap">{metric.icon}</span>
+              <span className="dashboard-stat__label">{metric.label}</span>
+            </div>
+            <strong className={typeof metric.value === 'string' ? 'dashboard-stat__text' : undefined}>{metric.value}</strong>
+            <p>{metric.description}</p>
+          </Card>
+        ))}
       </div>
 
       {profile && profile.verification_status !== 'VERIFIED' && <div className="callout callout--muted">
@@ -190,16 +252,12 @@ function DashboardPage() {
             <div className="profile-card__actions"><ButtonLink to={routes.provider.profile} variant="secondary" size="sm">Edit profile</ButtonLink></div>
           </Card>
           <Card className="quick-card">
-            <Link to={routes.provider.opportunities}>Browse matched opportunities</Link>
-            <Link to={routes.provider.services}>Manage services and prices</Link>
-            <Link to={routes.provider.coverage}>Review coverage</Link>
-            <Link to={routes.provider.quotes}>Your quotations</Link>
-            <Link to={routes.provider.commitments}>Commitments</Link>
+            {presentation.quickLinks.map((item) => <Link key={item.to} to={item.to}>{item.label}</Link>)}
           </Card>
         </div>
       </div>
 
-      <Card className="dashboard-panel network-dashboard">
+      {(isManager || isWorker) && <Card className="dashboard-panel network-dashboard">
         <div className="dashboard-panel__head"><div><h2>{profile?.kind === 'WORKER' ? 'Managers and assignments' : 'Your network and team'}</h2><p>{profile?.kind === 'WORKER' ? 'Independent relationships across every Manager you work with.' : 'Workers you can assign to accepted customer events.'}</p></div><ButtonLink to={routes.provider.network} variant="quiet" size="sm">Open network</ButtonLink></div>
         <div className="network-dashboard__metrics">
           <div><span>{profile?.kind === 'WORKER' ? 'Active Managers' : 'Active Workers'}</span><strong>{activeNetwork.length}</strong></div>
@@ -207,8 +265,8 @@ function DashboardPage() {
           <div><span>Assignment invitations</span><strong>{assignmentInvitations.length}</strong></div>
           <div><span>Upcoming assignments</span><strong>{upcomingAssignments.length}</strong></div>
         </div>
-        <div className="network-dashboard__links"><Link to={routes.provider.network}>My network</Link><Link to={routes.provider.assignments}>Assignments</Link>{profile?.kind === 'MANAGER' && <Link to={routes.provider.networkDiscover}>Discover Workers</Link>}</div>
-      </Card>
+        <div className="network-dashboard__links"><Link to={routes.provider.network}>{isWorker ? 'My Manager network' : 'My network'}</Link><Link to={routes.provider.assignments}>Assignments</Link>{isManager && <Link to={routes.provider.networkDiscover}>Discover Workers</Link>}</div>
+      </Card>}
     </>}
   </section>
 }

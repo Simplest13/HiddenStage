@@ -6,7 +6,9 @@ import { Breadcrumb } from '../shared/ui/navigation'
 import { Button } from '../shared/ui/primitives'
 import { NotificationDropdown } from '../shared/ui/NotificationDropdown'
 import { ThemeToggle } from '../shared/ui/ThemeToggle'
-import { workspaceConfig, type WorkspaceAudience } from './workspaceConfig'
+import { profilesApi } from '../shared/api/backend/profiles'
+import { useApiData } from '../shared/api/backend/useApiData'
+import { getWorkspaceConfig, type WorkspaceAudience } from './workspaceConfig'
 import { Brand } from './PublicLayout'
 import { useAuth, useAuthActions } from '../app/auth/useAuth'
 import './layouts.css'
@@ -17,7 +19,11 @@ export function WorkspaceLayout({ audience }: { audience: WorkspaceAudience }) {
   const navigate = useNavigate()
   const auth = useAuth()
   const authActions = useAuthActions()
-  const config = workspaceConfig[audience]
+  const providerProfile = useApiData(
+    () => audience === 'provider' ? profilesApi.getProviderProfile() : Promise.resolve(null),
+    [audience],
+  )
+  const config = getWorkspaceConfig(audience, providerProfile.data?.kind)
   const current = config.items.find((item) => location.pathname === item.href || (item.href !== config.home && location.pathname.startsWith(`${item.href}/`)))
   const pageTitle = current?.label ?? config.title
   return <div className={`workspace workspace--${audience}`}>
@@ -29,6 +35,12 @@ export function WorkspaceLayout({ audience }: { audience: WorkspaceAudience }) {
       <nav aria-label={`${config.title} navigation`} className="workspace-nav">
         {config.items.map((item) => <NavLink key={item.href} to={item.href} end={item.href === config.home} onClick={() => setSidebarOpen(false)}><span className="workspace-nav__icon" aria-hidden="true">{item.icon}</span>{item.label}</NavLink>)}
       </nav>
+      {audience === 'provider' && providerProfile.error && (
+        <div role="alert">
+          <p>Could not load professional-specific navigation: {providerProfile.error}</p>
+          <Button variant="quiet" size="sm" onClick={providerProfile.reload}>Retry</Button>
+        </div>
+      )}
       <div className="workspace-sidebar__bottom">
         {auth.status === 'authenticated' && auth.user?.isStaff && audience !== 'admin' && (
           <Link to={routes.admin.home} className="workspace-nav__admin-switch" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: 'var(--color-primary-600, #4f46e5)' }}>
@@ -88,7 +100,7 @@ export function WorkspaceLayout({ audience }: { audience: WorkspaceAudience }) {
       </header>
       <main className="workspace-content" id="workspace-content">
         <Breadcrumb items={[{ label: 'Workspace', href: config.home }, { label: pageTitle }]} />
-        <Outlet />
+        <Outlet context={providerProfile.data} />
       </main>
     </div>
   </div>

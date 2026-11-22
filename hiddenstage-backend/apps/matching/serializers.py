@@ -48,7 +48,7 @@ class ProviderDetailSerializer(serializers.Serializer):
     completed_at = serializers.DateTimeField(allow_null=True, required=False)
     services = ProviderServiceSerializer(many=True, required=False)
     portfolio_items = PortfolioItemSerializer(many=True, required=False)
-    team_members = serializers.ListField(child=serializers.DictField(), required=False)
+    team_members = serializers.ListField(child=serializers.CharField(), required=False)
     rating = serializers.FloatField(allow_null=True, required=False)
     review_count = serializers.IntegerField(required=False)
 

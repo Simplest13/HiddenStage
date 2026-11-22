@@ -7,6 +7,8 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.accounts.models import UserRole
+from apps.commitments.models import Commitment
 from apps.core.permissions import IsCustomer, IsProvider
 from apps.events.services import get_owned_event
 from apps.matching.serializers import (
@@ -202,13 +204,18 @@ class ProviderDetailView(APIView):
         team_members_data = []
         if provider.kind == "MANAGER":
             team_members_data = [
-                {
-                    "id": str(tm.id),
-                    "name": tm.member.full_name or "Team Member",
-                    "permissions": tm.permissions,
-                }
+                tm.member.full_name or "Team Member"
                 for tm in ProfileTeamMember.objects.filter(owner=provider.user, is_active=True).select_related("member")
             ]
+
+        has_matching_commitment = (
+            request.user.is_authenticated
+            and request.user.role == UserRole.CUSTOMER
+            and Commitment.objects.filter(
+                provider=provider.user,
+                customer=request.user,
+            ).exists()
+        )
 
         payload = {
             "id": provider.id,
@@ -217,7 +224,7 @@ class ProviderDetailView(APIView):
             "headline": provider.headline,
             "kind": provider.kind,
             "description": provider.description,
-            "contact": provider.contact if is_owner or request.user.is_authenticated else "",
+            "contact": provider.contact if is_owner or has_matching_commitment else "",
             "verification_status": provider.verification_status,
             "categories": provider.declared_categories(),
             "coverage": provider.coverage.all(),
