@@ -138,7 +138,9 @@ class AccountSettingsSerializer(serializers.Serializer):
     email = serializers.EmailField(max_length=254, required=False)
     phone = serializers.CharField(max_length=20, required=False, allow_blank=True)
     username = serializers.CharField(max_length=50, required=False, allow_blank=True)
-    theme_preference = serializers.ChoiceField(choices=["light", "dark"], required=False)
+    theme_preference = serializers.ChoiceField(
+        choices=["light", "dark", "system", "LIGHT", "DARK", "SYSTEM"], required=False
+    )
 
     def validate_email(self, value):
         user = self.context.get("request").user

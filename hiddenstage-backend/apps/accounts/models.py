@@ -33,6 +33,9 @@ class ThemePreference(models.TextChoices):
     LIGHT = "LIGHT", "Light"
     DARK = "DARK", "Dark"
     SYSTEM = "SYSTEM", "System"
+    LIGHT_LOWER = "light", "Light"
+    DARK_LOWER = "dark", "Dark"
+    SYSTEM_LOWER = "system", "System"
 
 
 def normalize_email_address(email: str) -> str:
@@ -72,9 +75,6 @@ class User(AbstractBaseUser, PermissionsMixin, UUIDModel):
         max_length=50, unique=True, null=True, blank=True, db_index=True
     )
     avatar = models.FileField(upload_to="avatars/", null=True, blank=True)
-    theme_preference = models.CharField(
-        max_length=10, default="light", choices=[("light", "Light"), ("dark", "Dark")]
-    )
     full_name = models.CharField(max_length=150)
     phone = models.CharField(max_length=20, blank=True)
     role = models.CharField(max_length=20, choices=UserRole.choices, default=UserRole.CUSTOMER)
