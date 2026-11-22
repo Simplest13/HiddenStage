@@ -4,7 +4,7 @@
 .hero-banner {
   position: relative;
   overflow: hidden;
-  color: var(--color-paper);
+  color: var(--color-white);
   background:
     radial-gradient(circle at 85% 15%, rgba(255, 122, 0, 0.45), transparent 48%),
     radial-gradient(circle at 12% 85%, rgba(248, 182, 193, 0.28), transparent 45%),
@@ -221,13 +221,13 @@
 .benefits-grid p { margin: 0; color: var(--color-muted); font-size: 0.88rem; line-height: 1.65; }
 
 /* Supplier CTA ----------------------------------------------------------- */
-.pro-cta { display: grid; grid-template-columns: 1.25fr 0.75fr; gap: 2rem; padding: clamp(1.75rem, 4vw, 2.75rem); overflow: hidden; border-radius: var(--radius-lg); color: var(--color-paper); background: linear-gradient(145deg, #120a06 0%, #2b150c 50%, #6b3e26 100%); }
+.pro-cta { display: grid; grid-template-columns: 1.25fr 0.75fr; gap: 2rem; padding: clamp(1.75rem, 4vw, 2.75rem); overflow: hidden; border-radius: var(--radius-lg); color: var(--color-white); background: linear-gradient(145deg, #120a06 0%, #2b150c 50%, #6b3e26 100%); }
 .pro-cta .eyebrow { color: var(--color-rose); }
-.pro-cta h2 { margin: 0.55rem 0 0.7rem; color: var(--color-paper); font: 500 clamp(1.7rem, 3vw, 2.35rem)/1.15 var(--font-display); }
+.pro-cta h2 { margin: 0.55rem 0 0.7rem; color: var(--color-white); font: 500 clamp(1.7rem, 3vw, 2.35rem)/1.15 var(--font-display); }
 .pro-cta p { max-width: 34rem; margin: 0 0 1rem; color: #f5e4dc; font-size: 0.92rem; line-height: 1.65; }
 .pro-cta .check-list { margin-bottom: 1.4rem; color: #e8e3db; }
-.pro-cta .check-list li::before { color: var(--color-indigo); background: var(--color-champagne); }
-.pro-cta .button--secondary { border-color: var(--color-champagne); color: var(--color-paper); background: transparent; }
+.pro-cta .check-list li::before { color: #3a1e11; background: var(--color-champagne); }
+.pro-cta .button--secondary { border-color: var(--color-champagne); color: var(--color-white); background: transparent; }
 .pro-cta .button--secondary:hover { background: rgb(217 195 166 / 14%); }
 .pro-cta__panel { position: relative; display: grid; min-height: 15rem; align-content: center; justify-items: start; gap: 1.25rem; padding: 1.5rem; border: 1px solid rgb(217 195 166 / 30%); border-radius: var(--radius-md); }
 .pro-cta__quote { color: var(--color-champagne); font: italic 1.25rem/1.45 var(--font-display); }

@@ -53,12 +53,12 @@
 
 /* Authentication shell --------------------------------------------------- */
 .auth-layout { display: grid; min-height: 100vh; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); background: var(--color-paper); }
-.auth-layout__aside { position: relative; display: flex; flex-direction: column; justify-content: space-between; gap: 2.5rem; padding: clamp(2rem, 4vw, 3.5rem); overflow: hidden; color: var(--color-paper); background: linear-gradient(145deg, #120a06 0%, #2b150c 50%, #6b3e26 100%); }
+.auth-layout__aside { position: relative; display: flex; flex-direction: column; justify-content: space-between; gap: 2.5rem; padding: clamp(2rem, 4vw, 3.5rem); overflow: hidden; color: var(--color-white); background: linear-gradient(145deg, #120a06 0%, #2b150c 50%, #6b3e26 100%); }
 .auth-layout__aside::before, .auth-layout__aside::after { position: absolute; border: 1px solid rgba(248, 182, 193, 0.25); border-radius: 50%; content: ''; }
 .auth-layout__aside::before { right: -6rem; bottom: -8rem; width: 24rem; height: 24rem; }
 .auth-layout__aside::after { right: 2rem; bottom: 1rem; width: 13rem; height: 13rem; border-color: rgba(255, 122, 0, 0.28); }
 .auth-layout__aside > * { position: relative; z-index: 1; }
-.auth-layout__aside h2 { max-width: 26rem; margin: 0.75rem 0 1rem; color: var(--color-paper); font: 500 clamp(2rem, 3.4vw, 3rem)/1.08 var(--font-display); letter-spacing: -0.03em; }
+.auth-layout__aside h2 { max-width: 26rem; margin: 0.75rem 0 1rem; color: var(--color-white); font: 500 clamp(2rem, 3.4vw, 3rem)/1.08 var(--font-display); letter-spacing: -0.03em; }
 .auth-layout__aside p { max-width: 26rem; margin: 0 0 1.4rem; color: #f5e4dc; font-size: 0.95rem; line-height: 1.7; }
 .auth-layout__aside .eyebrow { color: var(--color-rose); }
 .auth-layout__list { display: grid; gap: 0.7rem; margin: 0; padding: 0; list-style: none; color: #f5e8d8; font-size: 0.9rem; }

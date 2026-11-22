@@ -106,7 +106,7 @@
 .profile-coverage { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0 0 0.6rem; padding: 0; list-style: none; }
 .profile-coverage li { padding: 0.35rem 0.6rem; border: 1px solid var(--color-line); border-radius: var(--radius-pill); color: var(--color-indigo); background: var(--color-paper-bright); font-size: 0.8rem; }
 .portfolio-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
-.portfolio-sample { position: relative; display: grid; height: 10.5rem; align-content: end; gap: 0.25rem; overflow: hidden; padding: 0.9rem; border-radius: var(--radius-md); color: var(--color-paper); background: linear-gradient(150deg, #b58f63, #77502f); }
+.portfolio-sample { position: relative; display: grid; height: 10.5rem; align-content: end; gap: 0.25rem; overflow: hidden; padding: 0.9rem; border-radius: var(--radius-md); color: var(--color-white); background: linear-gradient(150deg, #b58f63, #77502f); }
 .portfolio-sample--2 { background: linear-gradient(150deg, #9a5563, var(--color-burgundy)); }
 .portfolio-sample::before { position: absolute; top: -2rem; right: -1rem; width: 7rem; height: 7rem; border: 1px solid rgb(255 255 255 / 28%); border-radius: 50%; content: ''; }
 .portfolio-sample span { position: relative; z-index: 1; color: var(--color-champagne); font: 700 0.58rem var(--font-ui); letter-spacing: 0.12em; }
