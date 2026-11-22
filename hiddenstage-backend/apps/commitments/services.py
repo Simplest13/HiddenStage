@@ -11,7 +11,7 @@ most defended transaction in the system:
   as a 409 instead of a duplicate obligation.
 """
 
-from django.db import IntegrityError, transaction
+from django.db import IntegrityError, OperationalError, connection, transaction
 from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
@@ -186,9 +186,15 @@ def accept_quotation(
                     for item in selected
                 ]
             )
-    except IntegrityError as exc:
-        # Lost a race against another acceptance for the same quoted line.
-        raise Conflict("This quotation has already been accepted.") from exc
+    except (IntegrityError, OperationalError) as exc:
+        is_sqlite_lock = (
+            connection.vendor == "sqlite"
+            and isinstance(exc, OperationalError)
+            and "locked" in str(exc).lower()
+        )
+        if isinstance(exc, IntegrityError) or is_sqlite_lock:
+            raise Conflict("This quotation has already been accepted.") from exc
+        raise
 
     CommitmentAudit.objects.create(
         commitment=commitment,

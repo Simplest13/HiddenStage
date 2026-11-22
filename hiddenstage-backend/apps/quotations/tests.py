@@ -2,7 +2,7 @@
 
 from datetime import timedelta
 
-from django.db import DatabaseError, transaction
+from django.db import DatabaseError, connection, transaction
 from django.test import TestCase, override_settings
 from django.utils import timezone
 from rest_framework.test import APIClient
@@ -159,6 +159,8 @@ class QuotationLifecycleTests(TestCase):
         self.assertEqual(revision.notes, "")
 
     def test_database_trigger_blocks_raw_updates(self):
+        if connection.vendor != "postgresql":
+            self.skipTest("Database immutability trigger is PostgreSQL-only")
         quotation = submitted_quotation(self.provider, self.event)
         revision = quotation.revisions.get()
         with self.assertRaises(DatabaseError):
