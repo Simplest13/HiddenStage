@@ -1,36 +1,36 @@
-# Graph Report - HiddenStage  (2026-11-21)
+# Graph Report - HiddenStage  (2026-11-22)
 
 ## Corpus Check
-- 309 files · ~273,678 words
+- 327 files · ~290,617 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 22 file(s) not represented in the graph (top: .css 12, (none) 5, .example 2)
 
 ## Summary
-- 3555 nodes · 8899 edges · 158 communities (132 shown, 26 thin omitted)
-- Extraction: 92% EXTRACTED · 8% INFERRED · 0% AMBIGUOUS · INFERRED: 727 edges (avg confidence: 0.94)
+- 3780 nodes · 9290 edges · 182 communities (147 shown, 35 thin omitted)
+- Extraction: 92% EXTRACTED · 8% INFERRED · 0% AMBIGUOUS · INFERRED: 736 edges (avg confidence: 0.94)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `c5d40fc3`
+- Built from commit: `c9a61580`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
 - Auth Guards & Admin Routing
 - Events Domain Models & APIs
-- Quotation UI & Acceptance Dialogs
-- Administration Serializers
+- EventWorkspacePage.tsx
+- IsStaffUser
 - Quotation Models & Revisions
 - Admin Pages & Moderation UI
 - AuthProvider.tsx
-- quotations/services.py
+- Event
 - Provider Catalog & Routing
 - events/models.py
 - CI/CD Workflows
-- test_attachments.py
+- AttachmentStorageTests
 - Network & Assignment Serializers
 - types.ts
-- Commitment
+- administration/services.py
 - network/services.py
 - Module 16
 - Module 17
@@ -43,28 +43,28 @@
 - modern-screenshot.umd.js
 - Module 25
 - el
-- make_customer
-- Module 28
+- make_provider
+- commitments/views.py
 - initPageChat
 - Module 31
-- User
-- ProfileTeamMember
+- ProviderProfile
+- Phase Breakdown
 - verification_required
 - showToast
 - new-work.md
 - profiles/views.py
 - Module 38
-- Module 39
+- emails.py
 - live.md
 - HiddenStage Development Recovery Report
-- Module 42
+- CustomerPages.tsx
 - RegisterSerializer
 - SKILL.md
-- Module 45
+- EmailVerificationToken
 - submitted_quotation
 - updatePendingCounter
 - Module 48
-- ProviderProfile
+- ProviderCoverage
 - Responsive Design
 - HiddenStage — Milestone 3 Completion Report
 - Module 52
@@ -98,7 +98,7 @@
 - Deployment Architecture
 - new-work-world.md
 - AdminPages.tsx
-- Module 83
+- QuotationItem
 - New visual work
 - Module 85
 - Module 86
@@ -106,7 +106,7 @@
 - optimize.md
 - Scan mode (approach C: auto-extract, then confirm descriptive language)
 - 0002_immutability_triggers.py
-- VerificationDisabledRegistrationTests
+- CustomerBookingsPage.tsx
 - Module 92
 - critique.md
 - Simplify the Design
@@ -132,7 +132,7 @@
 - iOS platform
 - Operate mode depth (and Read notes)
 - Shape
-- adapt.native.md
+- ServiceRequirement
 - Android platform
 - Persona-Based Design Testing
 - Extract Flow
@@ -147,32 +147,55 @@
 - Frontend Architecture
 - HiddenStage Frontend
 - Impeccable Documenter
-- Impeccable Documenter
+- WorkerAssignmentSerializer
 - Visualize: Direction Comps & Asset Production
-- parseRupeesToPaise
+- APIView
 - README.md
 - RocketRide: AI Pipeline & App Platform
-- 3. New database models and fields
+- User
 - Production Hardening Plan
 - RocketRide: AI Pipeline & App Platform
 - Scoring the report
 - HiddenStage Engineering Roadmap
 - hasTextRows
-- parse_time
+- accounts/views.py
 - ROUTE_MAP.md
 - generated/README.md
+- ProviderOpportunityTests
+- settings.py
+- AdminCommitmentSerializer
+- PackageAcceptanceTests
+- administration/views.py
+- administration/serializers.py
+- ProviderOnboardingPage
+- Business
+- HiddenStage Workflow Gap Analysis
+- Responsive Design
+- UserSerializer
+- HiddenStage — Event Professional Profile & Portfolio System Specification
+- AccountSettingsSerializer
+- AdminUserSerializer
+- normalize_username
+- QuotationLifecycleTests
+- CustomerNetworkPage
+- NotificationDropdown
+- UserManager
+- HiddenStage Decision Log
+- ChangePasswordSerializer
+- ProviderOnboardingTests
+- CUSTOMER_DASHBOARD_ECOSYSTEM_PLAN.md
 
 ## God Nodes (most connected - your core abstractions)
-1. `Button` - 70 edges
-2. `ProviderProfile` - 59 edges
-3. `User` - 52 edges
-4. `Event` - 50 edges
-5. `Spinner()` - 49 edges
-6. `Badge()` - 44 edges
-7. `useApiData()` - 42 edges
+1. `ProviderProfile` - 63 edges
+2. `User` - 59 edges
+3. `Button` - 50 edges
+4. `Event` - 44 edges
+5. `Commitment` - 42 edges
+6. `useApiData()` - 42 edges
+7. `UUIDModel` - 41 edges
 8. `make_customer()` - 41 edges
-9. `Input` - 41 edges
-10. `Commitment` - 40 edges
+9. `formatPaise()` - 39 edges
+10. `react` - 39 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `Feature matrix` --references--> `UserRole`  [INFERRED]
@@ -189,79 +212,79 @@
 ## Import Cycles
 - None detected.
 
-## Communities (158 total, 26 thin omitted)
+## Communities (182 total, 35 thin omitted)
 
 ### Community 0 - "Auth Guards & Admin Routing"
 Cohesion: 0.06
-Nodes (58): SessionUser, useAuth(), useAuthActions(), AdminLoginPage, RequireAdmin(), RequireAdminOrLogin(), RequireAuthentication(), RequireCompletedProvider() (+50 more)
+Nodes (61): useAuth(), useAuthActions(), useTheme(), AdminLoginPage, RequireAdmin(), RequireAdminOrLogin(), RequireAuthentication(), RequireCompletedProvider() (+53 more)
 
 ### Community 1 - "Events Domain Models & APIs"
+Cohesion: 0.04
+Nodes (30): 3. Defects found and fixed, Phase 2 — Functional Bug Fixes, detect_content_type(), scan_attachment(), validate_attachment_upload(), ScanStatus, CustomerBookingSerializer, Meta (+22 more)
+
+### Community 2 - "EventWorkspacePage.tsx"
 Cohesion: 0.05
-Nodes (28): 3. Defects found and fixed, Phase 2 — Functional Bug Fixes, detect_content_type(), scan_attachment(), validate_attachment_upload(), Event, Meta, ScanStatus (+20 more)
+Nodes (81): customerEventEditPath(), AdminAuditPage(), AdminBusinessesPage(), AdminModerationPage(), AdminOverviewPage(), AdminPages(), CommitmentsPage(), RequestsPage() (+73 more)
 
-### Community 2 - "Quotation UI & Acceptance Dialogs"
-Cohesion: 0.06
-Nodes (53): QuotesPage, customerEventEditPath(), Entry, EventDetailPage(), EventProvidersPage(), EventQuotesPage(), EventWorkspacePage(), refreshAll() (+45 more)
-
-### Community 3 - "Administration Serializers"
-Cohesion: 0.07
-Nodes (48): AdminAuditAction, AdminBusinessRepSerializer, Meta, AdminBusinessSerializer, Meta, AdminBusinessUpdateSerializer, AdminCategorySerializer, Meta (+40 more)
+### Community 3 - "IsStaffUser"
+Cohesion: 0.17
+Nodes (12): AdminCategorySerializer, Meta, AdminCategoryUpdateSerializer, UnifiedAuditEntrySerializer, list_unified_audit_entries(), _matches_query(), AdminAuditListView, AdminCategoryDetailView (+4 more)
 
 ### Community 4 - "Quotation Models & Revisions"
-Cohesion: 0.07
-Nodes (30): QuotationAdmin, QuotationItemInline, QuotationRevisionAdmin, QuotationRevisionInline, Quotation, Meta, QuotationItem, Meta (+22 more)
+Cohesion: 0.08
+Nodes (33): verification_satisfied(), get_overview_metrics(), ItemKind, Quotation, Meta, QuotationRevision, Meta, QuotationStatus (+25 more)
 
 ### Community 5 - "Admin Pages & Moderation UI"
 Cohesion: 0.09
-Nodes (50): providerQuotePath(), AdminAuditPage(), AdminBusinessesPage(), AdminModerationPage(), AdminOverviewPage(), AdminPages(), CommitmentsPage(), QuotesPage() (+42 more)
+Nodes (36): providerQuotePath(), RequestRow(), groupItems(), QuoteBreakdown(), RevisionStatusBadge(), AssignmentDetailPage(), AssociationManager(), calculateProfileScore() (+28 more)
 
 ### Community 6 - "AuthProvider.tsx"
-Cohesion: 0.16
-Nodes (17): anonymousAuthState, AuthActions, AuthContext, authenticated(), AuthProvider(), toSessionUser(), AccountRole, AuthState (+9 more)
+Cohesion: 0.20
+Nodes (14): anonymousAuthState, AuthActions, AuthContext, authenticated(), AuthProvider(), toSessionUser(), AccountRole, AuthState (+6 more)
 
-### Community 7 - "quotations/services.py"
-Cohesion: 0.09
-Nodes (32): verification_satisfied(), get_overview_metrics(), BusinessRuleViolation, Conflict, event_status(), EventStatus, RequirementStatus, validate_event_can_be_edited() (+24 more)
+### Community 7 - "Event"
+Cohesion: 0.07
+Nodes (34): Event, Meta, EventStatus, RequirementStatus, validate_event_can_be_edited(), can_access_event_attachments(), create_event_with_requirements(), ensure_event_editable() (+26 more)
 
 ### Community 8 - "Provider Catalog & Routing"
-Cohesion: 0.07
-Nodes (43): PublicPages, providerDetailPath(), serviceCategoryPath(), categoryName(), DemoProvider, demoProviders, serviceCategories, ServiceCategory (+35 more)
+Cohesion: 0.08
+Nodes (40): PublicPages, providerDetailPath(), serviceCategoryPath(), categoryName(), DemoProvider, demoProviders, serviceCategories, ServiceCategory (+32 more)
 
 ### Community 9 - "events/models.py"
-Cohesion: 0.05
-Nodes (35): Migration, Migration, AdminAuditLog, Meta, Migration, money_field(), non_negative_check(), TimeStampedModel (+27 more)
+Cohesion: 0.04
+Nodes (43): Migration, Migration, Migration, Migration, Migration, Migration, Notification, Meta (+35 more)
 
 ### Community 10 - "CI/CD Workflows"
 Cohesion: 0.05
 Nodes (45): concurrency, cancel-in-progress, group, run, defaults, env, name, runs-on (+37 more)
 
-### Community 11 - "test_attachments.py"
-Cohesion: 0.07
-Nodes (6): attachment_url(), AttachmentStorageTests, MediaStorageConfigurationTests, _database_from_url(), env_int(), _samesite()
+### Community 11 - "AttachmentStorageTests"
+Cohesion: 0.21
+Nodes (3): attachment_url(), AttachmentStorageTests, MediaStorageConfigurationTests
 
 ### Community 12 - "Network & Assignment Serializers"
-Cohesion: 0.08
-Nodes (31): 4. Generated API schema — CLOSED, HIGH-4 — OpenAPI schema silently omits the network endpoints (OPEN), IsProvider, AssignmentActionSerializer, AssignmentCreateSerializer, AvailabilityQuerySerializer, AvailabilityResponseSerializer, NetworkAssociationEndSerializer (+23 more)
+Cohesion: 0.06
+Nodes (36): 4. Generated API schema — CLOSED, HIGH-4 — OpenAPI schema silently omits the network endpoints (OPEN), AssignmentActionSerializer, AssignmentCreateSerializer, AvailabilityQuerySerializer, AvailabilityResponseSerializer, ChatMessageSerializer, Meta (+28 more)
 
 ### Community 13 - "types.ts"
 Cohesion: 0.05
-Nodes (59): assignmentStatusLabels, Page, eventsApi, EventWritePayload, RequirementPayload, DiscoveryParams, PublicDirectoryParams, QuoteItemPayload (+51 more)
+Nodes (50): ProviderOnboardingPage, assignmentStatusLabels, Page, CoverageDraft, currentYear, RoleData, roles, talentCategories (+42 more)
 
-### Community 14 - "Commitment"
-Cohesion: 0.05
-Nodes (34): 2. Existing functionality reused, CommitmentAdmin, CommitmentAuditInline, CommitmentLineInline, Commitment, Meta, CommitmentAction, CommitmentAudit (+26 more)
+### Community 14 - "administration/services.py"
+Cohesion: 0.09
+Nodes (16): CommitmentAdmin, CommitmentAuditInline, CommitmentLineInline, CommitmentAction, CommitmentAudit, Meta, CommitmentLine, Meta (+8 more)
 
 ### Community 15 - "network/services.py"
-Cohesion: 0.08
-Nodes (43): 2. New models (`apps/network`), `NetworkAssociation`, `NetworkInvitation`, `WorkerAssignment`, 6. Verified clean (no action), Changes delivered in Milestone 3, AssignmentStatus, AssociationStatus (+35 more)
+Cohesion: 0.07
+Nodes (47): 3. New database models and fields, `NetworkAssociation`, `NetworkInvitation`, `WorkerAssignment`, 2. New models (`apps/network`), `NetworkAssociation`, `NetworkInvitation`, `WorkerAssignment` (+39 more)
 
 ### Community 16 - "Module 16"
 Cohesion: 0.08
 Nodes (32): devDependencies, jsdom@^29.1.1, oxlint@^1.89.0, @playwright/test@^1.64.1, @testing-library/dom@^10.4.2, @testing-library/jest-dom@^7.0.1, @testing-library/react@^16.3.3, @testing-library/user-event@^14.6.8 (+24 more)
 
 ### Community 17 - "Module 17"
-Cohesion: 0.07
-Nodes (49): EventPages, allowedTypes, Attachments(), handleDownload(), BasicDetails(), blankRequirement(), blankValues(), budgetToPaise() (+41 more)
+Cohesion: 0.05
+Nodes (49): EventPages, LegacyEventRedirect, customerEventPath(), allowedTypes, blankRequirement(), blankValues(), budgetToPaise(), cryptoKey() (+41 more)
 
 ### Community 18 - "Module 18"
 Cohesion: 0.06
@@ -299,13 +322,13 @@ Nodes (27): build, command, depends_on, env_file, environment, ports, condition,
 Cohesion: 0.08
 Nodes (54): actionLabel(), applyConfigureBarChrome(), bindConfigureCountPillTooltip(), bindConfigureInlineControlHover(), bindConfigureModifierPillHover(), buildConfigureActionControl(), buildConfigureCountControl(), buildConfigureRow() (+46 more)
 
-### Community 27 - "make_customer"
-Cohesion: 0.06
-Nodes (16): UserRole, AdminAuthorizationTests, AdminWorkflowTests, AcceptanceVerificationSwitchTests, ensure_categories(), invite_and_accept(), make_customer(), make_event() (+8 more)
+### Community 27 - "make_provider"
+Cohesion: 0.12
+Nodes (8): ensure_categories(), invite_and_accept(), make_event(), make_provider(), make_user(), make_provider_of_kind(), QuotationPermissionTests, QuotationVerificationSwitchTests
 
-### Community 28 - "Module 28"
-Cohesion: 0.14
-Nodes (14): get_owned_event(), Invitation, Meta, InvitationCreateSerializer, InvitationSerializer, Meta, ProviderInvitationSerializer, Meta (+6 more)
+### Community 28 - "commitments/views.py"
+Cohesion: 0.09
+Nodes (27): Invoice, Meta, AcceptanceRequestSerializer, CommitmentAuditSerializer, Meta, CommitmentDetailSerializer, Meta, CommitmentLineSerializer (+19 more)
 
 ### Community 30 - "initPageChat"
 Cohesion: 0.08
@@ -315,37 +338,37 @@ Nodes (52): armPageChatForTyping(), attachSteerFocusDebug(), attachSteerFocusGua
 Cohesion: 0.09
 Nodes (22): compilerOptions, allowArbitraryExtensions, allowImportingTsExtensions, erasableSyntaxOnly, forceConsistentCasingInFileNames, jsx, lib, module (+14 more)
 
-### Community 32 - "User"
-Cohesion: 0.08
-Nodes (12): UserAdmin, User, Meta, normalize_phone(), normalize_pin_code(), normalize_text(), validate_indian_mobile(), validate_pin_code() (+4 more)
-
-### Community 33 - "ProfileTeamMember"
+### Community 32 - "ProviderProfile"
 Cohesion: 0.05
-Nodes (33): Approved constraints, HiddenStage Decision Log, Unresolved decisions, Workspace decisions for this restart, Global Constraints, HiddenStage Functional Upgrade Implementation Plan, Phase 1 — Codebase Reconnaissance & Schema Synchronization, Phase 3 — Professional Identity Architecture & Onboarding (+25 more)
+Nodes (26): ThemePreference, UserRole, AdminWorkflowTests, event_status(), normalize_pin_code(), normalize_text(), validate_pin_code(), EventRequirementInputSerializer (+18 more)
+
+### Community 33 - "Phase Breakdown"
+Cohesion: 0.20
+Nodes (9): Global Constraints, HiddenStage Functional Upgrade Implementation Plan, Phase 1 — Codebase Reconnaissance & Schema Synchronization, Phase 3 — Professional Identity Architecture & Onboarding, Phase 4 — Manager Search & Network Association Requests, Phase 5 — Profile & Portfolio Management Upgrade, Phase 6 — Discovery, Dashboard, & UI Polish, Phase 7 — Verification & Documentation (+1 more)
 
 ### Community 34 - "verification_required"
-Cohesion: 0.13
-Nodes (3): verification_required(), RegistrationTests, VerificationPolicyTests
+Cohesion: 0.09
+Nodes (5): verification_required(), RegistrationTests, VerificationDisabledRegistrationTests, VerificationPolicyTests, make_customer()
 
 ### Community 35 - "showToast"
 Cohesion: 0.08
 Nodes (41): abandonForeignSession(), abandonSupersededGo(), applyEditing(), buildLocatorForLeaf(), collectEditableTextRows(), visit(), copyEditContainerContext(), copyEditLeafContext() (+33 more)
 
 ### Community 36 - "new-work.md"
-Cohesion: 0.06
-Nodes (29): Craft (deprecated alias), Monorepo notes, Opting out of the boot check, Step 1: Run the pass, Step 2: Act by severity, Step 3: Deprecated fields are binding, Step 4: Do not overclaim on truth drift, Step 5: Compact DESIGN.md only with consent (+21 more)
+Cohesion: 0.05
+Nodes (33): Craft (deprecated alias), Impeccable Documenter, Input Contract, Output Contract, Workflow, Monorepo notes, Opting out of the boot check, Step 1: Run the pass (+25 more)
 
 ### Community 37 - "profiles/views.py"
-Cohesion: 0.06
-Nodes (27): 3.1 Public Discovery & Profile Endpoints (`apps/matching`), IsCustomer, ReadOnly, HealthView, DiscoveryQuerySerializer, OpportunityRequirementSerializer, ProviderDetailSerializer, ProviderMatchSerializer (+19 more)
+Cohesion: 0.04
+Nodes (41): Executive Summary, 3.1 Public Discovery & Profile Endpoints (`apps/matching`), Changes delivered in Milestone 4 (Functional Upgrade & Professional Architecture), IsCustomer, IsCustomerOrProvider, IsProvider, ReadOnly, DiscoveryQuerySerializer (+33 more)
 
 ### Community 38 - "Module 38"
 Cohesion: 0.10
 Nodes (19): compilerOptions, allowImportingTsExtensions, erasableSyntaxOnly, forceConsistentCasingInFileNames, lib, module, moduleDetection, noEmit (+11 more)
 
-### Community 39 - "Module 39"
-Cohesion: 0.12
-Nodes (16): _frontend_link(), send_password_reset_email(), send_verification_email(), EmailOnlySerializer, LoginSerializer, TokenSerializer, UserSerializer, Meta (+8 more)
+### Community 39 - "emails.py"
+Cohesion: 0.27
+Nodes (5): _frontend_link(), send_password_reset_email(), send_verification_email(), EmailOnlySerializer, PasswordResetRequestView
 
 ### Community 40 - "live.md"
 Cohesion: 0.06
@@ -355,49 +378,49 @@ Nodes (33): Apply at system scale, Audit before choosing, Choose a strategy, Con
 Cohesion: 0.06
 Nodes (31): Baseline verification, Completed work, Failed or blocked work, HiddenStage Development Recovery Report, Last known checkpoint, Partially completed work, Pending work, Recommended continuation (+23 more)
 
-### Community 42 - "Module 42"
-Cohesion: 0.23
-Nodes (11): customerEventPath(), CustomerPages(), DashboardPage(), firstName(), latestTotal(), Page, RequestRow(), RequestsPage() (+3 more)
+### Community 42 - "CustomerPages.tsx"
+Cohesion: 0.11
+Nodes (13): CustomerPages, CustomerPages(), DashboardPage(), firstName(), latestTotal(), Page, SettingsPage(), useOrganiserData() (+5 more)
 
 ### Community 44 - "SKILL.md"
 Cohesion: 0.07
 Nodes (25): Before you finish, Scope is sovereign, The amplification, The skeleton test, Why it reads flat, Craft floor, Refuse, Verify (+17 more)
 
-### Community 45 - "Module 45"
+### Community 45 - "EmailVerificationToken"
 Cohesion: 0.17
-Nodes (8): hash_token(), PasswordResetToken, Meta, SingleUseToken, Meta, PasswordResetConfirmSerializer, InvalidOrExpiredToken, PasswordResetConfirmView
+Nodes (8): 2. What was preserved, EmailVerificationToken, Meta, hash_token(), PasswordResetToken, Meta, SingleUseToken, Meta
 
 ### Community 46 - "submitted_quotation"
-Cohesion: 0.12
-Nodes (6): AcceptanceSetup, commitment_id(), PackageAcceptanceTests, SimpleAcceptanceTests, submitted_quotation(), QuotationLifecycleTests
+Cohesion: 0.25
+Nodes (4): AcceptanceSetup, commitment_id(), SimpleAcceptanceTests, submitted_quotation()
 
 ### Community 47 - "updatePendingCounter"
 Cohesion: 0.17
 Nodes (27): clearStoredManualApplyState(), fetchPendingCount(), handleManualEditActivity(), hidePendingApplyDock(), manualApplyLoadingText(), manualApplyStateKey(), manualEditEventForCurrentPage(), numberOrNull() (+19 more)
 
 ### Community 48 - "Module 48"
-Cohesion: 0.21
-Nodes (9): App(), AppProviders(), queryClient, routeConfig, router, customer, renderRoute(), renderRoute() (+1 more)
+Cohesion: 0.20
+Nodes (10): App(), AppProviders(), queryClient, routeConfig, router, customer, renderRoute(), renderRoute() (+2 more)
 
-### Community 49 - "ProviderProfile"
-Cohesion: 0.05
-Nodes (29): 1. Existing functionality reused, 1. Overview & Objective, 2.1 Authoritative Neon PostgreSQL Database Models, 2. Architecture & Data Model, 3.2 Provider Self-Management Endpoints (`apps/profiles`), 3. API Infrastructure, 4.1 Unified Profile Management (`/app/provider/profile`), 4.2 Customer-Facing Public Profile (`/providers/:id` & `/providers/:username`) (+21 more)
+### Community 49 - "ProviderCoverage"
+Cohesion: 0.12
+Nodes (13): 1. Existing functionality reused, 2.1 Authoritative Neon PostgreSQL Database Models, BusinessAdmin, BusinessRepresentativeInline, CustomerProfileAdmin, ProviderCoverageInline, ProviderProfileAdmin, ProviderServiceInline (+5 more)
 
 ### Community 50 - "Responsive Design"
 Cohesion: 0.08
-Nodes (25): Assess Adaptation Challenge, Breakpoints: Content-Driven, Content Adaptation, Desktop Adaptation (Mobile → Desktop), Detect Input Method, Not Just Screen Size, Email Adaptation (Web → Email), Implement Adaptations, Layout Adaptation Patterns (+17 more)
+Nodes (22): Assess Adaptation Challenge, Content Adaptation, Desktop Adaptation (Mobile → Desktop), Email Adaptation (Web → Email), Implement Adaptations, Layout Adaptation Techniques, Mobile Adaptation (Desktop → Mobile), Adaptation Strategies (+14 more)
 
 ### Community 51 - "HiddenStage — Milestone 3 Completion Report"
 Cohesion: 0.08
 Nodes (24): 10. Notification behavior, 11. Tests performed and actual results, 12. Known limitations, 13. Deferred decisions, 14. Remaining work for the next milestone, 15. Files changed for this milestone, 1. What was implemented, 4. Migrations (+16 more)
 
 ### Community 52 - "Module 52"
-Cohesion: 0.14
-Nodes (3): EmailBackend, normalize_email_address(), UserManager
+Cohesion: 0.16
+Nodes (4): EmailBackend, normalize_email_address(), LoginSerializer, LoginView
 
 ### Community 54 - "CustomerProfile"
-Cohesion: 0.12
-Nodes (9): CustomerProfile, Meta, CustomerProfileSerializer, Meta, ManagerSearchSerializer, Meta, CustomerProfileView, ManagerSearchView (+1 more)
+Cohesion: 0.08
+Nodes (11): CustomerProfile, Meta, CustomerProfileSerializer, Meta, ManagerSearchSerializer, Meta, ProviderProfileSerializer, Meta (+3 more)
 
 ### Community 55 - "initGlobalBar"
 Cohesion: 0.12
@@ -456,8 +479,8 @@ Cohesion: 0.11
 Nodes (18): 10. Remaining blockers, 11. Exact next steps to deploy, 1. What changed, 3. How the switch works, 4. Authentication test results, 5. Production build, 6. Backend checks, 7. Database status (+10 more)
 
 ### Community 70 - "react"
-Cohesion: 0.12
-Nodes (12): Tabs(), Drawer(), OverlayProps, useOverlay(), ButtonProps, FieldProps, InputProps, ToastMessage (+4 more)
+Cohesion: 0.17
+Nodes (5): Tabs(), ToastMessage, ToastContext, ToastContextValue, ToastTone
 
 ### Community 71 - "onAnnotDown"
 Cohesion: 0.18
@@ -504,8 +527,12 @@ Cohesion: 0.13
 Nodes (11): Comps, Directions, Operate, Comps, Directions, Persuade and Experience, Comps, Directions (+3 more)
 
 ### Community 82 - "AdminPages.tsx"
-Cohesion: 0.20
-Nodes (11): AdminPages, adminApi, AdminAuditEntry, AdminBusiness, AdminCategory, AdminCommitment, AdminEvent, AdminOverviewData (+3 more)
+Cohesion: 0.10
+Nodes (28): AdminPages, Attachments(), handleDownload(), adminApi, AdminAuditEntry, AdminBusiness, AdminCategory, AdminCommitment (+20 more)
+
+### Community 83 - "QuotationItem"
+Cohesion: 0.08
+Nodes (12): AdminAuditLogAdmin, AdminAuditLog, Meta, InvitationAdmin, QuotationAdmin, QuotationItemInline, QuotationRevisionAdmin, QuotationRevisionInline (+4 more)
 
 ### Community 84 - "New visual work"
 Cohesion: 0.14
@@ -523,9 +550,9 @@ Nodes (13): Animation Performance, Assess Performance Issues, Core Web Vitals Op
 Cohesion: 0.15
 Nodes (13): Component translation rules, Narrative mapping, Scan mode (approach C: auto-extract, then confirm descriptive language), Schema, Step 1: Find the design assets, Step 2: Auto-extract what can be auto-extracted, Step 2b: Stage the frontmatter, Step 3: Ask the user for qualitative language (+5 more)
 
-### Community 91 - "VerificationDisabledRegistrationTests"
-Cohesion: 0.17
-Nodes (4): 2. What was preserved, EmailVerificationToken, Meta, VerificationDisabledRegistrationTests
+### Community 91 - "CustomerBookingsPage.tsx"
+Cohesion: 0.10
+Nodes (19): CustomerBookingsPage, CustomerNetworkPage, CustomerPaymentsPage, CustomerBookingsPage(), LIFECYCLE_STEPS, CustomerPaymentsPage(), handleSimulatePayment(), loadData() (+11 more)
 
 ### Community 93 - "critique.md"
 Cohesion: 0.17
@@ -623,9 +650,9 @@ Nodes (9): Color, Components, Layout, Motion, Operate mode depth (and Read notes
 Cohesion: 0.22
 Nodes (8): Cadence, Confirm and stop, Phase 1: Discovery interview, Phase 2: Resolve the design direction, Phase 3: Write the brief, Round 1: purpose, people, and outcome, Round 2: material, behavior, and boundaries, Shape
 
-### Community 129 - "adapt.native.md"
-Cohesion: 0.25
-Nodes (7): Adaptation Strategies, Assess Adaptation Challenge, Implement & Verify, Orientation & foldables, Phone → Tablet (iPad / large screens), Platform → platform (iOS ↔ Android), Web → native (porting a website or web app)
+### Community 129 - "ServiceRequirement"
+Cohesion: 0.08
+Nodes (7): EventAdmin, EventAttachmentInline, ServiceRequirementInline, EventAttachment, Meta, ServiceRequirement, Meta
 
 ### Community 130 - "Android platform"
 Cohesion: 0.25
@@ -683,17 +710,17 @@ Nodes (5): HiddenStage Frontend, Project map, Quality commands, Requirements, Se
 Cohesion: 0.40
 Nodes (4): Impeccable Documenter, Input Contract, Output Contract, Workflow
 
-### Community 144 - "Impeccable Documenter"
-Cohesion: 0.40
-Nodes (4): Impeccable Documenter, Input Contract, Output Contract, Workflow
+### Community 144 - "WorkerAssignmentSerializer"
+Cohesion: 0.18
+Nodes (6): NetworkAssociationSerializer, Meta, provider_summary(), WorkerAssignmentSerializer, Meta, NetworkAssociationListView
 
 ### Community 145 - "Visualize: Direction Comps & Asset Production"
 Cohesion: 0.40
 Nodes (5): After approval: the comp becomes a spec, Generate three compositional options, One approval point, Plates and provenance, Visualize: Direction Comps & Asset Production
 
-### Community 146 - "parseRupeesToPaise"
-Cohesion: 0.50
-Nodes (5): submit(), ensureDraft(), saveDraft(), submit(), parseRupeesToPaise()
+### Community 146 - "APIView"
+Cohesion: 0.13
+Nodes (10): NotificationSerializer, Meta, PasswordResetConfirmSerializer, CheckUsernameView, CsrfTokenView, EmailResendView, LogoutView, MarkNotificationsReadView (+2 more)
 
 ### Community 147 - "README.md"
 Cohesion: 0.40
@@ -703,9 +730,9 @@ Nodes (4): HiddenStage, HiddenStage, HiddenStage, HiddenStage
 Cohesion: 0.50
 Nodes (3): Before writing ANY RocketRide code, Documentation, RocketRide: AI Pipeline & App Platform
 
-### Community 149 - "3. New database models and fields"
-Cohesion: 0.50
-Nodes (4): 3. New database models and fields, `NetworkAssociation`, `NetworkInvitation`, `WorkerAssignment`
+### Community 149 - "User"
+Cohesion: 0.13
+Nodes (4): 2. Existing functionality reused, UserAdmin, User, Meta
 
 ### Community 150 - "Production Hardening Plan"
 Cohesion: 0.50
@@ -719,23 +746,79 @@ Nodes (3): Before writing ANY RocketRide code, Documentation, RocketRide: AI Pip
 Cohesion: 0.50
 Nodes (4): Issue Severity (P0–P3), Reference Material, Score Summary, Scoring the report
 
+### Community 159 - "settings.py"
+Cohesion: 0.17
+Nodes (3): _database_from_url(), env_int(), _samesite()
+
+### Community 160 - "AdminCommitmentSerializer"
+Cohesion: 0.23
+Nodes (9): AdminCommitmentSerializer, Meta, AdminEventSerializer, Meta, AdminReasonSerializer, AdminCommitmentListView, AdminCommitmentReleaseView, AdminEventListView (+1 more)
+
+### Community 162 - "administration/views.py"
+Cohesion: 0.44
+Nodes (9): AdminAuditAction, create_category_as_admin(), _log(), release_commitment_as_admin(), set_provider_verification(), update_business_admin(), update_category_as_admin(), update_user_admin() (+1 more)
+
+### Community 163 - "administration/serializers.py"
+Cohesion: 0.23
+Nodes (8): AdminBusinessRepSerializer, Meta, AdminProviderSerializer, Meta, ProviderVerificationActionSerializer, AdminProviderVerificationView, BusinessRepresentative, Meta
+
+### Community 164 - "ProviderOnboardingPage"
+Cohesion: 0.23
+Nodes (8): blankLocation(), ProviderOnboardingPage(), payload(), roleList(), saveProgress(), setRoleValue(), submit(), toggleRoleList()
+
+### Community 165 - "Business"
+Cohesion: 0.27
+Nodes (7): AdminBusinessSerializer, Meta, AdminBusinessUpdateSerializer, AdminBusinessDetailView, AdminBusinessListView, Business, Meta
+
+### Community 166 - "HiddenStage Workflow Gap Analysis"
+Cohesion: 0.20
+Nodes (9): Changes delivered in Milestone 2, Changes delivered in Milestone 3, Decisions requiring approval, Feature matrix, HiddenStage Workflow Gap Analysis, Remaining work, in dependency order, Status at a glance, Verification performed (+1 more)
+
+### Community 167 - "Responsive Design"
+Cohesion: 0.20
+Nodes (10): Breakpoints: Content-Driven, Detect Input Method, Not Just Screen Size, Layout Adaptation Patterns, Mobile-First: Write It Right, Picture Element for Art Direction, Responsive Design, Responsive Images: Get It Right, Safe Areas: Handle the Notch (+2 more)
+
+### Community 168 - "UserSerializer"
+Cohesion: 0.29
+Nodes (6): TokenSerializer, UserSerializer, Meta, AvatarUploadView, EmailVerifyView, MeView
+
+### Community 169 - "HiddenStage — Event Professional Profile & Portfolio System Specification"
+Cohesion: 0.22
+Nodes (8): 1. Overview & Objective, 2. Architecture & Data Model, 3.2 Provider Self-Management Endpoints (`apps/profiles`), 3. API Infrastructure, 4.1 Unified Profile Management (`/app/provider/profile`), 4.2 Customer-Facing Public Profile (`/providers/:id` & `/providers/:username`), 4. Frontend Experience & WedMeGood Structure, HiddenStage — Event Professional Profile & Portfolio System Specification
+
+### Community 170 - "AccountSettingsSerializer"
+Cohesion: 0.33
+Nodes (4): AccountSettingsSerializer, AccountSettingsView, normalize_phone(), validate_indian_mobile()
+
+### Community 171 - "AdminUserSerializer"
+Cohesion: 0.31
+Nodes (5): AdminUserSerializer, Meta, AdminUserUpdateSerializer, AdminUserDetailView, AdminUserListView
+
+### Community 174 - "CustomerNetworkPage"
+Cohesion: 0.29
+Nodes (3): CustomerNetworkPage(), handleConnect(), loadData()
+
+### Community 177 - "HiddenStage Decision Log"
+Cohesion: 0.40
+Nodes (4): Approved constraints, HiddenStage Decision Log, Unresolved decisions, Workspace decisions for this restart
+
 ## Knowledge Gaps
-- **26 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **35 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `User` connect `User` to `Milestone 3 — Manager–Worker Network & Assignment Management Plan`, `Events Domain Models & APIs`, `verification_required`, `Administration Serializers`, `ProfileTeamMember`, `profiles/views.py`, `Module 39`, `quotations/services.py`, `events/models.py`, `VerificationDisabledRegistrationTests`, `RegisterSerializer`, `Commitment`, `network/services.py`, `ProviderProfile`, `HiddenStage — Milestone 3 Completion Report`, `make_customer`, `Module 28`?**
-  _High betweenness centrality (0.021) - this node is a cross-community bridge._
-- **Are the 34 inferred relationships involving `ProviderProfile` (e.g. with `Phase 1 — Codebase Reconnaissance & Schema Synchronization` and `1. Existing functionality reused`) actually correct?**
-  _`ProviderProfile` has 34 INFERRED edges - model-reasoned connections that need verification._
+- **Why does `User` connect `User` to `Quotation Models & Revisions`, `Event`, `events/models.py`, `Network & Assignment Serializers`, `administration/services.py`, `network/services.py`, `APIView`, `accounts/views.py`, `make_provider`, `ProviderOpportunityTests`, `ProviderProfile`, `verification_required`, `administration/serializers.py`, `administration/views.py`, `profiles/views.py`, `emails.py`, `UserSerializer`, `AccountSettingsSerializer`, `RegisterSerializer`, `normalize_username`, `AdminUserSerializer`, `ProviderCoverage`, `HiddenStage — Milestone 3 Completion Report`, `Milestone 3 — Manager–Worker Network & Assignment Management Plan`?**
+  _High betweenness centrality (0.017) - this node is a cross-community bridge._
+- **Are the 36 inferred relationships involving `ProviderProfile` (e.g. with `Phase 1 — Codebase Reconnaissance & Schema Synchronization` and `1. Existing functionality reused`) actually correct?**
+  _`ProviderProfile` has 36 INFERRED edges - model-reasoned connections that need verification._
 - **Should `Auth Guards & Admin Routing` be split into smaller, more focused modules?**
-  _Cohesion score 0.06394027913015254 - nodes in this community are weakly interconnected._
-- **Why does `ProviderProfile` connect `ProviderProfile` to `User`, `ProfileTeamMember`, `Administration Serializers`, `Quotation Models & Revisions`, `profiles/views.py`, `quotations/services.py`, `events/models.py`, `Network & Assignment Serializers`, `Commitment`, `network/services.py`, `CustomerProfile`, `make_customer`, `Module 28`?**
-  _High betweenness centrality (0.013) - this node is a cross-community bridge._
-- **Are the 26 inferred relationships involving `User` (e.g. with `2. Existing functionality reused` and `9. Availability logic`) actually correct?**
-  _`User` has 26 INFERRED edges - model-reasoned connections that need verification._
+  _Cohesion score 0.06442127773322641 - nodes in this community are weakly interconnected._
+- **Why does `ProviderProfile` connect `ProviderProfile` to `Phase Breakdown`, `administration/views.py`, `administration/serializers.py`, `Quotation Models & Revisions`, `IsStaffUser`, `profiles/views.py`, `Event`, `events/models.py`, `Network & Assignment Serializers`, `administration/services.py`, `network/services.py`, `ProviderCoverage`, `ProviderOnboardingTests`, `CustomerProfile`, `make_provider`, `commitments/views.py`, `ProviderOpportunityTests`?**
+  _High betweenness centrality (0.014) - this node is a cross-community bridge._
+- **Are the 31 inferred relationships involving `User` (e.g. with `2. Existing functionality reused` and `9. Availability logic`) actually correct?**
+  _`User` has 31 INFERRED edges - model-reasoned connections that need verification._
 - **Should `Events Domain Models & APIs` be split into smaller, more focused modules?**
-  _Cohesion score 0.04680365296803653 - nodes in this community are weakly interconnected._
-- **Why does `HiddenStage — Milestone 3 Completion Report` connect `HiddenStage — Milestone 3 Completion Report` to `3. New database models and fields`, `Commitment`?**
-  _High betweenness centrality (0.009) - this node is a cross-community bridge._
+  _Cohesion score 0.04229104229104229 - nodes in this community are weakly interconnected._
+- **Why does `UUIDModel` connect `events/models.py` to `ProviderProfile`, `ServiceRequirement`, `administration/serializers.py`, `Quotation Models & Revisions`, `Business`, `profiles/views.py`, `Event`, `EmailVerificationToken`, `administration/services.py`, `network/services.py`, `ProviderCoverage`, `QuotationItem`, `User`, `CustomerProfile`, `commitments/views.py`?**
+  _High betweenness centrality (0.011) - this node is a cross-community bridge._
