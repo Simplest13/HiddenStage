@@ -137,8 +137,8 @@ class InvoiceSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
     def get_provider_business(self, obj) -> str:
-        prof = getattr(obj.provider, "profile", None)
-        return prof.business_name if prof and prof.business_name else obj.provider.full_name
+        prof = getattr(obj.provider, "provider_profile", None)
+        return prof.display_name if prof and prof.display_name else obj.provider.full_name
 
 
 class PaymentTransactionSerializer(serializers.ModelSerializer):

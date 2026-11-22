@@ -526,8 +526,8 @@ export function CustomerPaymentsPage() {
         >
           <div
             style={{
-              background: 'var(--color-bg)',
-              color: 'var(--color-fg)',
+              background: 'var(--color-paper-bright)',
+              color: 'var(--color-ink)',
               borderRadius: '16px',
               maxWidth: '520px',
               width: '100%',
@@ -651,8 +651,8 @@ export function CustomerPaymentsPage() {
         >
           <div
             style={{
-              background: 'var(--color-bg)',
-              color: 'var(--color-fg)',
+              background: 'var(--color-paper-bright)',
+              color: 'var(--color-ink)',
               borderRadius: '16px',
               maxWidth: '680px',
               width: '100%',

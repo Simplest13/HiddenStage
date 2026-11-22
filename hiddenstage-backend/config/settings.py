@@ -16,10 +16,10 @@ if sys.platform == "win32":
 
     _orig_getaddrinfo = socket.getaddrinfo
 
-    def _ipv4_getaddrinfo(*args, **kwargs):
-        if kwargs.get("family", 0) == 0:
-            kwargs = {**kwargs, "family": socket.AF_INET}
-        return _orig_getaddrinfo(*args, **kwargs)
+    def _ipv4_getaddrinfo(host, port, family=0, *rest, **kwargs):
+        if family == 0 or family == socket.AF_UNSPEC:
+            family = socket.AF_INET
+        return _orig_getaddrinfo(host, port, family, *rest, **kwargs)
 
     socket.getaddrinfo = _ipv4_getaddrinfo
 

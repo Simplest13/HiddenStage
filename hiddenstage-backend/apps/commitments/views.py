@@ -160,7 +160,7 @@ class CustomerInvoicesListView(APIView):
         status_param = request.query_params.get("status")
         event_id = request.query_params.get("event_id")
         qs = Invoice.objects.filter(customer=request.user).select_related(
-            "event", "provider", "provider__profile"
+            "event", "provider", "provider__provider_profile"
         )
         if status_param and status_param != "ALL":
             qs = qs.filter(status=status_param.upper())
@@ -176,7 +176,7 @@ class CustomerInvoiceDetailView(APIView):
     def get(self, request, pk):
         invoice = (
             Invoice.objects.filter(customer=request.user, pk=pk)
-            .select_related("event", "provider", "provider__profile")
+            .select_related("event", "provider", "provider__provider_profile")
             .first()
         )
         if not invoice:

@@ -343,7 +343,7 @@ class CustomerNetworkListView(APIView):
     def get(self, request):
         connections = (
             CustomerConnection.objects.filter(customer=request.user)
-            .select_related("provider", "provider__profile")
+            .select_related("provider", "provider__provider_profile")
             .order_by("-created_at")
         )
         serializer = CustomerConnectionSerializer(
@@ -423,28 +423,30 @@ class CustomerNetworkSearchView(APIView):
         category = request.query_params.get("category", "").strip()
         qs = (
             User.objects.filter(role="PROVIDER", is_active=True)
-            .select_related("profile")
-            .prefetch_related("profile__coverage")
+            .select_related("provider_profile")
+            .prefetch_related("provider_profile__coverage")
         )
         if query:
             clean_q = query.lstrip("@")
             qs = qs.filter(
                 Q(username__icontains=clean_q)
                 | Q(full_name__icontains=query)
-                | Q(profile__business_name__icontains=query)
-                | Q(profile__coverage__city__icontains=query)
+                | Q(provider_profile__display_name__icontains=query)
+                | Q(provider_profile__coverage__city__icontains=query)
             ).distinct()
-        if category and category != "all":
-            qs = qs.filter(profile__categories__code__iexact=category).distinct()
+        if category and category.lower() != "all":
+            qs = qs.filter(provider_profile__services__category__code__iexact=category).distinct()
 
         results = []
-        user_conns = set(
-            CustomerConnection.objects.filter(customer=request.user).values_list(
-                "provider_id", flat=True
+        user_conns = set()
+        if request.user.is_authenticated:
+            user_conns = set(
+                CustomerConnection.objects.filter(customer=request.user).values_list(
+                    "provider_id", flat=True
+                )
             )
-        )
         for u in qs[:25]:
-            prof = getattr(u, "profile", None)
+            prof = getattr(u, "provider_profile", None)
             cats = (
                 prof.declared_categories()
                 if prof and hasattr(prof, "declared_categories")
@@ -459,8 +461,8 @@ class CustomerNetworkSearchView(APIView):
                     "avatar": u.avatar.url
                     if u.avatar and hasattr(u.avatar, "url")
                     else None,
-                    "business_name": prof.business_name
-                    if prof and prof.business_name
+                    "business_name": prof.display_name
+                    if prof and prof.display_name
                     else u.full_name,
                     "category": cats[0] if cats else "Specialist",
                     "city": cov.city if cov else "India",
@@ -478,7 +480,7 @@ class ConversationListView(APIView):
             Conversation.objects.filter(
                 Q(customer=request.user) | Q(provider=request.user)
             )
-            .select_related("customer", "provider", "provider__profile")
+            .select_related("customer", "provider", "provider__provider_profile")
             .prefetch_related("messages")
         )
         serializer = ConversationSerializer(qs, many=True, context={"request": request})

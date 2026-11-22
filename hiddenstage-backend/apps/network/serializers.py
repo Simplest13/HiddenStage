@@ -349,11 +349,11 @@ class CustomerConnectionSerializer(serializers.ModelSerializer):
         return None
 
     def get_business_name(self, obj) -> str:
-        prof = getattr(obj.provider, "profile", None)
-        return prof.business_name if prof and prof.business_name else obj.provider.full_name
+        prof = getattr(obj.provider, "provider_profile", None)
+        return prof.display_name if prof and prof.display_name else obj.provider.full_name
 
     def get_category(self, obj) -> str:
-        prof = getattr(obj.provider, "profile", None)
+        prof = getattr(obj.provider, "provider_profile", None)
         if prof and hasattr(prof, "declared_categories"):
             cats = prof.declared_categories()
             if cats:
@@ -361,7 +361,7 @@ class CustomerConnectionSerializer(serializers.ModelSerializer):
         return "Specialist"
 
     def get_city(self, obj) -> str:
-        prof = getattr(obj.provider, "profile", None)
+        prof = getattr(obj.provider, "provider_profile", None)
         if prof and hasattr(prof, "coverage"):
             first_cov = prof.coverage.first()
             if first_cov:
@@ -438,13 +438,13 @@ class ConversationSerializer(serializers.ModelSerializer):
     def get_other_user(self, obj) -> dict:
         request = self.context.get("request")
         target = obj.provider if request and request.user == obj.customer else obj.customer
-        prof = getattr(target, "profile", None)
+        prof = getattr(target, "provider_profile", None)
         return {
             "id": str(target.id),
             "name": target.full_name,
             "username": target.username,
             "avatar": target.avatar.url if target.avatar and hasattr(target.avatar, "url") else None,
-            "business_name": prof.business_name if prof and prof.business_name else target.full_name,
+            "business_name": prof.display_name if prof and prof.display_name else target.full_name,
         }
 
     def get_latest_message(self, obj) -> dict | None:
