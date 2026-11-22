@@ -437,9 +437,13 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": 20,
     "EXCEPTION_HANDLER": "apps.core.exceptions.api_exception_handler",
     "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
         "rest_framework.throttling.ScopedRateThrottle",
     ],
     "DEFAULT_THROTTLE_RATES": {
+        "anon": "30/min",
+        "user": "120/min",
         "auth": "30/min",
     },
     "DEFAULT_RENDERER_CLASSES": ["rest_framework.renderers.JSONRenderer"],
@@ -486,3 +490,8 @@ LOGGING = {
 # outside tests, because the override is reverted after the suite.
 if "test" in sys.argv:
     PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
+    REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"] = {
+        "anon": "10000/min",
+        "user": "10000/min",
+        "auth": "10000/min",
+    }

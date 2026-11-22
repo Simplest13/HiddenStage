@@ -64,10 +64,12 @@ def _resolve_selection(revision, package_keys, requirement_ids):
             {"package_keys": f"Unknown package(s): {', '.join(unknown_packages)}."}
         )
 
-    items_by_requirement = {str(item.requirement_id): item for item in items}
-    req_ids_str = [str(r) for r in requirement_ids]
+    items_by_requirement = {}
+    for item in items:
+        items_by_requirement[item.requirement_id] = item
+        items_by_requirement[str(item.requirement_id)] = item
     unknown_requirements = sorted(
-        {req_id for req_id in req_ids_str if req_id not in items_by_requirement},
+        {req_id for req_id in requirement_ids if req_id not in items_by_requirement},
         key=str,
     )
     if unknown_requirements:
@@ -81,7 +83,7 @@ def _resolve_selection(revision, package_keys, requirement_ids):
 
     packaged_selected_directly = [
         str(items_by_requirement[req_id].package_key)
-        for req_id in req_ids_str
+        for req_id in requirement_ids
         if items_by_requirement[req_id].package_key
     ]
     if packaged_selected_directly:
@@ -98,7 +100,7 @@ def _resolve_selection(revision, package_keys, requirement_ids):
     selected.update(
         {
             items_by_requirement[req_id].id: items_by_requirement[req_id]
-            for req_id in req_ids_str
+            for req_id in requirement_ids
         }
     )
     if not selected:

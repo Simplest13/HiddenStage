@@ -17,6 +17,7 @@ from rest_framework import status
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 from rest_framework.views import APIView
 
 from django.core.exceptions import ValidationError as DjangoValidationError
@@ -55,6 +56,7 @@ class CsrfTokenView(APIView):
 class RegisterView(APIView):
     permission_classes = [AllowAny]
     authentication_classes = []
+    throttle_classes = [AnonRateThrottle, UserRateThrottle]
     throttle_scope = "auth"
 
     @extend_schema(request=RegisterSerializer, responses={201: UserSerializer})
@@ -87,6 +89,7 @@ class RegisterView(APIView):
 class LoginView(APIView):
     permission_classes = [AllowAny]
     authentication_classes = []
+    throttle_classes = [AnonRateThrottle, UserRateThrottle]
     throttle_scope = "auth"
 
     @extend_schema(request=LoginSerializer, responses={200: UserSerializer})
@@ -178,6 +181,7 @@ class EmailResendView(APIView):
 class PasswordResetRequestView(APIView):
     permission_classes = [AllowAny]
     authentication_classes = []
+    throttle_classes = [AnonRateThrottle, UserRateThrottle]
     throttle_scope = "auth"
 
     @extend_schema(request=EmailOnlySerializer, responses={202: None})

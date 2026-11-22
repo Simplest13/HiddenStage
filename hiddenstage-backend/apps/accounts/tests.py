@@ -329,3 +329,14 @@ class VerificationDisabledRegistrationTests(TestCase):
         self.assertEqual(response.status_code, 200, response.content)
         self.assertTrue(response.data["email_verified"])
 
+    def test_login_and_register_rate_throttles_are_configured(self):
+        from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
+        from apps.accounts.views import LoginView, RegisterView, PasswordResetRequestView
+
+        self.assertIn(AnonRateThrottle, LoginView.throttle_classes)
+        self.assertIn(UserRateThrottle, LoginView.throttle_classes)
+        self.assertIn(AnonRateThrottle, RegisterView.throttle_classes)
+        self.assertIn(UserRateThrottle, RegisterView.throttle_classes)
+        self.assertIn(AnonRateThrottle, PasswordResetRequestView.throttle_classes)
+        self.assertIn(UserRateThrottle, PasswordResetRequestView.throttle_classes)
+
