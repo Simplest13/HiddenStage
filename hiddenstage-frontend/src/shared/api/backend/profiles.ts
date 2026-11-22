@@ -34,7 +34,7 @@ export type ProviderProfilePayload = {
   specializations?: string[]
   performance_styles?: string[]
   experience_summary?: string
-  languages?: string[]
+  languages?: string[] | string
   website?: string
   instagram?: string
   youtube?: string
@@ -42,6 +42,8 @@ export type ProviderProfilePayload = {
   logo?: string | null
   cover_image?: string | null
   is_public?: boolean
+  onboarding_step?: number
+  role_data?: Record<string, unknown>
 }
 
 export type PortfolioItemPayload = {
@@ -68,6 +70,9 @@ export const profilesApi = {
   },
   saveProviderProfile(payload: ProviderProfilePayload) {
     return apiRequest<ApiProviderProfile>('/me/provider-profile/', { method: 'PUT', ...jsonBody(payload) })
+  },
+  patchProviderProfile(payload: Partial<ProviderProfilePayload>) {
+    return apiRequest<ApiProviderProfile>('/me/provider-profile/', { method: 'PATCH', ...jsonBody(payload) })
   },
   listProviderServices() {
     return apiRequest<ApiProviderService[]>('/me/provider-services/')
