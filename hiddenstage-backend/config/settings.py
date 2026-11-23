@@ -168,7 +168,7 @@ def _database_from_url(url: str) -> dict[str, object]:
         "PASSWORD": unquote(parsed.password or ""),
         "HOST": parsed.hostname or "",
         "PORT": str(parsed.port or 5432),
-        "CONN_MAX_AGE": env_int("POSTGRES_CONN_MAX_AGE", 0 if is_pooled else 60),
+        "CONN_MAX_AGE": env_int("POSTGRES_CONN_MAX_AGE", 60),
         "CONN_HEALTH_CHECKS": True,
         "OPTIONS": options,
     }
@@ -315,6 +315,15 @@ ATTACHMENT_ALLOWED_CONTENT_TYPES = [
 ]
 ATTACHMENT_MAX_BYTES = env_int("ATTACHMENT_MAX_BYTES", 5 * 1024 * 1024)
 ATTACHMENT_MAX_PER_EVENT = env_int("ATTACHMENT_MAX_PER_EVENT", 5)
+
+# In-memory application cache for high-throughput zero-latency reads
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "hiddenstage-cache",
+        "TIMEOUT": 60,
+    }
+}
 
 # ---- Session and CSRF (D-005) -------------------------------------------------
 # Server-side Django sessions in HttpOnly cookies. The CSRF token cookie is

@@ -1,5 +1,6 @@
 import uuid
 
+from django.core.cache import cache
 from django.db.models import Min, Q
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
@@ -30,6 +31,11 @@ class PublicDirectoryView(APIView):
 
     @extend_schema(responses={200: PublicDirectoryProviderSerializer(many=True)})
     def get(self, request):
+        cache_key = f"pub_dir:{request.query_params.get('q', '')}:{request.query_params.get('category', '')}:{request.query_params.get('location', '')}"
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return Response(cached)
+
         queryset = (
             ProviderProfile.objects.filter(
                 user__is_active=True,
@@ -105,7 +111,9 @@ class PublicDirectoryView(APIView):
                 "rating": None,
                 "review_count": 0,
             })
-        return Response(PublicDirectoryProviderSerializer(results, many=True).data)
+        data = PublicDirectoryProviderSerializer(results, many=True).data
+        cache.set(cache_key, data, timeout=60)
+        return Response(data)
 
 
 class ProviderDiscoveryView(APIView):
@@ -177,6 +185,12 @@ class ProviderDetailView(APIView):
             pass
 
         clean_pk = str(pk).lstrip("@")
+        cache_key = f"pub_provider:{clean_pk}"
+        if not request.user.is_authenticated:
+            cached = cache.get(cache_key)
+            if cached is not None:
+                return Response(cached)
+
         lookup = Q(id=pk) if is_uuid else (Q(username__iexact=clean_pk) | Q(user__username__iexact=clean_pk))
         provider = (
             ProviderProfile.objects.filter(lookup, user__is_active=True)
@@ -256,4 +270,7 @@ class ProviderDetailView(APIView):
             "rating": None,
             "review_count": 0,
         }
-        return Response(ProviderDetailSerializer(payload).data)
+        data = ProviderDetailSerializer(payload).data
+        if not is_owner and not request.user.is_authenticated:
+            cache.set(cache_key, data, timeout=60)
+        return Response(data)

@@ -1,3 +1,4 @@
+from django.core.cache import cache
 from django.db.models import Q
 from drf_spectacular.utils import extend_schema
 from rest_framework import generics, status
@@ -37,7 +38,15 @@ class ServiceCategoryListView(generics.ListAPIView):
     authentication_classes = []
     serializer_class = ServiceCategorySerializer
     pagination_class = None
-    queryset = ServiceCategory.objects.filter(is_active=True)
+    queryset = ServiceCategory.objects.filter(is_active=True).order_by("sort_order", "name")
+
+    def list(self, request, *args, **kwargs):
+        cached = cache.get("categories:all_active")
+        if cached is not None:
+            return Response(cached)
+        response = super().list(request, *args, **kwargs)
+        cache.set("categories:all_active", response.data, timeout=300)
+        return response
 
 
 class CustomerProfileView(APIView):

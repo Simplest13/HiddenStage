@@ -1,5 +1,6 @@
 """Protected administrative API endpoints under /api/v1/admin/."""
 
+from django.core.cache import cache
 from django.db.models import Count, Q
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
@@ -43,11 +44,16 @@ class AdminOverviewView(APIView):
 
     @extend_schema(responses={200: None}, operation_id="admin_overview")
     def get(self, request):
+        cached = cache.get("admin:overview_data")
+        if cached is not None:
+            return Response(cached)
         metrics = get_overview_metrics()
         recent_audit = UnifiedAuditEntrySerializer(
             list_unified_audit_entries(source="all", limit=10), many=True
         ).data
-        return Response({"metrics": metrics, "recent_audit": recent_audit})
+        payload = {"metrics": metrics, "recent_audit": recent_audit}
+        cache.set("admin:overview_data", payload, timeout=30)
+        return Response(payload)
 
 
 class AdminUserListView(APIView):

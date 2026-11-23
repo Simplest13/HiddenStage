@@ -5,6 +5,7 @@ import { sessionApi, type LoginInput, type RegisterInput } from '../../shared/ap
 import { profilesApi, type CustomerProfilePayload, type ProviderProfilePayload } from '../../shared/api/backend/profiles'
 import type { ApiUser } from '../../shared/api/backend/types'
 import { isApiError, resolveMediaUrl } from '../../shared/api/client'
+import { clearApiDataCache } from '../../shared/api/backend/useApiData'
 
 export function toSessionUser(user: ApiUser): SessionUser {
   return {
@@ -101,7 +102,10 @@ export function AuthProvider({ children, state }: { children: ReactNode; state?:
   }, [])
 
   const logout = useCallback(async () => {
-    try { await sessionApi.logout() } finally { setAuthState(anonymousAuthState) }
+    try { await sessionApi.logout() } finally {
+      clearApiDataCache()
+      setAuthState(anonymousAuthState)
+    }
   }, [])
 
   const verifyEmail = useCallback(async (token: string) => {
