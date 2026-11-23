@@ -340,3 +340,61 @@ class VerificationDisabledRegistrationTests(TestCase):
         self.assertIn(AnonRateThrottle, PasswordResetRequestView.throttle_classes)
         self.assertIn(UserRateThrottle, PasswordResetRequestView.throttle_classes)
 
+
+class AvatarTests(TestCase):
+    def setUp(self):
+        self.user = make_customer("avatar-user@example.com")
+        self.client = APIClient()
+        self.client.force_authenticate(self.user)
+
+    def test_upload_and_serve_avatar(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        import os
+
+        # 1x1 transparent PNG payload
+        png_data = (
+            b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01"
+            b"\x08\x06\x00\x00\x00\x1f\x15c4\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05"
+            b"\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82"
+        )
+        file = SimpleUploadedFile("profile.png", png_data, content_type="image/png")
+        response = self.client.post("/api/v1/auth/avatar/", {"avatar": file}, format="multipart")
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertIsNotNone(response.data["avatar_url"])
+        self.assertTrue(response.data["avatar_url"].startswith("/api/v1/auth/avatars/"))
+
+        # Verify avatar file can be retrieved via the public avatar route
+        avatar_path = response.data["avatar_url"]
+        filename = os.path.basename(avatar_path)
+        serve_resp = APIClient().get(f"/api/v1/auth/avatars/{filename}")
+        self.assertEqual(serve_resp.status_code, 200)
+        self.assertEqual(serve_resp["Content-Type"], "image/png")
+        self.assertIn("max-age=86400", serve_resp["Cache-Control"])
+        serve_resp.close()
+
+        # Also verify legacy /private-media/avatars/ route serves it
+        legacy_resp = APIClient().get(f"/private-media/avatars/{filename}")
+        self.assertEqual(legacy_resp.status_code, 200)
+        legacy_resp.close()
+
+        # Remove avatar
+        remove_resp = self.client.post("/api/v1/auth/avatar/", {"action": "remove"}, format="json")
+        self.assertEqual(remove_resp.status_code, 200)
+        self.assertIsNone(remove_resp.data["avatar_url"])
+        self.user.refresh_from_db()
+        self.assertFalse(bool(self.user.avatar))
+
+    def test_upload_avatar_validation(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        # Invalid extension
+        txt_file = SimpleUploadedFile("bad.txt", b"not-an-image", content_type="text/plain")
+        resp = self.client.post("/api/v1/auth/avatar/", {"avatar": txt_file}, format="multipart")
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn("Only JPG, PNG, and WebP", resp.data["detail"])
+
+        # Nonexistent avatar returns 404
+        serve_404 = APIClient().get("/api/v1/auth/avatars/nonexistent_avatar.png")
+        self.assertEqual(serve_404.status_code, 404)
+
+

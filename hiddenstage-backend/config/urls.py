@@ -10,6 +10,8 @@ from drf_spectacular.views import (
     SpectacularSwaggerView,
 )
 
+from apps.accounts.views import AvatarMediaView
+
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/v1/health/", include("apps.core.urls")),
@@ -32,6 +34,11 @@ urlpatterns = [
         "api/v1/redoc/",
         SpectacularRedocView.as_view(url_name="schema"),
         name="redoc",
+    ),
+    path(
+        "private-media/avatars/<str:filename>",
+        AvatarMediaView.as_view(),
+        name="private-media-avatar",
     ),
 ]
 

@@ -8,6 +8,7 @@ export default defineConfig({
     // Same-origin API calls keep the Django session cookie and CSRF token intact.
     proxy: {
       '/api': { target: 'http://127.0.0.1:8000', changeOrigin: true },
+      '/private-media': { target: 'http://127.0.0.1:8000', changeOrigin: true },
     },
   },
   test: {

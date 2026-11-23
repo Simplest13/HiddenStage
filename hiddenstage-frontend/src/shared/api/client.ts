@@ -1,4 +1,11 @@
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '/api/v1').replace(/\/+$/, '')
+export const DEFAULT_PRODUCTION_API_BASE_URL = 'https://hiddenstage-j2j3.onrender.com/api/v1'
+
+export function resolveApiBaseUrl(configuredUrl: string | undefined, isProduction: boolean): string {
+  const fallback = isProduction ? DEFAULT_PRODUCTION_API_BASE_URL : '/api/v1'
+  return (configuredUrl || fallback).replace(/\/+$/, '')
+}
+
+const API_BASE_URL = resolveApiBaseUrl(import.meta.env.VITE_API_BASE_URL, import.meta.env.PROD)
 
 export class ApiError extends Error {
   readonly status: number
@@ -127,6 +134,7 @@ export function jsonBody(value: unknown): RequestInit {
 
 /** Absolute URL for an API-relative link returned by the server (e.g. attachment downloads). */
 export function apiUrl(path: string) {
+  if (!path) return ''
   if (/^https?:\/\//i.test(path)) return path
   const normalizedPath = path.startsWith('/') ? path : `/${path}`
   if (normalizedPath.startsWith('/api/v1/')) {
@@ -136,6 +144,27 @@ export function apiUrl(path: string) {
     }
   }
   return `${API_BASE_URL}${normalizedPath}`
+}
+
+/** Resolves an avatar or media path to an accessible URL (supporting /api/v1, /private-media, and external URLs). */
+export function resolveMediaUrl(path: string | null | undefined): string | null {
+  if (!path) return null
+  if (/^https?:\/\//i.test(path)) return path
+  const normalized = path.startsWith('/') ? path : `/${path}`
+  if (normalized.startsWith('/api/v1/')) {
+    if (API_BASE_URL.endsWith('/api/v1')) {
+      const root = API_BASE_URL.slice(0, -'/api/v1'.length)
+      return `${root}${normalized}`
+    }
+    return `${API_BASE_URL}${normalized}`
+  }
+  if (normalized.startsWith('/private-media/')) {
+    if (API_BASE_URL.endsWith('/api/v1')) {
+      const root = API_BASE_URL.slice(0, -'/api/v1'.length)
+      return `${root}${normalized}`
+    }
+  }
+  return apiUrl(normalized)
 }
 
 /** Trigger an authenticated download without exposing the session cookie to a new tab. */

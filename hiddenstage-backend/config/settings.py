@@ -57,7 +57,8 @@ DEBUG = env_bool("DJANGO_DEBUG", False)
 
 def _samesite(name: str) -> str:
     """Cookie SameSite policy, validated: a typo here fails closed, not silently."""
-    value = os.environ.get(name, "Lax").strip().lower()
+    default = "None" if not DEBUG else "Lax"
+    value = os.environ.get(name, default).strip().lower()
     allowed = {"lax": "Lax", "strict": "Strict", "none": "None"}
     if value not in allowed:
         raise ImproperlyConfigured(f"{name} must be Lax, Strict or None.")

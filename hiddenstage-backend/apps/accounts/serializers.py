@@ -50,9 +50,7 @@ class UserSerializer(serializers.ModelSerializer):
         return verification_required()
 
     def get_avatar_url(self, obj) -> str | None:
-        if obj.avatar and hasattr(obj.avatar, "url"):
-            return obj.avatar.url
-        return None
+        return getattr(obj, "avatar_url", None)
 
 
 class RegisterSerializer(serializers.Serializer):

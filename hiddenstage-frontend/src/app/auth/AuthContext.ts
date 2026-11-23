@@ -2,6 +2,7 @@ import { createContext } from 'react'
 import type { AuthState, RegisterResult, SessionUser } from './authTypes'
 import type { LoginInput, RegisterInput } from '../../shared/api/backend/session'
 import type { CustomerProfilePayload, ProviderProfilePayload } from '../../shared/api/backend/profiles'
+import type { ApiUser } from '../../shared/api/backend/types'
 
 export const anonymousAuthState: AuthState = { status: 'anonymous' }
 
@@ -13,7 +14,7 @@ export type AuthActions = {
   register(input: RegisterInput): Promise<RegisterResult>
   login(input: LoginInput): Promise<SessionUser>
   logout(): Promise<void>
-  refresh(): Promise<SessionUser | null>
+  refresh(user?: ApiUser): Promise<SessionUser | null>
   verifyEmail(token: string): Promise<SessionUser>
   resendVerification(): Promise<boolean>
   requestPasswordReset(email: string): Promise<void>

@@ -43,12 +43,12 @@ export function WorkspaceLayout({ audience }: { audience: WorkspaceAudience }) {
       )}
       <div className="workspace-sidebar__bottom">
         {auth.status === 'authenticated' && auth.user?.isStaff && audience !== 'admin' && (
-          <Link to={routes.admin.home} className="workspace-nav__admin-switch" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: 'var(--color-primary-600, #4f46e5)' }}>
+          <Link to={routes.admin.home} className="workspace-nav__admin-switch" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: 'var(--color-orange)' }}>
             ⚙ Go to Admin workspace
           </Link>
         )}
         {auth.status === 'authenticated' && auth.user?.isStaff && audience === 'admin' && (
-          <Link to={routes.customer.home} className="workspace-nav__admin-switch" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: 'var(--color-text-muted, #64748b)' }}>
+          <Link to={routes.customer.home} className="workspace-nav__admin-switch" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: 'var(--color-muted)' }}>
             ← Customer workspace
           </Link>
         )}

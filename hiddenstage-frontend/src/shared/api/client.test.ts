@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { ApiError, apiRequest, apiUrl } from './client'
+import { ApiError, apiRequest, apiUrl, resolveApiBaseUrl, resolveMediaUrl } from './client'
 
 describe('API error boundary', () => {
   afterEach(() => vi.unstubAllGlobals())
@@ -27,5 +27,20 @@ describe('API error boundary', () => {
     expect(apiUrl('/events')).toBe(`${base}/events`)
     expect(apiUrl('/api/v1/events/123/attachments/456/download/')).toBe(`${root}/api/v1/events/123/attachments/456/download/`)
     expect(apiUrl('https://example.com/asset.pdf')).toBe('https://example.com/asset.pdf')
+  })
+
+  it('falls back to the deployed backend in production builds', () => {
+    expect(resolveApiBaseUrl(undefined, true)).toBe('https://hiddenstage-j2j3.onrender.com/api/v1')
+    expect(resolveApiBaseUrl('/api/v1/', true)).toBe('/api/v1')
+  })
+
+  it('resolves avatar media URLs accurately across prefixes', () => {
+    expect(resolveMediaUrl(null)).toBeNull()
+    expect(resolveMediaUrl(undefined)).toBeNull()
+    expect(resolveMediaUrl('https://example.com/pfp.png')).toBe('https://example.com/pfp.png')
+    const resolvedApi = resolveMediaUrl('/api/v1/auth/avatars/user.png')
+    expect(resolvedApi).toContain('/api/v1/auth/avatars/user.png')
+    const resolvedMedia = resolveMediaUrl('/private-media/avatars/user.png')
+    expect(resolvedMedia).toContain('/private-media/avatars/user.png')
   })
 })

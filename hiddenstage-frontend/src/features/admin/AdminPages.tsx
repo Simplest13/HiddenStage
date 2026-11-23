@@ -1104,7 +1104,7 @@ function AdminAuditPage() {
                 <strong>Note:</strong> {selectedEntry.note}
               </p>
             )}
-            <div style={{ background: '#f4f4f5', padding: '0.75rem', borderRadius: '4px', overflowX: 'auto' }}>
+            <div style={{ background: 'var(--color-tint)', padding: '0.75rem', borderRadius: '4px', overflowX: 'auto', border: '1px solid var(--color-line)' }}>
               <strong>Metadata:</strong>
               <pre style={{ margin: 0, fontSize: '0.78rem' }}>
                 {JSON.stringify(selectedEntry.metadata, null, 2)}

@@ -397,7 +397,7 @@
 
 .wmg-project-card__img {
   height: 180px;
-  background: #f1f5f9;
+  background: var(--color-tint);
   position: relative;
   overflow: hidden;
   cursor: pointer;
@@ -433,7 +433,7 @@
   aspect-ratio: 1;
   border-radius: 10px;
   overflow: hidden;
-  background: #f1f5f9;
+  background: var(--color-tint);
   cursor: pointer;
   position: relative;
 }

@@ -221,7 +221,7 @@ class CustomerBookingSerializer(serializers.ModelSerializer):
                 "provider_id": str(c.provider_id),
                 "provider_name": c.provider.full_name,
                 "provider_username": getattr(c.provider, "username", None),
-                "provider_avatar": c.provider.avatar.url if c.provider.avatar and hasattr(c.provider.avatar, "url") else None,
+                "provider_avatar": getattr(c.provider, "avatar_url", None),
                 "business_name": getattr(p_profile, "business_name", c.provider.full_name) if p_profile else c.provider.full_name,
                 "quotation_id": str(c.quotation_id),
                 "total_paise": c.total_paise,

@@ -344,9 +344,7 @@ class CustomerConnectionSerializer(serializers.ModelSerializer):
 
     def get_provider_avatar(self, obj) -> str | None:
         p = obj.provider
-        if p.avatar and hasattr(p.avatar, "url"):
-            return p.avatar.url
-        return None
+        return getattr(p, "avatar_url", None)
 
     def get_business_name(self, obj) -> str:
         prof = getattr(obj.provider, "provider_profile", None)
@@ -405,9 +403,7 @@ class ChatMessageSerializer(serializers.ModelSerializer):
 
     def get_sender_avatar(self, obj) -> str | None:
         u = obj.sender
-        if u.avatar and hasattr(u.avatar, "url"):
-            return u.avatar.url
-        return None
+        return getattr(u, "avatar_url", None)
 
     def get_is_me(self, obj) -> bool:
         request = self.context.get("request")
@@ -443,7 +439,7 @@ class ConversationSerializer(serializers.ModelSerializer):
             "id": str(target.id),
             "name": target.full_name,
             "username": target.username,
-            "avatar": target.avatar.url if target.avatar and hasattr(target.avatar, "url") else None,
+            "avatar": getattr(target, "avatar_url", None),
             "business_name": prof.display_name if prof and prof.display_name else target.full_name,
         }
 

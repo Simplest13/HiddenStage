@@ -4,7 +4,7 @@ import type { AuthState, SessionUser } from './authTypes'
 import { sessionApi, type LoginInput, type RegisterInput } from '../../shared/api/backend/session'
 import { profilesApi, type CustomerProfilePayload, type ProviderProfilePayload } from '../../shared/api/backend/profiles'
 import type { ApiUser } from '../../shared/api/backend/types'
-import { isApiError } from '../../shared/api/client'
+import { isApiError, resolveMediaUrl } from '../../shared/api/client'
 
 export function toSessionUser(user: ApiUser): SessionUser {
   return {
@@ -13,7 +13,7 @@ export function toSessionUser(user: ApiUser): SessionUser {
     username: user.username,
     email: user.email,
     phone: user.phone,
-    avatarUrl: user.avatar_url,
+    avatarUrl: resolveMediaUrl(user.avatar_url),
     themePreference: user.theme_preference ?? 'light',
     emailVerified: user.email_verified,
     // Older backends omit the field; required is the safe default.
@@ -52,9 +52,9 @@ export function AuthProvider({ children, state }: { children: ReactNode; state?:
     setTheme(theme === 'light' ? 'dark' : 'light')
   }, [theme, setTheme])
 
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async (preloadedUser?: ApiUser) => {
     try {
-      const user = toSessionUser(await sessionApi.me())
+      const user = toSessionUser(preloadedUser ?? await sessionApi.me())
       setAuthState(authenticated(user))
       if (user.themePreference && user.themePreference !== theme) {
         setThemeState(user.themePreference)

@@ -22,6 +22,7 @@ urlpatterns = [
     path("settings/", views.AccountSettingsView.as_view(), name="settings"),
     path("password/change/", views.ChangePasswordView.as_view(), name="password-change"),
     path("avatar/", views.AvatarUploadView.as_view(), name="avatar"),
+    path("avatars/<str:filename>", views.AvatarMediaView.as_view(), name="avatar-media"),
     path("notifications/", views.NotificationListView.as_view(), name="notifications"),
     path("notifications/mark-read/", views.MarkNotificationsReadView.as_view(), name="notifications-mark-read"),
 ]

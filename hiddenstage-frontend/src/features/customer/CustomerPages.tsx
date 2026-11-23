@@ -8,6 +8,7 @@ import { eventsApi } from '../../shared/api/backend/events'
 import { marketplaceApi } from '../../shared/api/backend/marketplace'
 import { profilesApi } from '../../shared/api/backend/profiles'
 import { sessionApi } from '../../shared/api/backend/session'
+import { resolveMediaUrl } from '../../shared/api/client'
 import { useApiData } from '../../shared/api/backend/useApiData'
 import { formatDate, formatPaise, formatShortDate, formatTimeRange } from '../../shared/api/backend/format'
 import type { ApiEventListItem, ApiQuotation } from '../../shared/api/backend/types'
@@ -365,12 +366,20 @@ function SettingsPage() {
     const localUrl = URL.createObjectURL(file)
     setAvatarPreview(localUrl)
     try {
-      await sessionApi.uploadAvatar(file)
-      await authActions.refresh()
+      const updatedUser = await sessionApi.uploadAvatar(file)
+      const refreshed = await authActions.refresh(updatedUser)
+      const newUrl = refreshed?.avatarUrl || (updatedUser.avatar_url ? resolveMediaUrl(updatedUser.avatar_url) : null)
+      if (newUrl) {
+        setAvatarPreview(`${newUrl}${newUrl.includes('?') ? '&' : '?'}t=${Date.now()}`)
+      }
     } catch (err) {
       setAvatarError(err instanceof Error ? err.message : 'Failed to upload photo.')
+      setAvatarPreview(user?.avatarUrl || null)
     } finally {
       setUploadingAvatar(false)
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
     }
   }
 
@@ -378,13 +387,16 @@ function SettingsPage() {
     setUploadingAvatar(true)
     setAvatarError('')
     try {
-      await sessionApi.removeAvatar()
+      const updatedUser = await sessionApi.removeAvatar()
       setAvatarPreview(null)
-      await authActions.refresh()
+      await authActions.refresh(updatedUser)
     } catch (err) {
       setAvatarError(err instanceof Error ? err.message : 'Failed to remove photo.')
     } finally {
       setUploadingAvatar(false)
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
     }
   }
 

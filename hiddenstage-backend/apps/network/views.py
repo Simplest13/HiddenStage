@@ -461,9 +461,7 @@ class CustomerNetworkSearchView(APIView):
                     "id": str(u.id),
                     "name": u.full_name,
                     "username": u.username,
-                    "avatar": u.avatar.url
-                    if u.avatar and hasattr(u.avatar, "url")
-                    else None,
+                    "avatar": getattr(u, "avatar_url", None),
                     "business_name": prof.display_name
                     if prof and prof.display_name
                     else u.full_name,

@@ -6,10 +6,13 @@ X-CSRFToken. No access or refresh token is ever returned to the browser.
 """
 
 import logging
+import os
 
 from django.conf import settings
 from django.contrib.auth import authenticate, login, logout
+from django.core.files.storage import default_storage
 from django.db import transaction
+from django.http import FileResponse, Http404
 from django.middleware.csrf import get_token
 from django.utils import timezone
 from drf_spectacular.utils import OpenApiResponse, extend_schema
@@ -293,7 +296,10 @@ class AvatarUploadView(APIView):
         action = request.data.get("action")
         if action == "remove":
             if user.avatar:
-                user.avatar.delete(save=False)
+                try:
+                    user.avatar.delete(save=False)
+                except OSError:
+                    pass
                 user.avatar = None
                 user.save(update_fields=["avatar"])
             return Response(UserSerializer(user).data)
@@ -318,10 +324,34 @@ class AvatarUploadView(APIView):
             )
 
         if user.avatar:
-            user.avatar.delete(save=False)
+            try:
+                user.avatar.delete(save=False)
+            except OSError:
+                pass
         user.avatar = file_obj
         user.save(update_fields=["avatar"])
         return Response(UserSerializer(user).data)
+
+
+class AvatarMediaView(APIView):
+    """Serve uploaded user avatars publicly and securely."""
+
+    permission_classes = [AllowAny]
+    throttle_classes = []
+
+    def get(self, request, filename):
+        safe_name = os.path.basename(filename)
+        if not safe_name or ".." in filename:
+            raise Http404("Invalid avatar filename.")
+
+        path = f"avatars/{safe_name}"
+        if not default_storage.exists(path):
+            raise Http404("Avatar not found.")
+
+        file_handle = default_storage.open(path, "rb")
+        response = FileResponse(file_handle)
+        response["Cache-Control"] = "public, max-age=86400"
+        return response
 
 
 class NotificationListView(APIView):

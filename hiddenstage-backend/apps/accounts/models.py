@@ -120,6 +120,14 @@ class User(AbstractBaseUser, PermissionsMixin, UUIDModel):
         return self.email_verified_at is not None
 
     @property
+    def avatar_url(self) -> str | None:
+        if self.avatar and hasattr(self.avatar, "name") and self.avatar.name:
+            import os
+            filename = os.path.basename(self.avatar.name)
+            return f"/api/v1/auth/avatars/{filename}"
+        return None
+
+    @property
     def is_customer(self) -> bool:
         return self.role == UserRole.CUSTOMER
 

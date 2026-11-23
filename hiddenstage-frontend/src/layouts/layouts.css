@@ -211,14 +211,14 @@
   align-items: center;
   gap: 1rem;
   padding: 0.75rem clamp(1.25rem, 3vw, 2.5rem);
-  border-bottom: 1px solid rgba(107, 62, 38, 0.12);
-  background: rgb(255 253 249 / 92%);
+  border-bottom: 1px solid var(--color-line);
+  background: color-mix(in srgb, var(--color-paper-bright) 92%, transparent);
   backdrop-filter: blur(12px);
   box-shadow: 0 1px 6px rgba(18, 10, 6, 0.03);
 }
 .workspace-topbar__context { display: grid; gap: 0.1rem; margin-right: auto; }
 .workspace-topbar__context .eyebrow { font-size: 0.6rem; }
-.workspace-topbar__context strong { font: 700 1.05rem var(--font-ui); color: var(--color-espresso); }
+.workspace-topbar__context strong { font: 700 1.05rem var(--font-ui); color: var(--color-ink); }
 .workspace-topbar__actions { display: flex; align-items: center; gap: 0.6rem; }
 .notification-button { width: auto; height: 2.1rem; padding: 0 0.8rem; border-radius: var(--radius-pill); font-size: 0.78rem; }
 .account-menu { display: flex; align-items: center; gap: 0.5rem; padding: 0.3rem 0.35rem 0.3rem 0.35rem; border: 1px solid var(--color-line); border-radius: var(--radius-pill); background: var(--color-paper-bright); color: var(--color-ink); cursor: pointer; font-size: 0.82rem; font-weight: 600; transition: border-color 140ms ease; }
