@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { networkApi } from '../../shared/api/backend/ecosystem'
 import type { ApiChatMessage, ApiConversation, ApiCustomerConnection } from '../../shared/api/backend/types'
 import { Avatar, Button, Card, Spinner } from '../../shared/ui'
@@ -21,6 +21,11 @@ export function CustomerNetworkPage() {
   const [sending, setSending] = useState(false)
   const [attachmentFile, setAttachmentFile] = useState<File | null>(null)
 
+  // Live suggestions for left search bar
+  const [liveSuggestions, setLiveSuggestions] = useState<any[]>([])
+  const [searchingSuggestions, setSearchingSuggestions] = useState(false)
+  const [connectingSuggestionId, setConnectingSuggestionId] = useState<string | null>(null)
+
   // Find & Add Specialists Modal
   const [showFindModal, setShowFindModal] = useState(false)
   const [findQuery, setFindQuery] = useState('')
@@ -30,6 +35,7 @@ export function CustomerNetworkPage() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const modalSearchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   async function loadData() {
     try {
@@ -54,28 +60,62 @@ export function CustomerNetworkPage() {
     void loadData()
   }, [])
 
+  // Live debounced search against platform profiles when user types in left search input
+  useEffect(() => {
+    const q = searchQuery.trim()
+    if (!q) {
+      setLiveSuggestions([])
+      setSearchingSuggestions(false)
+      return
+    }
+
+    setSearchingSuggestions(true)
+    const timer = setTimeout(async () => {
+      try {
+        const data = await networkApi.searchProviders(q)
+        setLiveSuggestions(data)
+      } catch {
+        setLiveSuggestions([])
+      } finally {
+        setSearchingSuggestions(false)
+      }
+    }, 200)
+
+    return () => clearTimeout(timer)
+  }, [searchQuery])
+
   useEffect(() => {
     if (!activeConvId) return
     let active = true
-    async function fetchThread() {
+    async function fetchThread(isBackground = false) {
       try {
-        setLoadingMessages(true)
+        if (!isBackground) setLoadingMessages(true)
         const res = await networkApi.getConversation(activeConvId!)
         if (!active) return
         setActiveConv(res.conversation)
-        setMessages(res.messages)
-        setTimeout(() => {
-          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-        }, 100)
+        setMessages((prev) => {
+          if (
+            prev.length === res.messages.length &&
+            prev[prev.length - 1]?.id === res.messages[res.messages.length - 1]?.id
+          ) {
+            return prev
+          }
+          return res.messages
+        })
+        if (!isBackground) {
+          setTimeout(() => {
+            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+          }, 100)
+        }
       } catch {
         // ignore
       } finally {
-        if (active) setLoadingMessages(false)
+        if (active && !isBackground) setLoadingMessages(false)
       }
     }
-    void fetchThread()
+    void fetchThread(false)
     const timer = setInterval(() => {
-      void fetchThread()
+      void fetchThread(true)
     }, 8000)
     return () => {
       active = false
@@ -102,21 +142,25 @@ export function CustomerNetworkPage() {
     }
   }
 
-  async function handleSearchDirectory(q: string) {
+  function handleSearchDirectory(q: string) {
     setFindQuery(q)
+    if (modalSearchTimerRef.current) clearTimeout(modalSearchTimerRef.current)
     if (!q.trim()) {
       setSearchResults([])
+      setSearching(false)
       return
     }
-    try {
-      setSearching(true)
-      const res = await networkApi.searchProviders(q.trim())
-      setSearchResults(res)
-    } catch {
-      // ignore
-    } finally {
-      setSearching(false)
-    }
+    modalSearchTimerRef.current = setTimeout(async () => {
+      try {
+        setSearching(true)
+        const res = await networkApi.searchProviders(q.trim())
+        setSearchResults(res)
+      } catch {
+        // ignore
+      } finally {
+        setSearching(false)
+      }
+    }, 250)
   }
 
   async function handleConnect(provider: any) {
@@ -132,6 +176,23 @@ export function CustomerNetworkPage() {
       // ignore
     } finally {
       setConnectingId(null)
+    }
+  }
+
+  async function handleAddSuggestionToNetwork(profile: any) {
+    try {
+      setConnectingSuggestionId(profile.id)
+      await networkApi.connect(profile.id, profile.username || undefined, 'Added from Network search')
+      const conv = await networkApi.startConversation(profile.id)
+      await loadData()
+      if (conv?.id) {
+        setActiveConvId(conv.id)
+      }
+      setLiveSuggestions((prev) => prev.filter((p) => p.id !== profile.id))
+    } catch (err: any) {
+      alert(err?.message || 'Failed to add to network')
+    } finally {
+      setConnectingSuggestionId(null)
     }
   }
 
@@ -200,7 +261,7 @@ export function CustomerNetworkPage() {
 
   // Filtered connections
   const filteredConnections = allContacts.filter((c) => {
-    const q = searchQuery.toLowerCase().replace(/^@/, '')
+    const q = searchQuery.toLowerCase().replace(/^@/, '').trim()
     const matchesQ =
       !q ||
       c.provider_name.toLowerCase().includes(q) ||
@@ -209,6 +270,119 @@ export function CustomerNetworkPage() {
     const matchesCat = categoryFilter === 'ALL' || c.category.toUpperCase().includes(categoryFilter)
     return matchesQ && matchesCat
   })
+
+  // Set of connected user IDs (both provider and customer sides)
+  const connectedUserIds = useMemo(() => {
+    const ids = new Set<string>()
+    for (const c of allContacts) {
+      if (c.provider) ids.add(c.provider)
+      if (c.customer) ids.add(c.customer)
+      if (c.id) ids.add(c.id)
+    }
+    return ids
+  }, [allContacts])
+
+  // Filter out suggestions that are already in active network
+  const unaddedSuggestions = useMemo(() => {
+    return liveSuggestions.filter((p) => !connectedUserIds.has(p.id))
+  }, [liveSuggestions, connectedUserIds])
+
+  function renderConnectionItem(conn: ApiCustomerConnection) {
+    const conv = conversations.find(
+      (c) =>
+        c.id === conn.id ||
+        (conn.customer && c.customer === conn.customer) ||
+        c.provider === conn.provider ||
+        c.other_user?.id === conn.provider ||
+        (conn.customer && c.other_user?.id === conn.customer)
+    )
+    const isSelected = conv && conv.id === activeConvId
+    return (
+      <li key={conn.id}>
+        <div
+          onClick={() => void handleSelectConnection(conn)}
+          style={{
+            padding: '0.85rem 1rem',
+            borderBottom: '1px solid var(--color-line)',
+            background: isSelected ? 'var(--color-orange-soft)' : 'transparent',
+            borderLeft: isSelected ? '4px solid var(--color-orange)' : '4px solid transparent',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '0.75rem',
+            transition: 'background 0.12s ease',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', minWidth: 0 }}>
+            {conn.provider_avatar ? (
+              <img
+                src={conn.provider_avatar}
+                alt={conn.provider_name}
+                style={{ width: '2.5rem', height: '2.5rem', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
+              />
+            ) : (
+              <Avatar name={conn.provider_name} size="md" />
+            )}
+            <div style={{ minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <strong
+                  style={{
+                    fontSize: '0.88rem',
+                    color: 'var(--color-ink)',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}
+                >
+                  {conn.business_name || conn.provider_name}
+                </strong>
+                {conn.has_active_booking && (
+                  <span
+                    style={{
+                      fontSize: '0.6rem',
+                      fontWeight: 800,
+                      padding: '0.1rem 0.35rem',
+                      borderRadius: 'var(--radius-pill)',
+                      background: 'var(--color-success-soft)',
+                      color: 'var(--color-success)',
+                    }}
+                  >
+                    BOOKED
+                  </span>
+                )}
+              </div>
+              <span style={{ fontSize: '0.74rem', color: 'var(--color-muted)', display: 'block' }}>
+                {conn.provider_username ? `@${conn.provider_username}` : 'Specialist'} • {conn.category}
+              </span>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.3rem' }}>
+            <button
+              type="button"
+              title={isProvider ? 'Disconnect client' : 'Disconnect specialist'}
+              onClick={(e) => {
+                e.stopPropagation()
+                const partnerId = isProvider ? (conn.customer || conn.provider) : conn.provider
+                void handleDisconnect(partnerId)
+              }}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--color-muted)',
+                cursor: 'pointer',
+                fontSize: '0.75rem',
+                padding: '0.2rem',
+              }}
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      </li>
+    )
+  }
 
   return (
     <div className="customer-page" style={{ height: 'calc(100vh - 9rem)', display: 'flex', flexDirection: 'column' }}>
@@ -289,128 +463,189 @@ export function CustomerNetworkPage() {
             </div>
           </div>
 
-          {/* Connections List */}
+          {/* Connections & Suggestions List */}
           <div style={{ flex: 1, overflowY: 'auto' }}>
             {loading ? (
               <div style={{ padding: '2rem', textAlign: 'center' }}>
                 <Spinner label="Loading network…" />
               </div>
-            ) : filteredConnections.length === 0 ? (
-              <div style={{ padding: '2rem 1rem', textAlign: 'center', color: 'var(--color-muted)' }}>
-                <span style={{ fontSize: '1.8rem', display: 'block', marginBottom: '0.4rem' }}>👥</span>
-                <p style={{ margin: 0, fontSize: '0.85rem' }}>
-                  {isProvider ? 'No customers connected yet.' : 'No specialists match your search.'}
-                </p>
-                {!isProvider && (
-                  <Button
-                    size="sm"
-                    variant="quiet"
-                    style={{ marginTop: '0.6rem' }}
-                    onClick={() => setShowFindModal(true)}
-                  >
-                    Search Directory
-                  </Button>
-                )}
-              </div>
+            ) : !searchQuery.trim() ? (
+              filteredConnections.length === 0 ? (
+                <div style={{ padding: '2rem 1rem', textAlign: 'center', color: 'var(--color-muted)' }}>
+                  <span style={{ fontSize: '1.8rem', display: 'block', marginBottom: '0.4rem' }}>👥</span>
+                  <p style={{ margin: 0, fontSize: '0.85rem' }}>
+                    {isProvider ? 'No customers connected yet.' : 'Your network is empty.'}
+                  </p>
+                  <p style={{ margin: '0.35rem 0 0', fontSize: '0.75rem', color: 'var(--color-muted)' }}>
+                    Type an @username in the search box above to find contacts.
+                  </p>
+                  {!isProvider && (
+                    <Button
+                      size="sm"
+                      variant="quiet"
+                      style={{ marginTop: '0.75rem' }}
+                      onClick={() => setShowFindModal(true)}
+                    >
+                      Browse Directory
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+                  {filteredConnections.map((conn) => renderConnectionItem(conn))}
+                </ul>
+              )
             ) : (
-              <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
-                {filteredConnections.map((conn) => {
-                  const conv = conversations.find(
-                    (c) =>
-                      c.id === conn.id ||
-                      (conn.customer && c.customer === conn.customer) ||
-                      c.provider === conn.provider ||
-                      c.other_user?.id === conn.provider ||
-                      (conn.customer && c.other_user?.id === conn.customer)
-                  )
-                  const isSelected = conv && conv.id === activeConvId
-                  return (
-                    <li key={conn.id}>
-                      <div
-                        onClick={() => void handleSelectConnection(conn)}
-                        style={{
-                          padding: '0.85rem 1rem',
-                          borderBottom: '1px solid var(--color-line)',
-                          background: isSelected ? 'var(--color-orange-soft)' : 'transparent',
-                          borderLeft: isSelected ? '4px solid var(--color-orange)' : '4px solid transparent',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          gap: '0.75rem',
-                          transition: 'background 0.12s ease',
-                        }}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', minWidth: 0 }}>
-                          {conn.provider_avatar ? (
-                            <img
-                              src={conn.provider_avatar}
-                              alt={conn.provider_name}
-                              style={{ width: '2.5rem', height: '2.5rem', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
-                            />
-                          ) : (
-                            <Avatar name={conn.provider_name} size="md" />
-                          )}
-                          <div style={{ minWidth: 0 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                              <strong
-                                style={{
-                                  fontSize: '0.88rem',
-                                  color: 'var(--color-ink)',
-                                  whiteSpace: 'nowrap',
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis',
-                                }}
-                              >
-                                {conn.business_name || conn.provider_name}
-                              </strong>
-                              {conn.has_active_booking && (
-                                <span
-                                  style={{
-                                    fontSize: '0.6rem',
-                                    fontWeight: 800,
-                                    padding: '0.1rem 0.35rem',
-                                    borderRadius: 'var(--radius-pill)',
-                                    background: 'var(--color-success-soft)',
-                                    color: 'var(--color-success)',
-                                  }}
-                                >
-                                  BOOKED
-                                </span>
-                              )}
-                            </div>
-                            <span style={{ fontSize: '0.74rem', color: 'var(--color-muted)', display: 'block' }}>
-                              {conn.provider_username ? `@${conn.provider_username}` : 'Specialist'} • {conn.category}
-                            </span>
-                          </div>
-                        </div>
+              /* Search query active */
+              <div>
+                {/* 1. Existing Network Connections matching search */}
+                {filteredConnections.length > 0 && (
+                  <div>
+                    <div
+                      style={{
+                        padding: '0.45rem 1rem',
+                        fontSize: '0.7rem',
+                        fontWeight: 800,
+                        color: 'var(--color-muted)',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.06em',
+                        background: 'var(--color-tint)',
+                        borderBottom: '1px solid var(--color-line)',
+                      }}
+                    >
+                      In Your Network ({filteredConnections.length})
+                    </div>
+                    <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+                      {filteredConnections.map((conn) => renderConnectionItem(conn))}
+                    </ul>
+                  </div>
+                )}
 
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.3rem' }}>
-                          <button
-                            type="button"
-                            title={isProvider ? 'Disconnect client' : 'Disconnect specialist'}
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              const partnerId = isProvider ? (conn.customer || conn.provider) : conn.provider
-                              void handleDisconnect(partnerId)
-                            }}
+                {/* 2. Searching Spinner */}
+                {searchingSuggestions && (
+                  <div style={{ padding: '0.85rem 1rem', textAlign: 'center' }}>
+                    <Spinner label="Searching platform profiles…" />
+                  </div>
+                )}
+
+                {/* 3. Platform Profiles / Known Contacts Suggestions */}
+                {unaddedSuggestions.length > 0 && (
+                  <div style={{ borderTop: filteredConnections.length > 0 ? '2px solid var(--color-line)' : 'none' }}>
+                    <div
+                      style={{
+                        padding: '0.5rem 1rem',
+                        fontSize: '0.7rem',
+                        fontWeight: 800,
+                        color: 'var(--color-orange)',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.06em',
+                        background: 'var(--color-orange-soft)',
+                        borderBottom: '1px solid var(--color-line)',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <span>Suggested Profiles ({unaddedSuggestions.length})</span>
+                      <span style={{ fontSize: '0.65rem', textTransform: 'none', fontWeight: 500 }}>
+                        Click to add to feed
+                      </span>
+                    </div>
+
+                    <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+                      {unaddedSuggestions.map((p) => {
+                        const isConnecting = connectingSuggestionId === p.id
+                        return (
+                          <li
+                            key={p.id}
                             style={{
-                              background: 'none',
-                              border: 'none',
-                              color: 'var(--color-muted)',
-                              cursor: 'pointer',
-                              fontSize: '0.75rem',
-                              padding: '0.2rem',
+                              padding: '0.85rem 1rem',
+                              borderBottom: '1px solid var(--color-line)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              gap: '0.75rem',
+                              background: 'var(--color-paper-bright)',
+                              transition: 'background 0.15s ease',
                             }}
                           >
-                            ✕
-                          </button>
-                        </div>
-                      </div>
-                    </li>
-                  )
-                })}
-              </ul>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', minWidth: 0 }}>
+                              {p.avatar ? (
+                                <img
+                                  src={p.avatar}
+                                  alt={p.name}
+                                  style={{ width: '2.5rem', height: '2.5rem', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
+                                />
+                              ) : (
+                                <Avatar name={p.name} size="md" />
+                              )}
+                              <div style={{ minWidth: 0 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                                  <strong
+                                    style={{
+                                      fontSize: '0.88rem',
+                                      color: 'var(--color-ink)',
+                                      whiteSpace: 'nowrap',
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis',
+                                    }}
+                                  >
+                                    {p.business_name || p.name}
+                                  </strong>
+                                  {p.username && (
+                                    <span
+                                      style={{
+                                        fontSize: '0.7rem',
+                                        color: 'var(--color-orange)',
+                                        fontWeight: 700,
+                                        background: 'var(--color-tint)',
+                                        padding: '0.05rem 0.35rem',
+                                        borderRadius: 'var(--radius-pill)',
+                                      }}
+                                    >
+                                      @{p.username}
+                                    </span>
+                                  )}
+                                </div>
+                                <span style={{ fontSize: '0.74rem', color: 'var(--color-muted)', display: 'block' }}>
+                                  {p.category} • 📍 {p.city}
+                                </span>
+                              </div>
+                            </div>
+
+                            <Button
+                              size="sm"
+                              disabled={isConnecting}
+                              onClick={() => void handleAddSuggestionToNetwork(p)}
+                              style={{
+                                flexShrink: 0,
+                                fontSize: '0.75rem',
+                                padding: '0.35rem 0.75rem',
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              {isConnecting ? 'Adding…' : '+ Add to my network'}
+                            </Button>
+                          </li>
+                        )
+                      })}
+                    </ul>
+                  </div>
+                )}
+
+                {/* 4. Empty State if nothing matches */}
+                {filteredConnections.length === 0 && unaddedSuggestions.length === 0 && !searchingSuggestions && (
+                  <div style={{ padding: '2.5rem 1rem', textAlign: 'center', color: 'var(--color-muted)' }}>
+                    <span style={{ fontSize: '1.8rem', display: 'block', marginBottom: '0.4rem' }}>🔍</span>
+                    <p style={{ margin: 0, fontSize: '0.85rem' }}>
+                      No profiles found matching "{searchQuery}".
+                    </p>
+                    <p style={{ margin: '0.3rem 0 0', fontSize: '0.75rem', color: 'var(--color-muted)' }}>
+                      Try typing the exact @username or specialist name.
+                    </p>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </Card>

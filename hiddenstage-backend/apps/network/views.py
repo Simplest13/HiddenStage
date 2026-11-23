@@ -3,7 +3,7 @@ from django.utils import timezone
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.exceptions import PermissionDenied, ValidationError
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -376,13 +376,14 @@ class CustomerNetworkConnectView(APIView):
 
         provider = None
         if provider_id:
-            provider = User.objects.filter(pk=provider_id, role="PROVIDER").first()
+            provider = User.objects.filter(pk=provider_id, is_active=True).first()
         elif username:
-            provider = User.objects.filter(username__iexact=username, role="PROVIDER").first()
+            clean_u = username.lstrip("@").strip()
+            provider = User.objects.filter(username__iexact=clean_u, is_active=True).first()
 
         if not provider:
             return Response(
-                {"detail": "Event professional not found."}, status=status.HTTP_404_NOT_FOUND
+                {"detail": "Event professional or user not found."}, status=status.HTTP_404_NOT_FOUND
             )
 
         if provider.id == request.user.id:
@@ -441,26 +442,29 @@ class CustomerNetworkDisconnectView(APIView):
 
 
 class CustomerNetworkSearchView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def get(self, request):
         query = request.query_params.get("q", "").strip()
         category = request.query_params.get("category", "").strip()
         qs = (
-            User.objects.filter(role="PROVIDER", is_active=True)
+            User.objects.filter(is_active=True)
             .select_related("provider_profile")
             .prefetch_related(
                 "provider_profile__coverage",
                 "provider_profile__services__category",
             )
         )
+        if request.user.is_authenticated:
+            qs = qs.exclude(id=request.user.id)
+
         if query:
-            clean_q = query.lstrip("@")
+            clean_q = query.lstrip("@").strip()
             qs = qs.filter(
                 Q(username__icontains=clean_q)
-                | Q(full_name__icontains=query)
-                | Q(provider_profile__display_name__icontains=query)
-                | Q(provider_profile__coverage__city__icontains=query)
+                | Q(full_name__icontains=clean_q)
+                | Q(provider_profile__display_name__icontains=clean_q)
+                | Q(provider_profile__coverage__city__icontains=clean_q)
             ).distinct()
         if category and category.lower() != "all":
             qs = qs.filter(provider_profile__services__category__code__iexact=category).distinct()
@@ -473,13 +477,14 @@ class CustomerNetworkSearchView(APIView):
                     "provider_id", flat=True
                 )
             )
-        for u in qs[:25]:
+        for u in qs[:30]:
             prof = getattr(u, "provider_profile", None)
             cats = (
                 prof.declared_categories()
                 if prof and hasattr(prof, "declared_categories")
                 else []
             )
+            cat_label = cats[0] if cats else ("Client" if u.role == "CUSTOMER" else "Specialist")
             cov = prof.coverage.first() if prof and hasattr(prof, "coverage") else None
             results.append(
                 {
@@ -490,7 +495,7 @@ class CustomerNetworkSearchView(APIView):
                     "business_name": prof.display_name
                     if prof and prof.display_name
                     else u.full_name,
-                    "category": cats[0] if cats else "Specialist",
+                    "category": cat_label,
                     "city": cov.city if cov else "India",
                     "is_connected": u.id in user_conns,
                 }

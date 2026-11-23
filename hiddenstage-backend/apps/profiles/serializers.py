@@ -426,6 +426,8 @@ class ManagerSearchSerializer(serializers.ModelSerializer):
         source="business.name", default="", read_only=True
     )
     categories = serializers.SerializerMethodField()
+    username = serializers.SerializerMethodField()
+    manager_id = serializers.SerializerMethodField()
 
     class Meta:
         model = ProviderProfile
@@ -434,6 +436,7 @@ class ManagerSearchSerializer(serializers.ModelSerializer):
             "user_id",
             "display_name",
             "username",
+            "manager_id",
             "business_name",
             "headline",
             "description",
@@ -445,6 +448,15 @@ class ManagerSearchSerializer(serializers.ModelSerializer):
 
     def get_categories(self, obj):
         return obj.declared_categories()
+
+    def get_username(self, obj) -> str:
+        return obj.username or getattr(obj.user, "username", "") or ""
+
+    def get_manager_id(self, obj) -> str:
+        uname = obj.username or getattr(obj.user, "username", "")
+        if uname:
+            return f"@{uname.lstrip('@')}"
+        return str(obj.user_id)
 
 
 

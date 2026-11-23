@@ -555,6 +555,7 @@ export type ApiManagerSearchResult = {
   user_id: string
   display_name: string
   username: string
+  manager_id?: string
   business_name: string
   headline: string
   description: string

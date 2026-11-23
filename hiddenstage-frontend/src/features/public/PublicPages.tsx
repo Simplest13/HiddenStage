@@ -58,12 +58,35 @@ const demoProviderImages: Record<string, string> = {
   'p-rustic-roots': '/hero/food.jpg',
 }
 
+const categoryImages: Record<string, string> = {
+  'spaces': '/categories/spaces.jpg',
+  'food-and-drink': '/categories/food-and-drink.jpg',
+  'music-and-performance': '/categories/music-and-performance.jpg',
+  'photography': '/categories/photography.jpg',
+  'videography': '/categories/videography.jpg',
+  'decor-and-styling': '/categories/decor-and-styling.jpg',
+  'dj-and-sound': '/categories/dj-and-sound.jpg',
+  'event-hosting': '/categories/event-hosting.jpg',
+  'planning': '/categories/planning.jpg',
+}
+
 function CategoryTile({ slug, index }: { slug: string; index: number }) {
   const category = serviceCategories.find((item) => item.slug === slug)
   if (!category) return null
   const tone = ['clay', 'sage', 'gold', 'rose', 'blue', 'plum'][index % 6]
+  const imageSrc = categoryImages[category.slug]
+
   return <Link to={serviceCategoryPath(category.slug)} className={`cat-tile cat-tile--${tone}`}>
     <div className="cat-tile__media" aria-hidden="true">
+      {imageSrc && (
+        <img
+          src={imageSrc}
+          alt={category.name}
+          className="cat-tile__img"
+          loading="lazy"
+        />
+      )}
+      <div className="cat-tile__overlay" />
       <div className="cat-tile__icon-wrap">
         <CategoryIcon slug={category.slug} size={36} color="#ffffff" />
       </div>

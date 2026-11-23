@@ -51,6 +51,27 @@ export default function ProviderOnboardingPage() {
   const [managerResults, setManagerResults] = useState<ApiManagerSearchResult[]>([])
   const [selectedManager, setSelectedManager] = useState<ApiManagerSearchResult | null>(null)
   const [searchingManagers, setSearchingManagers] = useState(false)
+  const [showManagerPopup, setShowManagerPopup] = useState(false)
+
+  useEffect(() => {
+    if (!managerQuery.trim() || selectedManager) {
+      setShowManagerPopup(false)
+      return
+    }
+    const timer = setTimeout(async () => {
+      setSearchingManagers(true)
+      try {
+        const results = await profilesApi.searchManagers(managerQuery.trim())
+        setManagerResults(results)
+        setShowManagerPopup(true)
+      } catch {
+        // ignore
+      } finally {
+        setSearchingManagers(false)
+      }
+    }, 250)
+    return () => clearTimeout(timer)
+  }, [managerQuery, selectedManager])
 
   useEffect(() => {
     let active = true
@@ -111,10 +132,12 @@ export default function ProviderOnboardingPage() {
       : item))
   }
 
-  async function searchManagers() {
-    if (!managerQuery.trim()) return
+  async function searchManagers(queryOverride?: string) {
+    const q = (queryOverride ?? managerQuery).trim()
+    if (!q) return
     setSearchingManagers(true)
-    try { setManagerResults(await profilesApi.searchManagers(managerQuery.trim())) }
+    setShowManagerPopup(true)
+    try { setManagerResults(await profilesApi.searchManagers(q)) }
     catch { setError('Manager search is temporarily unavailable.') }
     finally { setSearchingManagers(false) }
   }
@@ -268,15 +291,106 @@ export default function ProviderOnboardingPage() {
               <Input label="Independent professional specialty" name="specialty" value={String(roleData.specialty || '')} onChange={(event) => setRoleValue('specialty', event.target.value)} />
               <div className="manager-association">
                 <strong>Associate with an Event Manager (optional)</strong>
-                <div className="event-form-grid">
-                  <Input label="Manager name or business" name="managerQuery" value={managerQuery} onChange={(event) => setManagerQuery(event.target.value)} />
-                  <Button type="button" variant="secondary" onClick={() => void searchManagers()} disabled={searchingManagers}>{searchingManagers ? 'Searching…' : 'Search'}</Button>
-                </div>
-                {managerResults.map((manager) => (
-                  <button type="button" key={manager.id} className={selectedManager?.id === manager.id ? 'is-selected' : ''} onClick={() => setSelectedManager(selectedManager?.id === manager.id ? null : manager)}>
-                    <strong>{manager.display_name}</strong>{manager.business_name ? ` — ${manager.business_name}` : ''}
-                  </button>
-                ))}
+                <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--color-muted)' }}>
+                  Search by manager name, company, or @username. Matching manager IDs will pop up for you to link your profile.
+                </p>
+
+                {selectedManager ? (
+                  <div className="manager-selected-card">
+                    <div>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-orange, #ff7a00)', display: 'block', marginBottom: '0.2rem' }}>
+                        ✓ Affiliated Event Manager Selected
+                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                        <strong style={{ fontSize: '1rem' }}>{selectedManager.display_name}</strong>
+                        <span className="manager-id-tag">Manager ID: {selectedManager.manager_id || `@${selectedManager.username}` || selectedManager.user_id.slice(0, 8)}</span>
+                        {selectedManager.business_name && (
+                          <span style={{ fontSize: '0.85rem', color: 'var(--color-muted)' }}>({selectedManager.business_name})</span>
+                        )}
+                      </div>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedManager(null)
+                        setManagerQuery('')
+                        setManagerResults([])
+                        setShowManagerPopup(false)
+                      }}
+                    >
+                      Change Manager ✕
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="manager-search-wrapper">
+                    <div className="event-form-grid">
+                      <Input
+                        label="Manager name or business"
+                        name="managerQuery"
+                        placeholder="Type manager name or @username..."
+                        value={managerQuery}
+                        onChange={(event) => {
+                          setManagerQuery(event.target.value)
+                          setSelectedManager(null)
+                        }}
+                        onFocus={() => {
+                          if (managerResults.length > 0) setShowManagerPopup(true)
+                        }}
+                      />
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => void searchManagers()}
+                        disabled={searchingManagers}
+                      >
+                        {searchingManagers ? 'Searching…' : 'Search'}
+                      </Button>
+                    </div>
+
+                    {showManagerPopup && (
+                      <div className="manager-search-popup" role="listbox">
+                        {searchingManagers && <div className="manager-popup-loading">Searching managers…</div>}
+                        {!searchingManagers && managerResults.length === 0 && managerQuery.trim().length >= 1 && (
+                          <div className="manager-popup-empty">
+                            No event managers found matching “{managerQuery}”. Check spelling or search by @username.
+                          </div>
+                        )}
+                        {!searchingManagers &&
+                          managerResults.map((manager) => (
+                            <button
+                              type="button"
+                              key={manager.id}
+                              className="manager-popup-item"
+                              onClick={() => {
+                                setSelectedManager(manager)
+                                setManagerQuery(manager.display_name)
+                                setShowManagerPopup(false)
+                              }}
+                            >
+                              <div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                  <strong>{manager.display_name}</strong>
+                                  <span className="manager-id-tag">
+                                    Manager ID: {manager.manager_id || `@${manager.username}` || manager.user_id.slice(0, 8)}
+                                  </span>
+                                </div>
+                                {manager.business_name && (
+                                  <span style={{ fontSize: '0.8rem', color: 'var(--color-muted)', display: 'block', marginTop: '0.15rem' }}>
+                                    Company: {manager.business_name}
+                                  </span>
+                                )}
+                              </div>
+                              <span style={{ fontSize: '0.8rem', color: 'var(--color-orange, #ff7a00)', fontWeight: 600 }}>
+                                Select ➔
+                              </span>
+                            </button>
+                          ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </>
           )}

@@ -319,8 +319,8 @@ def cancel_network_invitation(
 
 def list_network(*, actor, include_history: bool = False) -> list[dict]:
     profile = _profile_for(actor)
-    if profile is None or profile.kind not in (ProviderKind.MANAGER, ProviderKind.WORKER):
-        raise PermissionDenied("This account does not have a provider network.")
+    if profile is None:
+        raise PermissionDenied("This account does not have a provider profile.")
     statuses = (
         [AssociationStatus.ACTIVE, AssociationStatus.ENDED]
         if include_history

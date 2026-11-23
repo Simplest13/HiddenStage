@@ -201,12 +201,21 @@ class ManagerSearchView(APIView):
         ).select_related("business", "user")
         if query:
             clean_query = query.lstrip("@")
-            queryset = queryset.filter(
+            filters = (
                 Q(display_name__icontains=clean_query)
                 | Q(username__iexact=clean_query)
                 | Q(username__icontains=clean_query)
+                | Q(user__username__iexact=clean_query)
+                | Q(user__username__icontains=clean_query)
                 | Q(business__name__icontains=clean_query)
             )
+            try:
+                import uuid
+                val_uuid = uuid.UUID(clean_query)
+                filters |= Q(id=val_uuid) | Q(user_id=val_uuid)
+            except (ValueError, AttributeError):
+                pass
+            queryset = queryset.filter(filters)
         return Response(ManagerSearchSerializer(queryset[:20], many=True).data)
 
 

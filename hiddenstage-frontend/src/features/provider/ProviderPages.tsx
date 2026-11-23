@@ -83,9 +83,9 @@ function DashboardPage({ workspaceProfile }: { workspaceProfile?: ApiProviderPro
       marketplaceApi.listProviderQuotations(),
       marketplaceApi.listProviderCommitments(),
       profilesApi.getProviderProfile(),
-      networkApi.listAssociations(),
-      networkApi.listInvitations(),
-      networkApi.listAssignments(),
+      networkApi.listAssociations().catch(() => []),
+      networkApi.listInvitations().catch(() => []),
+      networkApi.listAssignments().catch(() => []),
     ])
     return { opportunities, invitations, quotations, commitments, profile, network, networkInvitations, assignments }
   }, [])
@@ -1541,9 +1541,13 @@ function AssociationManager() {
         {results.length > 0 && (
           <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             {results.map((m) => (
-              <div key={m.id} className="card" style={{ padding: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div key={m.id} className="card" style={{ padding: '0.85rem 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <strong>{m.display_name}</strong> {m.business_name && <span>({m.business_name})</span>}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <strong>{m.display_name}</strong>
+                    <span className="manager-id-tag">Manager ID: {m.manager_id || `@${m.username}` || m.user_id.slice(0, 8)}</span>
+                  </div>
+                  {m.business_name && <p style={{ fontSize: '0.85rem', color: 'var(--color-muted)', margin: '0.2rem 0 0 0' }}>{m.business_name}</p>}
                   {m.headline && <p style={{ fontSize: '0.85rem', margin: '0.25rem 0 0 0' }}>{m.headline}</p>}
                 </div>
                 <Button type="button" size="sm" onClick={() => void handleRequest(m.user_id)}>Request Association</Button>
