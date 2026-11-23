@@ -57,6 +57,11 @@ from apps.profiles.models import ProviderKind, ProviderProfile
 def _invitation_queryset():
     return NetworkInvitation.objects.select_related(
         "manager__provider_profile", "worker__provider_profile"
+    ).prefetch_related(
+        "manager__provider_profile__services__category",
+        "manager__provider_profile__coverage",
+        "worker__provider_profile__services__category",
+        "worker__provider_profile__coverage",
     )
 
 
@@ -206,9 +211,16 @@ class NetworkAssociationListView(APIView):
     def get(self, request):
         include_history = request.query_params.get("history") in {"1", "true", "yes"}
         items = list_network(actor=request.user, include_history=include_history)
+        associations = []
+        for item in items:
+            assoc = item["association"]
+            assoc._cached_counterpart_profile = item.get("profile")
+            assoc._active_assignments = item.get("active_assignments", 0)
+            assoc._completed_assignments = item.get("completed_assignments", 0)
+            associations.append(assoc)
         return Response(
             NetworkAssociationSerializer(
-                [item["association"] for item in items],
+                associations,
                 many=True,
                 context={"request": request},
             ).data

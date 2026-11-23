@@ -137,6 +137,11 @@ def _coverage_matches(coverage: ProviderCoverage, *, pin_code: str, city: str, s
 
 def provider_covers_location(provider: ProviderProfile, *, pin_code: str, city: str, state: str) -> bool:
     """Eligibility gate reused when an invitation is created."""
+    if hasattr(provider, "_prefetched_objects_cache") and "coverage" in provider._prefetched_objects_cache:
+        return any(
+            _coverage_matches(c, pin_code=pin_code, city=city, state=state)
+            for c in provider.coverage.all()
+        )
     pin = normalize_pin_code(pin_code)
     return provider.coverage.filter(matching_coverage_q(pin_code=pin, city=city, state=state)).exists()
 

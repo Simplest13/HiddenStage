@@ -40,28 +40,49 @@ CANCELLABLE_ASSIGNMENT_STATUSES = (
 
 
 def _profile_for(user):
-    return (
+    if hasattr(user, "_cached_provider_profile"):
+        return user._cached_provider_profile
+    profile = (
         ProviderProfile.objects.filter(user=user)
         .prefetch_related("services__category", "coverage")
         .first()
     )
+    if profile:
+        user._cached_provider_profile = profile
+    return profile
 
 
 def require_manager(user) -> ProviderProfile:
     if not user or not user.is_authenticated or not user.is_provider:
         raise PermissionDenied("Only Manager accounts can perform this action.")
-    profile = _profile_for(user)
+    if hasattr(user, "_cached_manager_profile"):
+        return user._cached_manager_profile
+    if hasattr(user, "_cached_provider_profile"):
+        profile = user._cached_provider_profile
+    else:
+        profile = ProviderProfile.objects.filter(user=user).first()
+        if profile:
+            user._cached_provider_profile = profile
     if profile is None or profile.kind != ProviderKind.MANAGER:
         raise PermissionDenied("Only Manager accounts can perform this action.")
+    user._cached_manager_profile = profile
     return profile
 
 
 def require_worker(user) -> ProviderProfile:
     if not user or not user.is_authenticated or not user.is_provider:
         raise PermissionDenied("Only Worker accounts can perform this action.")
-    profile = _profile_for(user)
+    if hasattr(user, "_cached_worker_profile"):
+        return user._cached_worker_profile
+    if hasattr(user, "_cached_provider_profile"):
+        profile = user._cached_provider_profile
+    else:
+        profile = ProviderProfile.objects.filter(user=user).first()
+        if profile:
+            user._cached_provider_profile = profile
     if profile is None or profile.kind != ProviderKind.WORKER:
         raise PermissionDenied("Only Worker accounts can perform this action.")
+    user._cached_worker_profile = profile
     return profile
 
 
@@ -307,31 +328,56 @@ def list_network(*, actor, include_history: bool = False) -> list[dict]:
     )
     field = "manager" if profile.kind == ProviderKind.MANAGER else "worker"
     counterpart = "worker" if profile.kind == ProviderKind.MANAGER else "manager"
-    associations = (
+    associations = list(
         NetworkAssociation.objects.filter(status__in=statuses, **{field: actor})
-        .select_related(f"{counterpart}__provider_profile")
+        .select_related(counterpart)
         .order_by("-associated_at")
     )
+    if not associations:
+        return []
+
+    from django.db.models import Count
+
+    counterpart_user_ids = [getattr(assoc, f"{counterpart}_id") for assoc in associations]
+    profiles = {
+        p.user_id: p
+        for p in ProviderProfile.objects.filter(user_id__in=counterpart_user_ids).prefetch_related(
+            "services__category", "coverage"
+        )
+    }
+
+    active_field = "worker_id" if profile.kind == ProviderKind.MANAGER else "manager_id"
+    active_counts = {
+        item[active_field]: item["cnt"]
+        for item in WorkerAssignment.objects.filter(
+            **{field: actor},
+            status__in=[AssignmentStatus.ACCEPTED, AssignmentStatus.IN_PROGRESS],
+        )
+        .values(active_field)
+        .annotate(cnt=Count("id"))
+    }
+    completed_counts = {
+        item[active_field]: item["cnt"]
+        for item in WorkerAssignment.objects.filter(
+            **{field: actor},
+            status=AssignmentStatus.COMPLETED,
+        )
+        .values(active_field)
+        .annotate(cnt=Count("id"))
+    }
+
     results = []
     for association in associations:
-        other = getattr(association, counterpart)
-        other_profile = _profile_for(other)
+        other_user_id = getattr(association, f"{counterpart}_id")
+        other_profile = profiles.get(other_user_id)
         if other_profile is None:
             continue
         results.append(
             {
                 "association": association,
                 "profile": other_profile,
-                "active_assignments": WorkerAssignment.objects.filter(
-                    manager=association.manager_id,
-                    worker=association.worker_id,
-                    status__in=BLOCKING_ASSIGNMENT_STATUSES,
-                ).count(),
-                "completed_assignments": WorkerAssignment.objects.filter(
-                    manager=association.manager_id,
-                    worker=association.worker_id,
-                    status=AssignmentStatus.COMPLETED,
-                ).count(),
+                "active_assignments": active_counts.get(other_user_id, 0),
+                "completed_assignments": completed_counts.get(other_user_id, 0),
             }
         )
     return results

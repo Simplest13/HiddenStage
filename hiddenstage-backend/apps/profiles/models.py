@@ -242,6 +242,12 @@ class ProviderProfile(UUIDModel):
         return self.display_name
 
     def declared_categories(self):
+        if hasattr(self, "_prefetched_objects_cache") and "services" in self._prefetched_objects_cache:
+            active = [s for s in self.services.all() if getattr(s, "is_active", False)]
+            if all("category" in getattr(s._state, "fields_cache", {}) for s in active):
+                valid = [s for s in active if getattr(s, "category", None) is not None]
+                valid.sort(key=lambda s: getattr(s.category, "sort_order", 0) if getattr(s.category, "sort_order", 0) is not None else 0)
+                return [s.category.code for s in valid]
         return list(
             self.services.filter(is_active=True)
             .order_by("category__sort_order")
@@ -249,11 +255,21 @@ class ProviderProfile(UUIDModel):
         )
 
     def is_complete(self) -> bool:
+        if hasattr(self, "_prefetched_objects_cache") and "services" in self._prefetched_objects_cache:
+            has_active_service = any(getattr(s, "is_active", False) for s in self.services.all())
+        else:
+            has_active_service = self.services.filter(is_active=True).exists()
+
+        if hasattr(self, "_prefetched_objects_cache") and "coverage" in self._prefetched_objects_cache:
+            has_coverage = len(self.coverage.all()) > 0
+        else:
+            has_coverage = self.coverage.exists()
+
         return bool(
             self.display_name
             and self.contact
-            and self.services.filter(is_active=True).exists()
-            and self.coverage.exists()
+            and has_active_service
+            and has_coverage
         )
 
     def refresh_completion(self):

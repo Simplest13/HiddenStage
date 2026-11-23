@@ -201,9 +201,10 @@ class ProviderDetailView(APIView):
             if provider.is_public is False:
                 return Response({"detail": "This profile is not currently public."}, status=status.HTTP_404_NOT_FOUND)
 
-        portfolio_qs = provider.portfolio_items.all()
-        if not is_owner:
-            portfolio_qs = portfolio_qs.filter(visibility="PUBLIC")
+        portfolio_items = [
+            item for item in provider.portfolio_items.all()
+            if is_owner or item.visibility == "PUBLIC"
+        ]
 
         team_members_data = []
         if provider.kind == "MANAGER":
@@ -221,6 +222,8 @@ class ProviderDetailView(APIView):
             ).exists()
         )
 
+        declared_cats = provider.declared_categories()
+
         payload = {
             "id": provider.id,
             "display_name": provider.display_name,
@@ -230,9 +233,9 @@ class ProviderDetailView(APIView):
             "description": provider.description,
             "contact": provider.contact if is_owner or has_matching_commitment else "",
             "verification_status": provider.verification_status,
-            "categories": provider.declared_categories(),
+            "categories": declared_cats,
             "coverage": provider.coverage.all(),
-            "primary_category": provider.primary_category.code if provider.primary_category else (provider.declared_categories()[0] if provider.declared_categories() else None),
+            "primary_category": provider.primary_category.code if provider.primary_category else (declared_cats[0] if declared_cats else None),
             "primary_category_name": provider.primary_category.name if provider.primary_category else None,
             "talent_category": provider.talent_category,
             "specializations": [s.strip() for s in (provider.specializations or "").split(",") if s.strip()] if provider.specializations else [],
@@ -248,7 +251,7 @@ class ProviderDetailView(APIView):
             "is_public": provider.is_public if provider.is_public is not None else True,
             "completed_at": provider.completed_at,
             "services": [s for s in provider.services.all() if s.is_active],
-            "portfolio_items": list(portfolio_qs),
+            "portfolio_items": portfolio_items,
             "team_members": team_members_data,
             "rating": None,
             "review_count": 0,

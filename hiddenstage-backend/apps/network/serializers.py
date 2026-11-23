@@ -118,6 +118,8 @@ class NetworkAssociationSerializer(serializers.ModelSerializer):
 
     @extend_schema_field(ProviderSummarySerializer(allow_null=True))
     def get_counterpart_profile(self, obj) -> dict | None:
+        if hasattr(obj, "_cached_counterpart_profile"):
+            return provider_summary(obj._cached_counterpart_profile)
         other = obj.worker if self._viewer_is_manager(obj) else obj.manager
         return provider_summary(getattr(other, "provider_profile", None))
 
@@ -127,6 +129,8 @@ class NetworkAssociationSerializer(serializers.ModelSerializer):
 
     @extend_schema_field(serializers.IntegerField())
     def get_active_assignments(self, obj) -> int:
+        if hasattr(obj, "_active_assignments"):
+            return obj._active_assignments
         return WorkerAssignment.objects.filter(
             manager=obj.manager_id,
             worker=obj.worker_id,
@@ -135,6 +139,8 @@ class NetworkAssociationSerializer(serializers.ModelSerializer):
 
     @extend_schema_field(serializers.IntegerField())
     def get_completed_assignments(self, obj) -> int:
+        if hasattr(obj, "_completed_assignments"):
+            return obj._completed_assignments
         return WorkerAssignment.objects.filter(
             manager=obj.manager_id,
             worker=obj.worker_id,
