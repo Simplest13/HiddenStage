@@ -54,6 +54,7 @@ export const routes = {
     quotes: '/app/provider/quotes',
     quoteForEvent: '/app/provider/quotes/:eventId',
     commitments: '/app/provider/commitments',
+    settings: '/app/provider/settings',
   },
   marketplace: {
     providersForEvent: '/app/events/:eventId/providers',

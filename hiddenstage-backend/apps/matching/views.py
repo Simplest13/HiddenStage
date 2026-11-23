@@ -176,7 +176,8 @@ class ProviderDetailView(APIView):
         except ValueError:
             pass
 
-        lookup = Q(id=pk) if is_uuid else Q(username__iexact=str(pk).lstrip("@"))
+        clean_pk = str(pk).lstrip("@")
+        lookup = Q(id=pk) if is_uuid else (Q(username__iexact=clean_pk) | Q(user__username__iexact=clean_pk))
         provider = (
             ProviderProfile.objects.filter(lookup, user__is_active=True)
             .select_related("user", "primary_category", "business")

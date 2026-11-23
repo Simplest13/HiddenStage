@@ -5,6 +5,9 @@ import './ui.css'
 type OverlayProps = { open: boolean; title: string; onClose: () => void; children: ReactNode }
 
 function useOverlay(open: boolean, onClose: () => void, initialFocus: RefObject<HTMLElement | null>) {
+  const onCloseRef = useRef(onClose)
+  onCloseRef.current = onClose
+
   useEffect(() => {
     if (!open) return
     const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null
@@ -13,7 +16,7 @@ function useOverlay(open: boolean, onClose: () => void, initialFocus: RefObject<
     const previousOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') onClose()
+      if (event.key === 'Escape') onCloseRef.current()
       if (event.key !== 'Tab' || !dialog) return
       const focusable = [...dialog.querySelectorAll<HTMLElement>('a[href], button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])')]
         .filter((element) => !element.hasAttribute('hidden'))
@@ -25,7 +28,7 @@ function useOverlay(open: boolean, onClose: () => void, initialFocus: RefObject<
     }
     document.addEventListener('keydown', onKeyDown)
     return () => { document.removeEventListener('keydown', onKeyDown); document.body.style.overflow = previousOverflow; previous?.focus() }
-  }, [open, onClose, initialFocus])
+  }, [open, initialFocus])
 }
 
 export function Modal({ open, title, onClose, children }: OverlayProps) {

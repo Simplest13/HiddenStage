@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
-import { Link, useMatches } from 'react-router-dom'
+import { Link, Navigate, useLocation, useMatches } from 'react-router-dom'
 import { Award, Calendar, CircleCheck, Folder, Sparkles } from 'kubai-icons-react'
 import { customerEventPath, routes } from '../../app/routes/routePaths'
 import { useAuth, useAuthActions, useTheme } from '../../app/auth/useAuth'
@@ -18,9 +18,16 @@ import './customer.css'
 type Page = 'customerHome' | 'customerRequests' | 'customerSettings'
 
 export default function CustomerPages() {
+  const auth = useAuth()
+  const location = useLocation()
   const page = (useMatches().at(-1)?.handle as { page?: Page } | undefined)?.page ?? 'customerHome'
   if (page === 'customerRequests') return <RequestsPage />
-  if (page === 'customerSettings') return <SettingsPage />
+  if (page === 'customerSettings') {
+    if (auth.status === 'authenticated' && auth.user?.accountType === 'PROVIDER' && location.pathname === routes.app.settings) {
+      return <Navigate to={routes.provider.settings} replace />
+    }
+    return <SettingsPage />
+  }
   return <DashboardPage />
 }
 

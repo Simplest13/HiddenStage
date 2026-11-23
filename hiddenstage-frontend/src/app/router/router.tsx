@@ -79,8 +79,8 @@ const protectedChildren: RouteObject[] = [
     { path: relativePath(routes.appBase, routes.marketplace.quotesForEvent), element: lazyPage(EventWorkspace), handle: { page: 'customerEventQuotes' } },
     { path: relativePath(routes.customer.home, routes.customer.quotes), element: lazyPage(QuotesPage), handle: { page: 'customerQuotes' } },
     { path: relativePath(routes.customer.home, routes.customer.commitments), element: lazyPage(CommitmentsPage), handle: { page: 'customerCommitments' } },
-    { path: 'settings', element: lazyPage(CustomerPages), handle: { page: 'customerSettings' } },
     ] },
+    { path: 'settings', element: lazyPage(CustomerPages), handle: { page: 'customerSettings' } },
     { path: 'customer', children: [
       { index: true, element: <Navigate to={routes.customer.home} replace /> },
       { path: 'requests', children: [
@@ -104,6 +104,7 @@ const protectedChildren: RouteObject[] = [
     { path: relativePath(routes.provider.home, routes.provider.quotes), element: lazyPage(ProviderPages), handle: { page: 'providerQuotes' } },
     { path: relativePath(routes.provider.home, routes.provider.quoteForEvent), element: lazyPage(ProviderPages), handle: { page: 'providerQuoteEditor' } },
     { path: relativePath(routes.provider.home, routes.provider.commitments), element: lazyPage(ProviderPages), handle: { page: 'providerCommitments' } },
+    { path: relativePath(routes.provider.home, routes.provider.settings), element: lazyPage(CustomerPages), handle: { page: 'customerSettings' } },
   ] }] },
   // Business workspace has no backend in this release; the URL stays reserved.
   { path: relativePath(routes.appBase, routes.business.home), element: <Navigate to={routes.forbidden} replace /> },

@@ -233,6 +233,11 @@ class ProviderProfile(UUIDModel):
             ),
         ]
 
+    def save(self, *args, **kwargs):
+        if not self.username and self.user and self.user.username:
+            self.username = self.user.username
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return self.display_name
 

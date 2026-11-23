@@ -428,6 +428,18 @@ export function ProviderProfilePage() {
     )
   }
 
+  if (liveData.loading) {
+    return (
+      <div className="wmg-page" style={{ padding: '4rem 1rem' }}>
+        <div className="wrap" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '300px' }}>
+          <div className="page-spinner" role="status" aria-label="Loading provider profile...">
+            <span className="spinner-dots" />
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   if (!liveProvider) {
     return (
       <div className="wmg-page" style={{ padding: '4rem 1rem' }}>

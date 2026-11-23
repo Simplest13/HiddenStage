@@ -67,7 +67,7 @@ export function WorkspaceLayout({ audience }: { audience: WorkspaceAudience }) {
             className="account-menu"
             type="button"
             aria-label={`Account menu: ${auth.status === 'authenticated' ? auth.user?.fullName ?? '' : ''}`}
-            onClick={() => navigate(routes.app.settings)}
+            onClick={() => navigate(audience === 'provider' ? routes.provider.settings : routes.app.settings)}
           >
             {auth.status === 'authenticated' && auth.user?.avatarUrl ? (
               <img

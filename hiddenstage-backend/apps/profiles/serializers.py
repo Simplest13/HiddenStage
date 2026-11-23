@@ -160,6 +160,8 @@ class ProviderProfileSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         data = super().to_representation(instance)
         data["categories"] = instance.declared_categories()
+        if not data.get("username") and instance.user and instance.user.username:
+            data["username"] = instance.user.username
         return data
 
     def validate_categories(self, value):
