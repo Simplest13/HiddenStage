@@ -79,7 +79,16 @@ ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "" if not DEBUG else "localhost
 _render_host = os.environ.get("RENDER_EXTERNAL_HOSTNAME", "").strip()
 if _render_host and _render_host not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append(_render_host)
-for _default_render_host in ["hiddenstage-j2j3.onrender.com", ".onrender.com"]:
+for _default_render_host in [
+    "localhost",
+    "127.0.0.1",
+    "testserver",
+    "hiddenstage-j2j3.onrender.com",
+    ".onrender.com",
+    "hiddenstage.in",
+    "www.hiddenstage.in",
+    ".hiddenstage.in",
+]:
     if _default_render_host not in ALLOWED_HOSTS:
         ALLOWED_HOSTS.append(_default_render_host)
 
@@ -347,13 +356,26 @@ CSRF_COOKIE_SECURE = not DEBUG
 CSRF_TRUSTED_ORIGINS = env_list(
     "CSRF_TRUSTED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173"
 )
-for _render_origin in ["https://hiddenstage-j2j3.onrender.com", "https://*.onrender.com"]:
+for _render_origin in [
+    "https://hiddenstage-j2j3.onrender.com",
+    "https://*.onrender.com",
+    "https://hiddenstage.in",
+    "https://www.hiddenstage.in",
+    "https://*.hiddenstage.in",
+]:
     if _render_origin not in CSRF_TRUSTED_ORIGINS:
         CSRF_TRUSTED_ORIGINS.append(_render_origin)
 
 CORS_ALLOWED_ORIGINS = env_list(
     "CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173"
 )
+for _cors_origin in [
+    "https://hiddenstage-j2j3.onrender.com",
+    "https://hiddenstage.in",
+    "https://www.hiddenstage.in",
+]:
+    if _cors_origin not in CORS_ALLOWED_ORIGINS:
+        CORS_ALLOWED_ORIGINS.append(_cors_origin)
 # A wildcard origin with credentials is both invalid per the CORS spec and a way to
 # leak session-authenticated responses. Refuse to boot with one in production.
 if not DEBUG and ("*" in CORS_ALLOWED_ORIGINS or "*" in CSRF_TRUSTED_ORIGINS):

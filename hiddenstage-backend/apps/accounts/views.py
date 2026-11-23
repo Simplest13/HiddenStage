@@ -120,10 +120,15 @@ class LogoutView(APIView):
 
 
 class MeView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
-    @extend_schema(responses={200: UserSerializer})
+    @extend_schema(responses={200: UserSerializer, 401: None})
     def get(self, request):
+        if not request.user or not request.user.is_authenticated:
+            return Response(
+                {"detail": "Authentication credentials were not provided."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
         return Response(UserSerializer(request.user).data)
 
 

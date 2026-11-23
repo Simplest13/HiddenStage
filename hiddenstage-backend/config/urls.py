@@ -9,10 +9,33 @@ from drf_spectacular.views import (
     SpectacularRedocView,
     SpectacularSwaggerView,
 )
+from rest_framework import status
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from apps.accounts.views import AvatarMediaView
 
+
+class RootHealthView(APIView):
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    def get(self, request):
+        return Response({
+            "status": "ok",
+            "service": "hiddenstage-api",
+            "version": "v1",
+            "health": "/api/v1/health/",
+            "docs": "/api/v1/docs/",
+        })
+
+    def head(self, request):
+        return Response(status=status.HTTP_200_OK)
+
+
 urlpatterns = [
+    path("", RootHealthView.as_view(), name="root-health"),
     path("admin/", admin.site.urls),
     path("api/v1/health/", include("apps.core.urls")),
     path("api/v1/auth/", include("apps.accounts.urls")),
