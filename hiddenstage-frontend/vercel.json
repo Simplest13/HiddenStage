@@ -4,5 +4,18 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "installCommand": "npm ci",
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://hiddenstage-j2j3.onrender.com/api/:path*"
+    },
+    {
+      "source": "/private-media/:path*",
+      "destination": "https://hiddenstage-j2j3.onrender.com/private-media/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
 }

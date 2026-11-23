@@ -54,10 +54,16 @@ def env_list(name: str, default: str = "") -> list[str]:
 
 
 DEBUG = env_bool("DJANGO_DEBUG", False)
+_is_hosted = bool(
+    os.environ.get("RENDER")
+    or os.environ.get("RENDER_EXTERNAL_HOSTNAME")
+    or not DEBUG
+)
 
-def _samesite(name: str) -> str:
+def _samesite(name: str, default: str | None = None) -> str:
     """Cookie SameSite policy, validated: a typo here fails closed, not silently."""
-    default = "None" if not DEBUG else "Lax"
+    if default is None:
+        default = "None" if _is_hosted else "Lax"
     value = os.environ.get(name, default).strip().lower()
     allowed = {"lax": "Lax", "strict": "Strict", "none": "None"}
     if value not in allowed:
@@ -347,12 +353,12 @@ SESSION_COOKIE_HTTPONLY = True
 # browser withholds the cookie on cross-site XHR and every signed-in request looks
 # anonymous. None requires Secure, which is already on whenever DEBUG is off.
 SESSION_COOKIE_SAMESITE = _samesite("SESSION_COOKIE_SAMESITE")
-SESSION_COOKIE_SECURE = not DEBUG
+SESSION_COOKIE_SECURE = env_bool("SESSION_COOKIE_SECURE", _is_hosted)
 
 CSRF_COOKIE_NAME = "csrftoken"
 CSRF_COOKIE_HTTPONLY = False
 CSRF_COOKIE_SAMESITE = _samesite("CSRF_COOKIE_SAMESITE")
-CSRF_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = env_bool("CSRF_COOKIE_SECURE", _is_hosted)
 CSRF_TRUSTED_ORIGINS = env_list(
     "CSRF_TRUSTED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173"
 )
