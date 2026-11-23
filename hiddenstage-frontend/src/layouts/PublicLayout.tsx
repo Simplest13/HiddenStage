@@ -9,10 +9,15 @@ import './layouts.css'
 const COPYRIGHT_YEAR = new Date().getFullYear()
 
 export function Brand({ inverse = false, to }: { inverse?: boolean; to?: string }) {
-  return <Link to={to ?? routes.home} className={`brand ${inverse ? 'brand--inverse' : ''}`} aria-label="HiddenStage home">
-    <span className="brand__mark" aria-hidden="true"><span /><span /><span /></span>
-    <span className="brand__word">hidden<span>stage</span></span>
-  </Link>
+  return (
+    <Link to={to ?? routes.home} className={`brand ${inverse ? 'brand--inverse' : ''}`} aria-label="HiddenStage home">
+      <img
+        src={inverse ? '/logo-inverse.png' : '/logo.png'}
+        alt="HiddenStage"
+        className="brand__logo"
+      />
+    </Link>
+  )
 }
 
 export function PublicLayout() {

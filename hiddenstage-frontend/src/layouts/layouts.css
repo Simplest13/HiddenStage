@@ -1,5 +1,9 @@
 /* Brand ------------------------------------------------------------------ */
-.brand { display: inline-flex; align-items: center; gap: 0.6rem; color: var(--color-indigo); text-decoration: none; }
+.brand { display: inline-flex; align-items: center; gap: 0.6rem; color: var(--color-indigo); text-decoration: none; transition: opacity 160ms ease, transform 160ms ease; }
+.brand:hover { opacity: 0.92; transform: translateY(-1px); }
+.brand__logo { height: 2.25rem; width: auto; max-width: 12.5rem; object-fit: contain; display: block; }
+.workspace-sidebar__brand .brand__logo { height: 2.45rem; max-width: 13rem; }
+.site-nav .brand__logo { height: 2.35rem; }
 .brand__word { font: 800 1.15rem/1 var(--font-ui); letter-spacing: -0.045em; }
 .brand__word span { color: var(--color-orange); }
 .brand__mark { display: flex; width: 1.65rem; height: 1.45rem; align-items: flex-end; gap: 0.16rem; }

@@ -102,7 +102,7 @@ function DashboardPage({ workspaceProfile }: { workspaceProfile?: ApiProviderPro
   const isManager = profile?.kind === 'MANAGER'
   const isWorker = profile?.kind === 'WORKER'
 
-  const providerName = profile?.display_name || (user?.fullName ? user.fullName : 'there')
+  const providerName = (user?.fullName ? user.fullName : profile?.display_name) || 'there'
   const profileMetric = {
     label: 'Profile',
     value: profile ? verificationStatusLabels[profile.verification_status] : '—',
@@ -201,7 +201,7 @@ function DashboardPage({ workspaceProfile }: { workspaceProfile?: ApiProviderPro
           <span>{presentation.eyebrow}</span>
         </span>
         <h1>
-          Welcome back{providerName ? `, ${providerName}` : ''}. <em>{presentation.title}</em>
+          Welcome back{providerName ? `, ${providerName}` : ''}. {profile ? <em>{presentation.title}</em> : null}
         </h1>
         <p>{presentation.intro}</p>
         <div className="dashboard-welcome-hero__chips">
