@@ -1,6 +1,7 @@
 import { apiRequest, jsonBody } from '../client'
 import type {
   ApiAvailability,
+  ApiCustomerConnection,
   ApiNetworkAssociation,
   ApiNetworkInvitation,
   ApiWorkerAssignment,
@@ -37,6 +38,10 @@ export const networkApi = {
   },
   workerDetail(userId: string) {
     return apiRequest<ApiWorkerDiscovery>(`/network/workers/${encodeURIComponent(userId)}/`)
+  },
+
+  listConnections() {
+    return apiRequest<ApiCustomerConnection[]>('/network/connections/')
   },
 
   listInvitations() {

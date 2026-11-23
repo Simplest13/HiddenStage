@@ -354,8 +354,10 @@ class CustomerNetworkListView(APIView):
 
     def get(self, request):
         connections = (
-            CustomerConnection.objects.filter(customer=request.user)
-            .select_related("provider", "provider__provider_profile")
+            CustomerConnection.objects.filter(
+                Q(customer=request.user) | Q(provider=request.user)
+            )
+            .select_related("customer", "provider", "provider__provider_profile")
             .order_by("-created_at")
         )
         serializer = CustomerConnectionSerializer(
@@ -397,12 +399,23 @@ class CustomerNetworkConnectView(APIView):
             conn.notes = notes
             conn.save(update_fields=["notes"])
 
+        # Ensure conversation exists so both sides can immediately message
+        Conversation.objects.get_or_create(
+            customer=request.user,
+            provider=provider,
+        )
+
+        dest_url = (
+            "/app/provider/customer-network"
+            if getattr(provider, "is_provider", False) or getattr(provider, "role", "") == "PROVIDER"
+            else "/app/network"
+        )
         Notification.objects.create(
             user=provider,
             title="New Customer Connection",
             message=f"{request.user.full_name} added you to their network.",
             notification_type="CONNECTION",
-            action_url="/app/network",
+            action_url=dest_url,
         )
 
         serializer = CustomerConnectionSerializer(conn, context={"request": request})
@@ -586,12 +599,15 @@ class SendMessageView(APIView):
         conv.save(update_fields=["updated_at"])
 
         recipient = conv.provider if request.user == conv.customer else conv.customer
+        recipient_is_provider = (
+            getattr(recipient, "is_provider", False) or getattr(recipient, "role", "") == "PROVIDER"
+        )
         Notification.objects.create(
             user=recipient,
             title=f"New message from {request.user.full_name}",
             message=content[:100] if content else "Sent an attachment",
             notification_type="MESSAGE",
-            action_url="/app/network",
+            action_url="/app/provider/customer-network" if recipient_is_provider else "/app/network",
         )
 
         return Response(

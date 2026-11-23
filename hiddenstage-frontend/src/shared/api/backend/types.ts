@@ -40,6 +40,7 @@ export type ApiNotification = {
 
 export type ApiCustomerConnection = {
   id: string
+  customer?: string
   provider: string
   provider_name: string
   provider_username?: string | null
@@ -50,6 +51,20 @@ export type ApiCustomerConnection = {
   notes?: string
   has_active_booking: boolean
   unread_messages_count: number
+  customer_details?: {
+    id: string
+    full_name: string
+    username?: string | null
+    email: string
+    phone?: string
+    avatar?: string | null
+    city?: string
+    locality?: string
+    state?: string
+    pin_code?: string
+    bio?: string
+    joined_at: string
+  }
   created_at: string
 }
 

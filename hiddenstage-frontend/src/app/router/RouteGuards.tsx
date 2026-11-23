@@ -43,9 +43,15 @@ export function RequireVerifiedCustomer() {
 
 export function RequireCustomerOnboarding() {
   const auth = useAuth()
+  const location = useLocation()
   if (auth.status === 'loading') return <Spinner label="Checking your session" />
   if (auth.status !== 'authenticated') return <Navigate to={routes.auth.login} replace />
-  if (!auth.roles.includes('CUSTOMER')) return <Navigate to={routes.forbidden} replace />
+  if (!auth.roles.includes('CUSTOMER')) {
+    if (auth.roles.includes('PROVIDER') && (location.pathname === routes.customer.network || location.pathname === '/app/network')) {
+      return <Navigate to={routes.provider.customerNetwork} replace />
+    }
+    return <Navigate to={routes.forbidden} replace />
+  }
   if (verificationPending(auth.user)) return <Navigate to={routes.auth.verifyEmail} replace />
   if (!auth.user.profileCompleted) return <Navigate to={routes.customer.onboarding} replace />
   return <Outlet />

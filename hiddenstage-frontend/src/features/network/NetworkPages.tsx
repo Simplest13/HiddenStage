@@ -11,6 +11,7 @@ import type {
   ApiAvailability,
   ApiCategory,
   ApiCommitment,
+  ApiCustomerConnection,
   ApiNetworkAssociation,
   ApiNetworkInvitation,
   ApiWorkerAssignment,
@@ -69,21 +70,24 @@ export default function NetworkPages() {
 function NetworkPage() {
   const { showToast } = useToast()
   const data = useApiData(async () => {
-    const [profile, associations, invitations] = await Promise.all([
+    const [profile, associations, invitations, customerConnections] = await Promise.all([
       profilesApi.getProviderProfile(),
       networkApi.listAssociations(true),
       networkApi.listInvitations(),
+      networkApi.listConnections(),
     ])
-    return { profile, associations, invitations }
+    return { profile, associations, invitations, customerConnections }
   }, [])
   const [ending, setEnding] = useState<ApiNetworkAssociation | null>(null)
   const [endReason, setEndReason] = useState('')
   const [busy, setBusy] = useState('')
   const [error, setError] = useState('')
+  const [inspectingCustomer, setInspectingCustomer] = useState<ApiCustomerConnection | null>(null)
 
   const profile = data.data?.profile
   const associations = data.data?.associations ?? []
   const invitations = data.data?.invitations ?? []
+  const customerConnections = data.data?.customerConnections ?? []
   const active = associations.filter((item) => item.status === 'ACTIVE')
   const ended = associations.filter((item) => item.status === 'ENDED')
   const pending = invitations.filter((item) => item.status === 'PENDING')
@@ -134,10 +138,68 @@ function NetworkPage() {
     {error && <p className="customer-error" role="alert">{error}</p>}
 
     <div className="stat-grid network-stats">
-      <Card className="dashboard-stat"><span className="dashboard-stat__label">{profile?.kind === 'WORKER' ? 'Active Managers' : 'Active Workers'}</span><strong>{active.length}</strong><p>Current network relationships.</p></Card>
+      <Card className="dashboard-stat"><span className="dashboard-stat__label">Connected Customers</span><strong>{customerConnections.length}</strong><p>Clients who added you to their network.</p></Card>
+      <Card className="dashboard-stat"><span className="dashboard-stat__label">{profile?.kind === 'WORKER' ? 'Active Managers' : 'Active Workers'}</span><strong>{active.length}</strong><p>Team network relationships.</p></Card>
       <Card className="dashboard-stat"><span className="dashboard-stat__label">{profile?.kind === 'WORKER' ? 'Invitations to review' : 'Invitations sent'}</span><strong>{pending.length}</strong><p>{profile?.kind === 'WORKER' ? 'Managers waiting for your answer.' : 'Workers who have not answered yet.'}</p></Card>
       <Card className="dashboard-stat"><span className="dashboard-stat__label">Past associations</span><strong>{ended.length}</strong><p>History is retained when a relationship ends.</p></Card>
     </div>
+
+    <section className="network-section">
+      <div className="section-toolbar">
+        <div>
+          <h2>Connected Customers</h2>
+          <p>Clients and hosts who connected with your services to coordinate event requirements.</p>
+        </div>
+        <Badge tone="accent">{customerConnections.length}</Badge>
+      </div>
+      {customerConnections.length === 0 ? (
+        <Card style={{ padding: '2rem 1.5rem', textAlign: 'center', background: 'var(--color-canvas)', border: '1px dashed var(--color-line)' }}>
+          <span style={{ fontSize: '2rem', display: 'block', marginBottom: '0.5rem' }}>👥</span>
+          <h3 style={{ margin: '0 0 0.35rem', fontSize: '1.05rem' }}>No customer connections yet</h3>
+          <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--color-muted)' }}>
+            When event hosts add you to their network from your directory profile, they will appear here so you can inspect their details and message them.
+          </p>
+        </Card>
+      ) : (
+        <div className="network-list">
+          {customerConnections.map((conn) => (
+            <Card className="network-card" key={conn.id}>
+              <div className="network-card__head">
+                <div className="network-card__identity">
+                  {conn.provider_avatar ? (
+                    <img src={conn.provider_avatar} alt={conn.provider_name} style={{ width: '2.5rem', height: '2.5rem', borderRadius: '50%', objectFit: 'cover' }} />
+                  ) : (
+                    <Avatar name={conn.provider_name} />
+                  )}
+                  <div>
+                    <h3>{conn.business_name || conn.provider_name}</h3>
+                    <p>{conn.provider_username ? `@${conn.provider_username}` : 'Direct Client'} · Connected {formatShortDate(conn.created_at)}</p>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                  <Badge tone="success">Customer</Badge>
+                  {conn.has_active_booking && <Badge tone="accent">Booked</Badge>}
+                  {conn.unread_messages_count > 0 && <Badge tone="warning">{conn.unread_messages_count} new msg</Badge>}
+                </div>
+              </div>
+              {conn.notes && <blockquote className="network-message">“{conn.notes}”</blockquote>}
+              <p className="network-meta">
+                Location: {[conn.customer_details?.locality, conn.customer_details?.city].filter(Boolean).join(', ') || conn.city || 'India'}
+                {conn.customer_details?.phone ? ` · Phone: ${conn.customer_details.phone}` : ''}
+              </p>
+              <div className="network-actions">
+                <Button type="button" size="sm" onClick={() => setInspectingCustomer(conn)}>
+                  Inspect Customer 🔍
+                </Button>
+                <ButtonLink to={routes.provider.customerNetwork} size="sm" variant="secondary">
+                  Message Client 💬
+                </ButtonLink>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+    </section>
 
     {profile?.kind === 'MANAGER' && pending.length > 0 && <section className="network-section">
       <div className="section-toolbar"><div><h2>Pending invitations</h2><p>Workers who have not answered your invitation yet. Invitations expire automatically.</p></div><Badge>{pending.length}</Badge></div>
@@ -209,6 +271,59 @@ function NetworkPage() {
         : 'The Worker is removed from your active network and cannot receive new assignments from you. Existing assignments and history remain.'}</p>
       <Textarea label="Reason (optional)" name="endReason" rows={3} maxLength={1000} value={endReason} onChange={(event) => setEndReason(event.target.value)} />
       <div className="modal-actions"><Button type="button" variant="secondary" onClick={() => setEnding(null)} disabled={Boolean(busy)}>Cancel</Button><Button type="button" disabled={Boolean(busy)} onClick={() => void confirmEnd()}>{busy ? 'Ending…' : profile?.kind === 'WORKER' ? 'Leave network' : 'Remove Worker'}</Button></div>
+    </Modal>
+
+    <Modal open={Boolean(inspectingCustomer)} title={`Customer Details: ${inspectingCustomer?.business_name || inspectingCustomer?.provider_name || 'Customer'}`} onClose={() => setInspectingCustomer(null)}>
+      {inspectingCustomer && (
+        <div className="inspect-customer-modal" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', paddingBottom: '1rem', borderBottom: '1px solid var(--color-line)' }}>
+            {inspectingCustomer.provider_avatar ? (
+              <img src={inspectingCustomer.provider_avatar} alt={inspectingCustomer.provider_name} style={{ width: '3.75rem', height: '3.75rem', borderRadius: '50%', objectFit: 'cover' }} />
+            ) : (
+              <Avatar name={inspectingCustomer.provider_name} size="lg" />
+            )}
+            <div>
+              <h3 style={{ margin: '0 0 0.25rem', fontSize: '1.25rem' }}>{inspectingCustomer.provider_name}</h3>
+              <div style={{ display: 'flex', gap: '0.45rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                {inspectingCustomer.provider_username && <Badge tone="neutral">@{inspectingCustomer.provider_username}</Badge>}
+                <Badge tone="success">Verified Customer</Badge>
+                {inspectingCustomer.has_active_booking && <Badge tone="accent">Active Event Booking</Badge>}
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
+            <div>
+              <span style={{ fontSize: '0.78rem', color: 'var(--color-muted)', display: 'block', textTransform: 'uppercase', fontWeight: 700 }}>Email</span>
+              <strong style={{ fontSize: '0.95rem' }}>{inspectingCustomer.customer_details?.email || 'Not provided'}</strong>
+            </div>
+            <div>
+              <span style={{ fontSize: '0.78rem', color: 'var(--color-muted)', display: 'block', textTransform: 'uppercase', fontWeight: 700 }}>Phone</span>
+              <strong style={{ fontSize: '0.95rem' }}>{inspectingCustomer.customer_details?.phone || 'Not provided'}</strong>
+            </div>
+            <div>
+              <span style={{ fontSize: '0.78rem', color: 'var(--color-muted)', display: 'block', textTransform: 'uppercase', fontWeight: 700 }}>Location</span>
+              <strong style={{ fontSize: '0.95rem' }}>{[inspectingCustomer.customer_details?.locality, inspectingCustomer.customer_details?.city, inspectingCustomer.customer_details?.state].filter(Boolean).join(', ') || inspectingCustomer.city || 'India'}</strong>
+            </div>
+            <div>
+              <span style={{ fontSize: '0.78rem', color: 'var(--color-muted)', display: 'block', textTransform: 'uppercase', fontWeight: 700 }}>Connected Since</span>
+              <strong style={{ fontSize: '0.95rem' }}>{formatShortDate(inspectingCustomer.created_at)}</strong>
+            </div>
+          </div>
+
+          {inspectingCustomer.notes && (
+            <div style={{ background: 'var(--color-canvas)', padding: '0.85rem 1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-line)' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-muted)', display: 'block', marginBottom: '0.25rem' }}>Connection Note</span>
+              <p style={{ margin: 0, fontSize: '0.9rem', fontStyle: 'italic' }}>“{inspectingCustomer.notes}”</p>
+            </div>
+          )}
+
+          <div className="modal-actions" style={{ marginTop: '0.5rem', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+            <Button type="button" variant="secondary" onClick={() => setInspectingCustomer(null)}>Close</Button>
+            <ButtonLink to={routes.provider.customerNetwork} onClick={() => setInspectingCustomer(null)}>Open Chat & Messages 💬</ButtonLink>
+          </div>
+        </div>
+      )}
     </Modal>
   </section>
 }

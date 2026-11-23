@@ -268,7 +268,7 @@ def accept_quotation(
             title="Quotation Accepted",
             message=f"{actor.full_name} accepted your quotation for {event.name} ({len(selected)} service(s)).",
             notification_type="BOOKING",
-            action_url=f"/provider/commitments/{commitment.pk}",
+            action_url="/app/provider/commitments",
         )
         Notification.objects.create(
             user=actor,

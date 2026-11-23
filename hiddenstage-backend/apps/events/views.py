@@ -410,7 +410,7 @@ class EventCompleteView(APIView):
                     title="Event Completed",
                     message=f"{request.user.full_name} confirmed completion of {event.name}. Congratulations!",
                     notification_type="BOOKING",
-                    action_url=f"/provider/commitments/{c.pk}",
+                    action_url="/app/provider/commitments",
                 )
             except Exception as e:
                 logger.warning("Failed to create provider completion notification: %s", e)

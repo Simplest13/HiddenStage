@@ -322,19 +322,22 @@ class AvailabilityResponseSerializer(serializers.Serializer):
 
 
 class CustomerConnectionSerializer(serializers.ModelSerializer):
-    provider_name = serializers.CharField(source="provider.full_name", read_only=True)
-    provider_username = serializers.CharField(source="provider.username", read_only=True)
+    provider_name = serializers.SerializerMethodField()
+    provider_username = serializers.SerializerMethodField()
     provider_avatar = serializers.SerializerMethodField()
     business_name = serializers.SerializerMethodField()
     category = serializers.SerializerMethodField()
     city = serializers.SerializerMethodField()
     has_active_booking = serializers.SerializerMethodField()
     unread_messages_count = serializers.SerializerMethodField()
+    customer = serializers.PrimaryKeyRelatedField(read_only=True)
+    customer_details = serializers.SerializerMethodField()
 
     class Meta:
         model = CustomerConnection
         fields = [
             "id",
+            "customer",
             "provider",
             "provider_name",
             "provider_username",
@@ -345,18 +348,37 @@ class CustomerConnectionSerializer(serializers.ModelSerializer):
             "notes",
             "has_active_booking",
             "unread_messages_count",
+            "customer_details",
             "created_at",
         ]
 
+    def _is_provider_view(self, obj) -> bool:
+        request = self.context.get("request")
+        return bool(request and request.user == obj.provider)
+
+    def get_provider_name(self, obj) -> str:
+        if self._is_provider_view(obj):
+            return obj.customer.full_name
+        return obj.provider.full_name
+
+    def get_provider_username(self, obj) -> str | None:
+        if self._is_provider_view(obj):
+            return obj.customer.username
+        return obj.provider.username
+
     def get_provider_avatar(self, obj) -> str | None:
-        p = obj.provider
-        return getattr(p, "avatar_url", None)
+        target = obj.customer if self._is_provider_view(obj) else obj.provider
+        return getattr(target, "avatar_url", None)
 
     def get_business_name(self, obj) -> str:
+        if self._is_provider_view(obj):
+            return obj.customer.full_name
         prof = getattr(obj.provider, "provider_profile", None)
         return prof.display_name if prof and prof.display_name else obj.provider.full_name
 
     def get_category(self, obj) -> str:
+        if self._is_provider_view(obj):
+            return "Client"
         prof = getattr(obj.provider, "provider_profile", None)
         if prof and hasattr(prof, "declared_categories"):
             cats = prof.declared_categories()
@@ -365,6 +387,8 @@ class CustomerConnectionSerializer(serializers.ModelSerializer):
         return "Specialist"
 
     def get_city(self, obj) -> str:
+        if self._is_provider_view(obj):
+            return "Customer"
         prof = getattr(obj.provider, "provider_profile", None)
         if prof and hasattr(prof, "coverage"):
             first_cov = prof.coverage.first()
@@ -377,10 +401,30 @@ class CustomerConnectionSerializer(serializers.ModelSerializer):
         return Commitment.objects.filter(customer=obj.customer, provider=obj.provider, status="ACTIVE").exists()
 
     def get_unread_messages_count(self, obj) -> int:
+        request = self.context.get("request")
         conv = Conversation.objects.filter(customer=obj.customer, provider=obj.provider).first()
         if not conv:
             return 0
-        return conv.messages.filter(is_read=False).exclude(sender=obj.customer).count()
+        exclude_user = request.user if request else obj.customer
+        return conv.messages.filter(is_read=False).exclude(sender=exclude_user).count()
+
+    def get_customer_details(self, obj) -> dict:
+        c = obj.customer
+        prof = getattr(c, "customer_profile", None)
+        return {
+            "id": str(c.id),
+            "full_name": c.full_name,
+            "username": c.username,
+            "email": c.email,
+            "phone": getattr(c, "phone", "") or "",
+            "avatar": getattr(c, "avatar_url", None),
+            "city": prof.city if prof and prof.city else "",
+            "locality": prof.locality if prof and prof.locality else "",
+            "state": prof.state if prof and prof.state else "",
+            "pin_code": prof.pin_code if prof and prof.pin_code else "",
+            "bio": prof.bio if prof and prof.bio else "",
+            "joined_at": c.date_joined,
+        }
 
 
 class ChatMessageSerializer(serializers.ModelSerializer):

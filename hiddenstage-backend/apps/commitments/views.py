@@ -252,7 +252,7 @@ class SimulatePaymentView(APIView):
             title="Payment Received in Escrow",
             message=f"₹{amount_inr:,} received for {invoice.event.name} from {request.user.full_name}. Funds held in escrow.",
             notification_type="PAYMENT",
-            action_url="/app/payments",
+            action_url="/app/provider/commitments",
         )
 
         return Response(

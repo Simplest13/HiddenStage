@@ -2,8 +2,12 @@ import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { networkApi } from '../../shared/api/backend/ecosystem'
 import type { ApiChatMessage, ApiConversation, ApiCustomerConnection } from '../../shared/api/backend/types'
 import { Avatar, Button, Card, Spinner } from '../../shared/ui'
+import { useAuth } from '../../app/auth/useAuth'
 
 export function CustomerNetworkPage() {
+  const auth = useAuth()
+  const isProvider = auth.status === 'authenticated' && auth.roles.includes('PROVIDER') && !auth.roles.includes('CUSTOMER')
+
   const [connections, setConnections] = useState<ApiCustomerConnection[]>([])
   const [conversations, setConversations] = useState<ApiConversation[]>([])
   const [activeConvId, setActiveConvId] = useState<string | null>(null)
@@ -131,23 +135,31 @@ export function CustomerNetworkPage() {
     }
   }
 
-  async function handleDisconnect(providerId: string) {
-    if (!window.confirm('Remove this specialist from your network?')) return
+  async function handleDisconnect(partnerId: string) {
+    if (!window.confirm(isProvider ? 'Remove this client from your network?' : 'Remove this specialist from your network?')) return
     try {
-      await networkApi.disconnect(providerId)
-      setConnections((prev) => prev.filter((c) => c.provider !== providerId))
+      await networkApi.disconnect(partnerId)
+      setConnections((prev) => prev.filter((c) => c.provider !== partnerId && c.customer !== partnerId))
     } catch {
       // ignore
     }
   }
 
   async function handleSelectConnection(conn: ApiCustomerConnection) {
-    const existing = conversations.find((c) => c.provider === conn.provider)
+    const existing = conversations.find(
+      (c) =>
+        c.id === conn.id ||
+        (conn.customer && c.customer === conn.customer) ||
+        c.provider === conn.provider ||
+        c.other_user?.id === conn.provider ||
+        (conn.customer && c.other_user?.id === conn.customer)
+    )
     if (existing) {
       setActiveConvId(existing.id)
     } else {
       try {
-        const conv = await networkApi.startConversation(conn.provider)
+        const targetId = isProvider ? (conn.customer || conn.provider) : conn.provider
+        const conv = await networkApi.startConversation(targetId)
         setConversations((prev) => [conv, ...prev])
         setActiveConvId(conv.id)
       } catch {
@@ -156,8 +168,38 @@ export function CustomerNetworkPage() {
     }
   }
 
+  // Merged list of contacts from connections and conversations
+  const allContacts: ApiCustomerConnection[] = [...connections]
+  for (const conv of conversations) {
+    const alreadyPresent = allContacts.some(
+      (c) =>
+        c.id === conv.id ||
+        (c.customer && c.customer === conv.customer) ||
+        c.provider === conv.provider ||
+        c.provider === conv.other_user?.id ||
+        (c.customer && c.customer === conv.other_user?.id)
+    )
+    if (!alreadyPresent && conv.other_user) {
+      allContacts.push({
+        id: conv.id,
+        customer: conv.customer,
+        provider: conv.provider,
+        provider_name: conv.other_user.name,
+        provider_username: conv.other_user.username,
+        provider_avatar: conv.other_user.avatar,
+        business_name: conv.other_user.business_name || conv.other_user.name,
+        category: isProvider ? 'Customer' : 'Specialist',
+        city: 'Direct Client',
+        notes: '',
+        has_active_booking: false,
+        unread_messages_count: conv.unread_count || 0,
+        created_at: conv.created_at,
+      })
+    }
+  }
+
   // Filtered connections
-  const filteredConnections = connections.filter((c) => {
+  const filteredConnections = allContacts.filter((c) => {
     const q = searchQuery.toLowerCase().replace(/^@/, '')
     const matchesQ =
       !q ||
@@ -172,11 +214,17 @@ export function CustomerNetworkPage() {
     <div className="customer-page" style={{ height: 'calc(100vh - 9rem)', display: 'flex', flexDirection: 'column' }}>
       <div className="customer-page__heading" style={{ flexShrink: 0 }}>
         <div>
-          <span className="eyebrow eyebrow--accent">RELATIONSHIP NETWORK</span>
-          <h1>My Network &amp; Messages</h1>
-          <p>Connect directly with trusted event specialists and coordinate requirements in real time.</p>
+          <span className="eyebrow eyebrow--accent">
+            {isProvider ? 'CUSTOMER NETWORK' : 'RELATIONSHIP NETWORK'}
+          </span>
+          <h1>{isProvider ? 'Customer Network & Messages' : 'My Network & Messages'}</h1>
+          <p>
+            {isProvider
+              ? 'Communicate directly with clients and hosts who connected with your services.'
+              : 'Connect directly with trusted event specialists and coordinate requirements in real time.'}
+          </p>
         </div>
-        <Button onClick={() => setShowFindModal(true)}>+ Find Specialists by @username</Button>
+        {!isProvider && <Button onClick={() => setShowFindModal(true)}>+ Find Specialists by @username</Button>}
       </div>
 
       {/* Main 2-Panel Chat & Network Layout */}
@@ -250,20 +298,31 @@ export function CustomerNetworkPage() {
             ) : filteredConnections.length === 0 ? (
               <div style={{ padding: '2rem 1rem', textAlign: 'center', color: 'var(--color-muted)' }}>
                 <span style={{ fontSize: '1.8rem', display: 'block', marginBottom: '0.4rem' }}>👥</span>
-                <p style={{ margin: 0, fontSize: '0.85rem' }}>No specialists match your search.</p>
-                <Button
-                  size="sm"
-                  variant="quiet"
-                  style={{ marginTop: '0.6rem' }}
-                  onClick={() => setShowFindModal(true)}
-                >
-                  Search Directory
-                </Button>
+                <p style={{ margin: 0, fontSize: '0.85rem' }}>
+                  {isProvider ? 'No customers connected yet.' : 'No specialists match your search.'}
+                </p>
+                {!isProvider && (
+                  <Button
+                    size="sm"
+                    variant="quiet"
+                    style={{ marginTop: '0.6rem' }}
+                    onClick={() => setShowFindModal(true)}
+                  >
+                    Search Directory
+                  </Button>
+                )}
               </div>
             ) : (
               <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
                 {filteredConnections.map((conn) => {
-                  const conv = conversations.find((c) => c.provider === conn.provider)
+                  const conv = conversations.find(
+                    (c) =>
+                      c.id === conn.id ||
+                      (conn.customer && c.customer === conn.customer) ||
+                      c.provider === conn.provider ||
+                      c.other_user?.id === conn.provider ||
+                      (conn.customer && c.other_user?.id === conn.customer)
+                  )
                   const isSelected = conv && conv.id === activeConvId
                   return (
                     <li key={conn.id}>
@@ -329,10 +388,11 @@ export function CustomerNetworkPage() {
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.3rem' }}>
                           <button
                             type="button"
-                            title="Disconnect specialist"
+                            title={isProvider ? 'Disconnect client' : 'Disconnect specialist'}
                             onClick={(e) => {
                               e.stopPropagation()
-                              void handleDisconnect(conn.provider)
+                              const partnerId = isProvider ? (conn.customer || conn.provider) : conn.provider
+                              void handleDisconnect(partnerId)
                             }}
                             style={{
                               background: 'none',

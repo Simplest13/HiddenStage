@@ -2,6 +2,45 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { sessionApi } from '../api/backend/session'
 import type { ApiNotification } from '../api/backend/types'
+import { useAuth } from '../../app/auth/useAuth'
+
+function resolveNotificationUrl(item: ApiNotification, roles: readonly string[]): string {
+  const url = item.action_url
+  if (!url) return ''
+  const isProvider = roles.includes('PROVIDER')
+  const isCustomer = roles.includes('CUSTOMER')
+
+  if (isProvider) {
+    if (
+      item.notification_type === 'CONNECTION' ||
+      item.notification_type === 'MESSAGE' ||
+      item.title.toLowerCase().includes('customer') ||
+      url.includes('customer-network') ||
+      url === '/app/network' ||
+      url === '/network'
+    ) {
+      return '/app/provider/customer-network'
+    }
+    if (url === '/app/payments' || url === '/payments') return '/app/provider/commitments'
+    if (url === '/app/bookings' || url === '/bookings') return '/app/provider/commitments'
+    if (url === '/app/events' || url === '/events') return '/app/provider/opportunities'
+    if (url.startsWith('/provider/commitments')) return '/app/provider/commitments'
+    if (url.startsWith('/provider/')) return `/app${url}`
+    if (url.startsWith('/app/customer/')) return '/app/provider/customer-network'
+    return url
+  }
+
+  if (isCustomer) {
+    if (url.startsWith('/app/provider/network') || url.startsWith('/app/provider/customer-network')) return '/app/network'
+    if (url.startsWith('/app/provider/commitments')) return '/app/customer/commitments'
+    if (url.startsWith('/provider/commitments')) return '/app/customer/commitments'
+    if (url.startsWith('/app/provider/')) return '/app'
+    if (url.startsWith('/provider/')) return '/app'
+    return url
+  }
+
+  return url
+}
 
 export function NotificationDropdown() {
   const [open, setOpen] = useState(false)
@@ -11,6 +50,7 @@ export function NotificationDropdown() {
   const [loading, setLoading] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
+  const auth = useAuth()
 
   async function loadNotifications() {
     try {
@@ -67,7 +107,11 @@ export function NotificationDropdown() {
     }
     setOpen(false)
     if (item.action_url) {
-      navigate(item.action_url)
+      const roles = auth.status === 'authenticated' ? auth.roles : []
+      const destination = resolveNotificationUrl(item, roles)
+      if (destination) {
+        navigate(destination)
+      }
     }
   }
 
