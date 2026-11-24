@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { networkApi } from '../../shared/api/backend/ecosystem'
+import { subscribeToRealtime } from '../../shared/api/realtime'
 import type { ApiChatMessage, ApiConversation, ApiCustomerConnection } from '../../shared/api/backend/types'
 import { Avatar, Button, Card, Spinner } from '../../shared/ui'
 import { useAuth } from '../../app/auth/useAuth'
@@ -114,11 +115,30 @@ export function CustomerNetworkPage() {
       }
     }
     void fetchThread(false)
+
+    // Realtime instant push for incoming messages
+    const unsubscribe = subscribeToRealtime((evt) => {
+      if (!active) return
+      if (evt.type === 'chat_message' && evt.data?.conversation_id === activeConvId) {
+        const incoming = evt.data.message
+        setMessages((prev) => {
+          if (prev.some((m) => m.id === incoming.id)) return prev
+          return [...prev, incoming]
+        })
+        setTimeout(() => {
+          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+        }, 50)
+      }
+    })
+
+    // Passive fallback sync
     const timer = setInterval(() => {
       void fetchThread(true)
-    }, 8000)
+    }, 45000)
+
     return () => {
       active = false
+      unsubscribe()
       clearInterval(timer)
     }
   }, [activeConvId])
@@ -126,15 +146,37 @@ export function CustomerNetworkPage() {
   async function handleSendMessage(e: FormEvent) {
     e.preventDefault()
     if (!activeConvId || (!messageText.trim() && !attachmentFile)) return
+    const textToSend = messageText.trim()
+    const fileToSend = attachmentFile
+
+    // Optimistic UI update: message appears instantly in chat window (0ms)
+    const tempId = `temp-${Date.now()}`
+    const currentUser = (auth as any).user
+    const optimisticMsg: ApiChatMessage = {
+      id: tempId,
+      conversation: activeConvId,
+      sender: currentUser?.id || '',
+      sender_name: currentUser?.full_name || 'Me',
+      sender_username: currentUser?.username || '',
+      sender_avatar: currentUser?.avatar || '',
+      is_me: true,
+      content: textToSend,
+      attachment: fileToSend ? URL.createObjectURL(fileToSend) : undefined,
+      created_at: new Date().toISOString(),
+      is_read: false,
+    }
+
+    setMessages((prev) => [...prev, optimisticMsg])
+    setMessageText('')
+    setAttachmentFile(null)
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }, 20)
+
     try {
       setSending(true)
-      const newMsg = await networkApi.sendMessage(activeConvId, messageText.trim(), attachmentFile || undefined)
-      setMessages((prev) => [...prev, newMsg])
-      setMessageText('')
-      setAttachmentFile(null)
-      setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-      }, 50)
+      const newMsg = await networkApi.sendMessage(activeConvId, textToSend, fileToSend || undefined)
+      setMessages((prev) => prev.map((m) => (m.id === tempId ? newMsg : m)))
     } catch {
       // ignore
     } finally {
@@ -166,12 +208,16 @@ export function CustomerNetworkPage() {
   async function handleConnect(provider: any) {
     try {
       setConnectingId(provider.id)
-      await networkApi.connect(provider.id, provider.username, 'Connected from Directory')
-      await loadData()
-      // Open or create conversation
-      const conv = await networkApi.startConversation(provider.id)
-      setActiveConvId(conv.id)
+      // Parallel execution: connect and open conversation concurrently in one round-trip
+      const [, conv] = await Promise.all([
+        networkApi.connect(provider.id, provider.username, 'Connected from Directory'),
+        networkApi.startConversation(provider.id),
+      ])
+      if (conv?.id) {
+        setActiveConvId(conv.id)
+      }
       setShowFindModal(false)
+      void loadData()
     } catch {
       // ignore
     } finally {
@@ -182,13 +228,16 @@ export function CustomerNetworkPage() {
   async function handleAddSuggestionToNetwork(profile: any) {
     try {
       setConnectingSuggestionId(profile.id)
-      await networkApi.connect(profile.id, profile.username || undefined, 'Added from Network search')
-      const conv = await networkApi.startConversation(profile.id)
-      await loadData()
+      // Parallel execution: connect and open conversation concurrently
+      const [, conv] = await Promise.all([
+        networkApi.connect(profile.id, profile.username || undefined, 'Added from Network search'),
+        networkApi.startConversation(profile.id),
+      ])
       if (conv?.id) {
         setActiveConvId(conv.id)
       }
       setLiveSuggestions((prev) => prev.filter((p) => p.id !== profile.id))
+      void loadData()
     } catch (err: any) {
       alert(err?.message || 'Failed to add to network')
     } finally {

@@ -1,4 +1,8 @@
-from django.db.models import Q
+import json
+import queue
+from django.core.cache import cache
+from django.db.models import BooleanField, Exists, OuterRef, Q, Subquery, Value
+from django.http import StreamingHttpResponse
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
@@ -8,7 +12,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts.models import Notification, User
-from apps.core.permissions import IsProvider
+from apps.core.permissions import IsCustomerOrProvider, IsProvider
+from apps.network.events import event_bus
+from apps.profiles.models import ProviderCoverage, ProviderService
 from apps.network.models import (
     AssociationStatus,
     ChatMessage,
@@ -205,10 +211,12 @@ class NetworkInvitationActionView(APIView):
 
 
 class NetworkAssociationListView(APIView):
-    permission_classes = [IsProvider]
+    permission_classes = [IsCustomerOrProvider]
 
     @extend_schema(responses={200: NetworkAssociationSerializer(many=True)})
     def get(self, request):
+        if not request.user.is_provider:
+            return Response([])
         include_history = request.query_params.get("history") in {"1", "true", "yes"}
         items = list_network(actor=request.user, include_history=include_history)
         associations = []
@@ -353,15 +361,59 @@ class CustomerNetworkListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        connections = (
+        connections = list(
             CustomerConnection.objects.filter(
                 Q(customer=request.user) | Q(provider=request.user)
             )
-            .select_related("customer", "provider", "provider__provider_profile")
+            .select_related(
+                "customer",
+                "customer__customer_profile",
+                "provider",
+                "provider__provider_profile",
+                "provider__customer_profile",
+            )
+            .prefetch_related(
+                "provider__provider_profile__services__category",
+                "provider__provider_profile__coverage",
+            )
             .order_by("-created_at")
         )
+
+        pairs = [(c.customer_id, c.provider_id) for c in connections]
+        active_pairs = set()
+        if pairs:
+            from apps.commitments.models import Commitment
+            c_ids = [p[0] for p in pairs]
+            p_ids = [p[1] for p in pairs]
+            active_pairs = set(
+                Commitment.objects.filter(
+                    customer_id__in=c_ids,
+                    provider_id__in=p_ids,
+                    status="ACTIVE",
+                ).values_list("customer_id", "provider_id")
+            )
+
+        unread_map = {}
+        if pairs:
+            convs = Conversation.objects.filter(
+                Q(customer=request.user) | Q(provider=request.user)
+            ).prefetch_related("messages")
+            for conv in convs:
+                pair_key = (conv.customer_id, conv.provider_id)
+                unread_cnt = sum(
+                    1 for m in conv.messages.all()
+                    if not m.is_read and m.sender_id != request.user.id
+                )
+                unread_map[pair_key] = unread_cnt
+
         serializer = CustomerConnectionSerializer(
-            connections, many=True, context={"request": request}
+            connections,
+            many=True,
+            context={
+                "request": request,
+                "active_pairs": active_pairs,
+                "unread_map": unread_map,
+            },
         )
         return Response(serializer.data)
 
@@ -419,6 +471,25 @@ class CustomerNetworkConnectView(APIView):
             action_url=dest_url,
         )
 
+        event_bus.publish_to_user(
+            str(provider.id),
+            "network_update",
+            {
+                "type": "connected",
+                "customer_id": str(request.user.id),
+                "customer_name": request.user.full_name,
+            },
+        )
+        event_bus.publish_to_user(
+            str(provider.id),
+            "notification",
+            {
+                "title": "New Customer Connection",
+                "message": f"{request.user.full_name} added you to their network.",
+                "notification_type": "CONNECTION",
+            },
+        )
+
         serializer = CustomerConnectionSerializer(conn, context={"request": request})
         return Response(
             serializer.data,
@@ -447,16 +518,30 @@ class CustomerNetworkSearchView(APIView):
     def get(self, request):
         query = request.query_params.get("q", "").strip()
         category = request.query_params.get("category", "").strip()
-        qs = (
-            User.objects.filter(is_active=True)
-            .select_related("provider_profile")
-            .prefetch_related(
-                "provider_profile__coverage",
-                "provider_profile__services__category",
-            )
+        user_id = str(request.user.id) if request.user.is_authenticated else "anon"
+        cache_key = f"search_providers:{user_id}:{query.lower()}:{category.lower()}"
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return Response(cached)
+
+        first_city = Subquery(
+            ProviderCoverage.objects.filter(provider=OuterRef("provider_profile")).values("city")[:1]
         )
+        first_category = Subquery(
+            ProviderService.objects.filter(provider=OuterRef("provider_profile"), is_active=True)
+            .order_by("category__sort_order")
+            .values("category__name")[:1]
+        )
+
+        qs = User.objects.filter(is_active=True)
         if request.user.is_authenticated:
             qs = qs.exclude(id=request.user.id)
+            conn_subquery = CustomerConnection.objects.filter(
+                customer=request.user, provider=OuterRef("pk")
+            )
+            qs = qs.annotate(is_connected=Exists(conn_subquery))
+        else:
+            qs = qs.annotate(is_connected=Value(False, output_field=BooleanField()))
 
         if query:
             clean_q = query.lstrip("@").strip()
@@ -465,27 +550,20 @@ class CustomerNetworkSearchView(APIView):
                 | Q(full_name__icontains=clean_q)
                 | Q(provider_profile__display_name__icontains=clean_q)
                 | Q(provider_profile__coverage__city__icontains=clean_q)
-            ).distinct()
+            )
         if category and category.lower() != "all":
-            qs = qs.filter(provider_profile__services__category__code__iexact=category).distinct()
+            qs = qs.filter(provider_profile__services__category__code__iexact=category)
+
+        qs = (
+            qs.distinct()
+            .select_related("provider_profile")
+            .annotate(city=first_city, category_name=first_category)
+        )
 
         results = []
-        user_conns = set()
-        if request.user.is_authenticated:
-            user_conns = set(
-                CustomerConnection.objects.filter(customer=request.user).values_list(
-                    "provider_id", flat=True
-                )
-            )
         for u in qs[:30]:
             prof = getattr(u, "provider_profile", None)
-            cats = (
-                prof.declared_categories()
-                if prof and hasattr(prof, "declared_categories")
-                else []
-            )
-            cat_label = cats[0] if cats else ("Client" if u.role == "CUSTOMER" else "Specialist")
-            cov = prof.coverage.first() if prof and hasattr(prof, "coverage") else None
+            cat_label = u.category_name or ("Client" if u.role == "CUSTOMER" else "Specialist")
             results.append(
                 {
                     "id": str(u.id),
@@ -496,10 +574,11 @@ class CustomerNetworkSearchView(APIView):
                     if prof and prof.display_name
                     else u.full_name,
                     "category": cat_label,
-                    "city": cov.city if cov else "India",
-                    "is_connected": u.id in user_conns,
+                    "city": u.city or "India",
+                    "is_connected": bool(u.is_connected),
                 }
             )
+        cache.set(cache_key, results, timeout=60)
         return Response(results)
 
 
@@ -512,7 +591,12 @@ class ConversationListView(APIView):
             Conversation.objects.filter(
                 Q(customer=request.user) | Q(provider=request.user)
             )
-            .select_related("customer", "provider", "provider__provider_profile")
+            .select_related(
+                "customer",
+                "customer__provider_profile",
+                "provider",
+                "provider__provider_profile",
+            )
             .prefetch_related("messages")
         )
         serializer = ConversationSerializer(qs, many=True, context={"request": request})
@@ -615,7 +699,63 @@ class SendMessageView(APIView):
             action_url="/app/provider/customer-network" if recipient_is_provider else "/app/network",
         )
 
+        msg_data = ChatMessageSerializer(msg, context={"request": request}).data
+
+        event_bus.publish_to_user(
+            str(recipient.id),
+            "chat_message",
+            {
+                "conversation_id": str(conv.id),
+                "message": msg_data,
+            },
+        )
+        event_bus.publish_to_user(
+            str(recipient.id),
+            "notification",
+            {
+                "title": f"New message from {request.user.full_name}",
+                "message": content[:100] if content else "Sent an attachment",
+                "notification_type": "MESSAGE",
+            },
+        )
+
         return Response(
-            ChatMessageSerializer(msg, context={"request": request}).data,
+            msg_data,
             status=status.HTTP_201_CREATED,
         )
+
+
+class RealtimeStreamView(APIView):
+    """Server-Sent Events (SSE) endpoint for sub-millisecond push updates.
+
+    Delivers incoming chat messages, status transitions, and notifications
+    directly to active browser sessions without polling lag.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user_id = str(request.user.id)
+        q = event_bus.subscribe(user_id)
+
+        def event_stream():
+            yield f"event: connected\ndata: {json.dumps({'status': 'connected', 'user_id': user_id})}\n\n"
+            try:
+                while True:
+                    try:
+                        item = q.get(timeout=15)
+                        yield f"event: message\ndata: {json.dumps(item)}\n\n"
+                    except queue.Empty:
+                        yield ": keepalive\n\n"
+            except GeneratorExit:
+                event_bus.unsubscribe(q, user_id)
+            finally:
+                event_bus.unsubscribe(q, user_id)
+
+        response = StreamingHttpResponse(
+            event_stream(),
+            content_type="text/event-stream",
+        )
+        response["Cache-Control"] = "no-cache, no-transform"
+        response["X-Accel-Buffering"] = "no"
+        return response

@@ -32,18 +32,20 @@ export default function CustomerPages() {
 }
 
 function useOrganiserData() {
-  const events = useApiData(() => eventsApi.list(), [])
-  const commitments = useApiData(() => marketplaceApi.listCommitments(), [])
+  const events = useApiData(() => eventsApi.list(), [], { key: 'customer-events' })
+  const commitments = useApiData(() => marketplaceApi.listCommitments(), [], { key: 'customer-commitments' })
   const quotations = useApiData(async () => {
-    const list = await eventsApi.list()
-    const live = list.filter((event) => event.status === 'SUBMITTED' || event.status === 'CLOSED')
-    const groups = await Promise.all(live.map(async (event) => {
-      const quotes = await marketplaceApi.listEventQuotations(event.id).catch(() => [])
-      return quotes.map((quotation) => ({ quotation, event }))
+    const list = await marketplaceApi.listCustomerQuotations().catch(() => [])
+    return list.map((quotation) => ({
+      quotation,
+      event: {
+        id: quotation.event,
+        name: quotation.event_name,
+        event_date: quotation.event_date ?? '',
+      },
     }))
-    return groups.flat()
-  }, [])
-  const profile = useApiData(() => profilesApi.getCustomerProfile(), [])
+  }, [], { key: 'customer-quotations' })
+  const profile = useApiData(() => profilesApi.getCustomerProfile(), [], { key: 'customer-profile' })
   return { events, commitments, quotations, profile }
 }
 
@@ -191,7 +193,7 @@ function latestTotal(quotation: ApiQuotation) {
 }
 
 function RequestsPage() {
-  const data = useApiData(() => eventsApi.list(), [])
+  const data = useApiData(() => eventsApi.list(), [], { key: 'customer-events' })
   const [query, setQuery] = useState('')
   const [status, setStatus] = useState('ALL')
   const [sort, setSort] = useState('soonest')

@@ -274,6 +274,9 @@ class CustomerConnection(UUIDModel, TimeStampedModel):
 
     class Meta:
         ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["provider", "customer"], name="cust_conn_prov_cust_idx"),
+        ]
         constraints = [
             models.UniqueConstraint(
                 fields=["customer", "provider"], name="uniq_customer_provider_connection"
@@ -297,6 +300,10 @@ class Conversation(UUIDModel, TimeStampedModel):
 
     class Meta:
         ordering = ["-updated_at"]
+        indexes = [
+            models.Index(fields=["customer", "provider"], name="conv_cust_prov_idx"),
+            models.Index(fields=["provider", "customer"], name="conv_prov_cust_idx"),
+        ]
 
     def __str__(self):
         return f"Conversation: {self.customer_id} with {self.provider_id}"
@@ -316,6 +323,9 @@ class ChatMessage(UUIDModel, TimeStampedModel):
 
     class Meta:
         ordering = ["created_at"]
+        indexes = [
+            models.Index(fields=["conversation", "is_read", "sender"], name="msg_conv_read_sender_idx"),
+        ]
 
     def __str__(self):
         return f"Message {self.pk} in {self.conversation_id} from {self.sender_id}"

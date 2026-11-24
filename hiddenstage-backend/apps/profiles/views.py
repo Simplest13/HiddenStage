@@ -43,9 +43,12 @@ class ServiceCategoryListView(generics.ListAPIView):
     def list(self, request, *args, **kwargs):
         cached = cache.get("categories:all_active")
         if cached is not None:
-            return Response(cached)
+            res = Response(cached)
+            res["Cache-Control"] = "public, max-age=3600, stale-while-revalidate=86400"
+            return res
         response = super().list(request, *args, **kwargs)
-        cache.set("categories:all_active", response.data, timeout=300)
+        cache.set("categories:all_active", response.data, timeout=3600)
+        response["Cache-Control"] = "public, max-age=3600, stale-while-revalidate=86400"
         return response
 
 

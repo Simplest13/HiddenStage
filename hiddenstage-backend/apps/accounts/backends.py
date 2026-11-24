@@ -24,8 +24,20 @@ class EmailBackend(ModelBackend):
         return None
 
     def get_user(self, user_id):
+        if not user_id:
+            return None
+        from django.core.cache import cache
+        cache_key = f"auth_user:{user_id}"
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return cached
         UserModel = get_user_model()
         try:
-            return UserModel.objects.get(pk=user_id)
+            user = (
+                UserModel.objects.select_related("customer_profile", "provider_profile")
+                .get(pk=user_id)
+            )
+            cache.set(cache_key, user, timeout=60)
+            return user
         except UserModel.DoesNotExist:
             return None

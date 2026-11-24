@@ -67,6 +67,9 @@ class CommitmentSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
     def get_provider_display_name(self, obj) -> str:
+        prof = getattr(obj.provider, "provider_profile", None)
+        if prof and prof.display_name:
+            return prof.display_name
         profile = (
             ProviderProfile.objects.filter(user_id=obj.provider_id)
             .only("display_name")

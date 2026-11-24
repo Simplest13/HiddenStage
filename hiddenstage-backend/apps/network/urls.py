@@ -5,6 +5,7 @@ from apps.network import views
 app_name = "network"
 
 urlpatterns = [
+    path("network/stream/", views.RealtimeStreamView.as_view(), name="realtime-stream"),
     path("network/connections/", views.CustomerNetworkListView.as_view(), name="customer-connections"),
     path("network/connections/connect/", views.CustomerNetworkConnectView.as_view(), name="customer-connect"),
     path("network/connections/<uuid:provider_id>/", views.CustomerNetworkDisconnectView.as_view(), name="customer-disconnect"),

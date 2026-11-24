@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { sessionApi } from '../api/backend/session'
+import { subscribeToRealtime } from '../api/realtime'
 import type { ApiNotification } from '../api/backend/types'
 import { useAuth } from '../../app/auth/useAuth'
 
@@ -67,10 +68,22 @@ export function NotificationDropdown() {
 
   useEffect(() => {
     void loadNotifications()
+
+    // Realtime push notification listener
+    const unsubscribe = subscribeToRealtime((evt) => {
+      if (evt.type === 'notification') {
+        void loadNotifications()
+      }
+    })
+
     const timer = setInterval(() => {
       void loadNotifications()
-    }, 20000)
-    return () => clearInterval(timer)
+    }, 60000)
+
+    return () => {
+      unsubscribe()
+      clearInterval(timer)
+    }
   }, [])
 
   useEffect(() => {

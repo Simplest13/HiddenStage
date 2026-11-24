@@ -84,6 +84,9 @@ export const marketplaceApi = {
     )
   },
 
+  listCustomerQuotations() {
+    return unpaginated<ApiQuotation>('/customer/quotations/')
+  },
   listEventQuotations(eventId: string) {
     return apiRequest<ApiQuotation[]>(`/events/${encodeURIComponent(eventId)}/quotations/`)
   },

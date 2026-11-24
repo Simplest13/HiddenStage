@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { customerEventPath, routes } from '../../app/routes/routePaths'
 import { bookingsApi } from '../../shared/api/backend/ecosystem'
+import { useApiData } from '../../shared/api/backend/useApiData'
 import type { ApiBooking } from '../../shared/api/backend/types'
 import { formatPaise, formatShortDate } from '../../shared/api/backend/format'
 import { Avatar, Button, ButtonLink, Card, Spinner } from '../../shared/ui'
@@ -21,8 +22,12 @@ const LIFECYCLE_STEPS = [
 ]
 
 export function CustomerBookingsPage() {
-  const [bookings, setBookings] = useState<ApiBooking[]>([])
-  const [loading, setLoading] = useState(true)
+  const { data: bookingsData, loading, reload: loadBookings } = useApiData(
+    () => bookingsApi.list(),
+    [],
+    { key: 'customer-bookings' }
+  )
+  const bookings = bookingsData ?? []
   const [filter, setFilter] = useState<'ALL' | 'ACTIVE' | 'CONFIRMED' | 'COMPLETED'>('ALL')
   const [selectedBooking, setSelectedBooking] = useState<ApiBooking | null>(null)
   const [completeBooking, setCompleteBooking] = useState<ApiBooking | null>(null)
@@ -30,22 +35,6 @@ export function CustomerBookingsPage() {
   const [completing, setCompleting] = useState(false)
   const [feedbackSuccess, setFeedbackSuccess] = useState<string | null>(null)
   const navigate = useNavigate()
-
-  async function loadBookings() {
-    try {
-      setLoading(true)
-      const data = await bookingsApi.list()
-      setBookings(data)
-    } catch (err: unknown) {
-      console.error('Failed to load customer bookings:', err)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    void loadBookings()
-  }, [])
 
   async function handleCompleteEvent(booking: ApiBooking) {
     try {

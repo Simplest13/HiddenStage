@@ -3,7 +3,7 @@
 import mimetypes
 
 from django.db import transaction
-from django.db.models import Count
+from django.db.models import Count, Exists, OuterRef, Prefetch, Q
 from django.http import FileResponse
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import generics, status
@@ -13,10 +13,13 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.commitments.models import Commitment
 from apps.core.exceptions import Conflict
-from apps.core.permissions import IsCustomer
+from apps.core.permissions import IsCustomer, IsCustomerOrProvider
 from apps.events.attachments import scan_attachment, validate_attachment_upload
 from apps.events.models import Event, EventAttachment, EventStatus, ServiceRequirement
+from apps.invitations.models import Invitation
+from apps.quotations.models import Quotation, QuotationRevision
 from apps.events.serializers import (
     CustomerBookingSerializer,
     EventAttachmentSerializer,
@@ -37,15 +40,27 @@ from apps.profiles.models import ServiceCategory
 
 
 class EventListCreateView(generics.ListCreateAPIView):
-    permission_classes = [IsCustomer]
+    permission_classes = [IsCustomerOrProvider]
     pagination_class = None
 
     def get_queryset(self):
-        queryset = (
-            Event.objects.filter(customer=self.request.user)
-            .annotate(requirement_count=Count("requirements"))
-            .order_by("-event_date", "-created_at")
-        )
+        if self.request.user.is_provider:
+            queryset = (
+                Event.objects.filter(
+                    Q(quotations__provider=self.request.user)
+                    | Q(commitments__provider=self.request.user)
+                    | Q(invitations__provider=self.request.user)
+                )
+                .annotate(requirement_count=Count("requirements"))
+                .distinct()
+                .order_by("-event_date", "-created_at")
+            )
+        else:
+            queryset = (
+                Event.objects.filter(customer=self.request.user)
+                .annotate(requirement_count=Count("requirements"))
+                .order_by("-event_date", "-created_at")
+            )
         status_param = self.request.query_params.get("status")
         if status_param:
             queryset = queryset.filter(status=status_param.upper())
@@ -56,6 +71,11 @@ class EventListCreateView(generics.ListCreateAPIView):
 
     @extend_schema(request=EventWriteSerializer, responses={201: EventSerializer})
     def post(self, request):
+        if not request.user.is_customer:
+            return Response(
+                {"detail": "Only customer accounts can create events."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
         serializer = EventWriteSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = dict(serializer.validated_data)
@@ -305,24 +325,41 @@ class EventAttachmentDeleteView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+def _optimized_bookings_queryset(user):
+    revised_subquery = QuotationRevision.objects.filter(
+        quotation__event=OuterRef("pk"), revision_number__gt=1
+    )
+    quote_subquery = Quotation.objects.filter(event=OuterRef("pk"))
+    inv_subquery = Invitation.objects.filter(event=OuterRef("pk"))
+    commitments_qs = Commitment.objects.select_related(
+        "provider", "provider__provider_profile", "quotation"
+    )
+    requirements_qs = ServiceRequirement.objects.select_related("category")
+
+    return (
+        Event.objects.filter(customer=user)
+        .annotate(
+            annotated_quotations_count=Count("quotations", distinct=True),
+            annotated_has_quotation=Exists(quote_subquery),
+            annotated_has_revised_quotation=Exists(revised_subquery),
+            annotated_has_invitation=Exists(inv_subquery),
+        )
+        .prefetch_related(
+            Prefetch("requirements", queryset=requirements_qs),
+            Prefetch("commitments", queryset=commitments_qs),
+            "invoices",
+        )
+        .order_by("-event_date", "-created_at")
+    )
+
+
 class CustomerBookingsListView(APIView):
     permission_classes = [IsCustomer]
 
     @extend_schema(operation_id="events_bookings_list")
     def get(self, request):
         status_param = request.query_params.get("status")
-        queryset = (
-            Event.objects.filter(customer=request.user)
-            .prefetch_related(
-                "requirements",
-                "requirements__category",
-                "commitments",
-                "commitments__provider__provider_profile",
-                "commitments__quotation",
-                "invoices",
-            )
-            .order_by("-event_date", "-created_at")
-        )
+        queryset = _optimized_bookings_queryset(request.user)
         if status_param and status_param != "ALL":
             queryset = queryset.filter(status=status_param.upper())
         serializer = CustomerBookingSerializer(queryset, many=True)
@@ -334,18 +371,7 @@ class CustomerBookingDetailView(APIView):
 
     @extend_schema(operation_id="events_bookings_detail")
     def get(self, request, pk):
-        event = (
-            Event.objects.filter(customer=request.user, pk=pk)
-            .prefetch_related(
-                "requirements",
-                "requirements__category",
-                "commitments",
-                "commitments__provider__provider_profile",
-                "commitments__quotation",
-                "invoices",
-            )
-            .first()
-        )
+        event = _optimized_bookings_queryset(request.user).filter(pk=pk).first()
         if not event:
             return Response({"detail": "Booking not found."}, status=status.HTTP_404_NOT_FOUND)
         serializer = CustomerBookingSerializer(event)

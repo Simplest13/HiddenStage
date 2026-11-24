@@ -36,6 +36,16 @@ urlpatterns = [
         name="provider-quotation-withdraw",
     ),
     path(
+        "customer/quotations/",
+        views.CustomerQuotationListView.as_view(),
+        name="customer-quotations",
+    ),
+    path(
+        "quotations/customer/",
+        views.CustomerQuotationListView.as_view(),
+        name="customer-quotations-prefixed",
+    ),
+    path(
         "events/<uuid:event_pk>/quotations/",
         views.EventQuotationListView.as_view(),
         name="event-quotations",

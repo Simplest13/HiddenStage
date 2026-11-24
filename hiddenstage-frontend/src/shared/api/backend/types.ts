@@ -701,6 +701,7 @@ export type ApiQuotation = {
   id: string
   event: string
   event_name: string
+  event_date?: string | null
   provider: string
   provider_display_name: string
   provider_profile_id: string | null

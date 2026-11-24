@@ -209,6 +209,8 @@ class CustomerBookingSerializer(serializers.ModelSerializer):
         return obj._cached_all_invoices
 
     def get_quotations_count(self, obj) -> int:
+        if hasattr(obj, "annotated_quotations_count"):
+            return obj.annotated_quotations_count
         return getattr(obj, "quotations", []).count() if hasattr(obj, "quotations") else 0
 
     def get_commitments(self, obj) -> list:
@@ -245,6 +247,9 @@ class CustomerBookingSerializer(serializers.ModelSerializer):
         }
 
     def get_lifecycle_stage(self, obj) -> str:
+        if hasattr(obj, "_cached_lifecycle_stage"):
+            return obj._cached_lifecycle_stage
+
         # Determine 11-step lifecycle
         today = timezone.now().date()
         commits = self._active_commits(obj)
@@ -259,34 +264,46 @@ class CustomerBookingSerializer(serializers.ModelSerializer):
 
             # If event date has passed or customer confirmed event completion (closed_at set)
             if is_past or (obj.closed_at and (obj.event_date is None or obj.event_date <= today)):
-                if total_paid >= total_booked and total_booked > 0:
-                    return "event_completed"
-                return "final_payment_pending"
+                stage = "event_completed" if (total_paid >= total_booked and total_booked > 0) else "final_payment_pending"
+            elif is_today:
+                stage = "service_in_progress"
+            elif total_paid > 0:
+                stage = "advance_paid_booking_confirmed"
+            elif any(i.status in ["PAYMENT_PENDING", "ADVANCE_PENDING"] for i in invoices):
+                stage = "advance_payment_pending"
+            else:
+                stage = "quotation_accepted"
+            obj._cached_lifecycle_stage = stage
+            return stage
 
-            # If today is event day
-            if is_today:
-                return "service_in_progress"
+        # Quotation & invitation checks using annotations when present
+        if hasattr(obj, "annotated_has_quotation"):
+            if obj.annotated_has_quotation:
+                stage = "quotation_revised" if getattr(obj, "annotated_has_revised_quotation", False) else "quotation_received"
+            elif getattr(obj, "annotated_has_invitation", False):
+                stage = "invitation_sent"
+            else:
+                stage = "service_requested"
+            obj._cached_lifecycle_stage = stage
+            return stage
 
-            # Future event with active commitment
-            if total_paid > 0:
-                return "advance_paid_booking_confirmed"
-            if any(i.status in ["PAYMENT_PENDING", "ADVANCE_PENDING"] for i in invoices):
-                return "advance_payment_pending"
-            return "quotation_accepted"
-        
-        # Quotation checks
         quotes = getattr(obj, "quotations", None)
         if quotes and quotes.exists():
             if quotes.filter(revisions__revision_number__gt=1).exists():
-                return "quotation_revised"
-            return "quotation_received"
+                stage = "quotation_revised"
+            else:
+                stage = "quotation_received"
+            obj._cached_lifecycle_stage = stage
+            return stage
         
         # Invitation check
         invs = getattr(obj, "invitations", None)
         if invs and invs.exists():
-            return "invitation_sent"
-        
-        return "service_requested"
+            stage = "invitation_sent"
+        else:
+            stage = "service_requested"
+        obj._cached_lifecycle_stage = stage
+        return stage
 
     def get_lifecycle_label(self, obj) -> str:
         stage = self.get_lifecycle_stage(obj)

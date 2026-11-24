@@ -30,8 +30,35 @@ function authenticated(user: SessionUser): AuthState {
   return { status: 'authenticated', roles: [user.accountType], user }
 }
 
+function getCachedSessionUser(): SessionUser | null {
+  try {
+    if (typeof window === 'undefined' || !window.sessionStorage) return null
+    const raw = window.sessionStorage.getItem('hs_session_user')
+    return raw ? (JSON.parse(raw) as SessionUser) : null
+  } catch {
+    return null
+  }
+}
+
+function setCachedSessionUser(user: SessionUser | null) {
+  try {
+    if (typeof window === 'undefined' || !window.sessionStorage) return
+    if (user) {
+      window.sessionStorage.setItem('hs_session_user', JSON.stringify(user))
+    } else {
+      window.sessionStorage.removeItem('hs_session_user')
+    }
+  } catch {
+    // ignore
+  }
+}
+
 export function AuthProvider({ children, state }: { children: ReactNode; state?: AuthState }) {
-  const [authState, setAuthState] = useState<AuthState>(state ?? { status: 'loading' })
+  const [authState, setAuthState] = useState<AuthState>(() => {
+    if (state) return state
+    const cached = getCachedSessionUser()
+    return cached ? authenticated(cached) : { status: 'loading' }
+  })
   const [theme, setThemeState] = useState<'light' | 'dark'>(() => {
     const saved = localStorage.getItem('hiddenstage-theme')
     return saved === 'dark' ? 'dark' : 'light'
@@ -56,6 +83,7 @@ export function AuthProvider({ children, state }: { children: ReactNode; state?:
   const refresh = useCallback(async (preloadedUser?: ApiUser) => {
     try {
       const user = toSessionUser(preloadedUser ?? await sessionApi.me())
+      setCachedSessionUser(user)
       setAuthState(authenticated(user))
       if (user.themePreference && user.themePreference !== theme) {
         setThemeState(user.themePreference)
@@ -64,6 +92,7 @@ export function AuthProvider({ children, state }: { children: ReactNode; state?:
     } catch (error) {
       // 401 is the normal signed-out state; anything else must not masquerade as one.
       if (isApiError(error) && error.status !== 401 && error.status !== 403) throw error
+      setCachedSessionUser(null)
       setAuthState(anonymousAuthState)
       return null
     }
@@ -77,11 +106,13 @@ export function AuthProvider({ children, state }: { children: ReactNode; state?:
         if (!active) return
         if (meResult.status === 'fulfilled') {
           const user = toSessionUser(meResult.value)
+          setCachedSessionUser(user)
           setAuthState(authenticated(user))
           if (user.themePreference) {
             setThemeState(user.themePreference)
           }
         } else {
+          setCachedSessionUser(null)
           setAuthState(anonymousAuthState)
         }
       })
@@ -91,18 +122,21 @@ export function AuthProvider({ children, state }: { children: ReactNode; state?:
   const register = useCallback(async (input: RegisterInput) => {
     const response = await sessionApi.register(input)
     const user = toSessionUser(response)
+    setCachedSessionUser(user)
     setAuthState(authenticated(user))
     return { user, verificationEmailSent: response.verification_email_sent !== false }
   }, [])
 
   const login = useCallback(async (input: LoginInput) => {
     const user = toSessionUser(await sessionApi.login(input))
+    setCachedSessionUser(user)
     setAuthState(authenticated(user))
     return user
   }, [])
 
   const logout = useCallback(async () => {
     try { await sessionApi.logout() } finally {
+      setCachedSessionUser(null)
       clearApiDataCache()
       setAuthState(anonymousAuthState)
     }
@@ -110,6 +144,7 @@ export function AuthProvider({ children, state }: { children: ReactNode; state?:
 
   const verifyEmail = useCallback(async (token: string) => {
     const user = toSessionUser(await sessionApi.verifyEmail(token))
+    setCachedSessionUser(user)
     setAuthState(authenticated(user))
     return user
   }, [])

@@ -175,6 +175,10 @@ def _database_from_url(url: str) -> dict[str, object]:
     if not db_name:
         raise ImproperlyConfigured("DATABASE_URL must include a database name.")
     options: dict[str, str] = dict(parse_qsl(parsed.query, keep_blank_values=False))
+    options.setdefault("keepalives", "1")
+    options.setdefault("keepalives_idle", "30")
+    options.setdefault("keepalives_interval", "10")
+    options.setdefault("keepalives_count", "5")
     is_pooled = "-pooler." in (parsed.hostname or "")
     config: dict[str, object] = {
         "ENGINE": "django.db.backends.postgresql",
@@ -183,8 +187,8 @@ def _database_from_url(url: str) -> dict[str, object]:
         "PASSWORD": unquote(parsed.password or ""),
         "HOST": parsed.hostname or "",
         "PORT": str(parsed.port or 5432),
-        "CONN_MAX_AGE": env_int("POSTGRES_CONN_MAX_AGE", 60),
-        "CONN_HEALTH_CHECKS": True,
+        "CONN_MAX_AGE": env_int("POSTGRES_CONN_MAX_AGE", 600),
+        "CONN_HEALTH_CHECKS": env_bool("POSTGRES_CONN_HEALTH_CHECKS", not is_pooled),
         "OPTIONS": options,
     }
     if is_pooled:
@@ -230,8 +234,8 @@ else:
                 "PASSWORD": os.environ.get("POSTGRES_PASSWORD", "hiddenstage"),
                 "HOST": os.environ.get("POSTGRES_HOST", "127.0.0.1"),
                 "PORT": os.environ.get("POSTGRES_PORT", "5432"),
-                "CONN_MAX_AGE": env_int("POSTGRES_CONN_MAX_AGE", 60),
-                "CONN_HEALTH_CHECKS": True,
+                "CONN_MAX_AGE": env_int("POSTGRES_CONN_MAX_AGE", 600),
+                "CONN_HEALTH_CHECKS": env_bool("POSTGRES_CONN_HEALTH_CHECKS", False),
                 "OPTIONS": {},
             }
         }
@@ -341,9 +345,10 @@ CACHES = {
 }
 
 # ---- Session and CSRF (D-005) -------------------------------------------------
-# Server-side Django sessions in HttpOnly cookies. The CSRF token cookie is
-# readable by the frontend client, which echoes it in X-CSRFToken.
-SESSION_ENGINE = "django.contrib.sessions.backends.db"
+# Server-side Django sessions in HttpOnly cookies with in-memory cached_db for sub-millisecond lookups.
+# The CSRF token cookie is readable by the frontend client, which echoes it in X-CSRFToken.
+SESSION_ENGINE = "django.contrib.sessions.backends.cached_db"
+KEEP_DB_WARM = env_bool("KEEP_DB_WARM", True)
 SESSION_COOKIE_NAME = "hs_sessionid"
 SESSION_COOKIE_AGE = env_int("SESSION_COOKIE_AGE", 60 * 60 * 24 * 14)
 SESSION_COOKIE_HTTPONLY = True
@@ -389,6 +394,7 @@ if not DEBUG and ("*" in CORS_ALLOWED_ORIGINS or "*" in CSRF_TRUSTED_ORIGINS):
         "Wildcard CORS/CSRF origins are not allowed when DJANGO_DEBUG is off."
     )
 CORS_ALLOW_CREDENTIALS = True
+CORS_PREFLIGHT_MAX_AGE = 86400
 CORS_ALLOW_HEADERS = [
     "accept",
     "authorization",

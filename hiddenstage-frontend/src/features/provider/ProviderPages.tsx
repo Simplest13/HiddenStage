@@ -88,7 +88,7 @@ function DashboardPage({ workspaceProfile }: { workspaceProfile?: ApiProviderPro
       networkApi.listAssignments().catch(() => []),
     ])
     return { opportunities, invitations, quotations, commitments, profile, network, networkInvitations, assignments }
-  }, [])
+  }, [], { key: 'provider-overview' })
   const pending = (data.data?.invitations ?? []).filter((item) => item.status === 'PENDING')
   const openQuotes = (data.data?.quotations ?? []).filter((item) => item.status === 'OPEN')
   const activeCommitments = (data.data?.commitments ?? []).filter((item) => item.status === 'ACTIVE')

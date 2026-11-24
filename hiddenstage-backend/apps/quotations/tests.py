@@ -215,6 +215,15 @@ class QuotationLifecycleTests(TestCase):
         rows = response.data["results"] if isinstance(response.data, dict) else response.data
         self.assertEqual(len(rows), 2)
 
+    def test_customer_quotations_overview_sees_all_quotations(self):
+        submitted_quotation(self.provider, self.event)
+        client = APIClient()
+        client.force_authenticate(self.customer)
+        response = client.get("/api/v1/customer/quotations/")
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["event_name"], self.event.name)
+
 @override_settings(EMAIL_VERIFICATION_REQUIRED=False)
 class QuotationVerificationSwitchTests(TestCase):
     def _quote(self, provider, event):

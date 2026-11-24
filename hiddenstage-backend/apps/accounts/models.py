@@ -111,6 +111,8 @@ class User(AbstractBaseUser, PermissionsMixin, UUIDModel):
         if self.phone:
             self.phone = normalize_phone(self.phone)
         super().save(*args, **kwargs)
+        from django.core.cache import cache
+        cache.delete(f"auth_user:{self.pk}")
 
     def __str__(self):
         return self.email

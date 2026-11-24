@@ -173,3 +173,22 @@ class EventQuotationListView(generics.ListAPIView):
             .prefetch_related("revisions__items__requirement")
             .order_by("created_at")
         )
+
+
+class CustomerQuotationListView(generics.ListAPIView):
+    """Customer overview: all quotations received across all events owned by customer."""
+
+    permission_classes = [IsCustomer]
+    serializer_class = QuotationSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        mark_expired_revisions(
+            QuotationRevision.objects.filter(quotation__event__customer=self.request.user)
+        )
+        return (
+            Quotation.objects.filter(event__customer=self.request.user)
+            .select_related("event", "provider", "provider__provider_profile")
+            .prefetch_related("revisions__items__requirement")
+            .order_by("-updated_at")
+        )

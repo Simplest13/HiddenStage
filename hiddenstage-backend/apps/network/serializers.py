@@ -391,16 +391,22 @@ class CustomerConnectionSerializer(serializers.ModelSerializer):
             return "Customer"
         prof = getattr(obj.provider, "provider_profile", None)
         if prof and hasattr(prof, "coverage"):
-            first_cov = prof.coverage.first()
-            if first_cov:
-                return first_cov.city
+            covs = prof.coverage.all()
+            if covs:
+                return covs[0].city
         return "India"
 
     def get_has_active_booking(self, obj) -> bool:
+        active_pairs = self.context.get("active_pairs")
+        if active_pairs is not None:
+            return (obj.customer_id, obj.provider_id) in active_pairs
         from apps.commitments.models import Commitment
         return Commitment.objects.filter(customer=obj.customer, provider=obj.provider, status="ACTIVE").exists()
 
     def get_unread_messages_count(self, obj) -> int:
+        unread_map = self.context.get("unread_map")
+        if unread_map is not None:
+            return unread_map.get((obj.customer_id, obj.provider_id), 0)
         request = self.context.get("request")
         conv = Conversation.objects.filter(customer=obj.customer, provider=obj.provider).first()
         if not conv:
@@ -494,7 +500,11 @@ class ConversationSerializer(serializers.ModelSerializer):
         }
 
     def get_latest_message(self, obj) -> dict | None:
-        msg = obj.messages.order_by("-created_at").first()
+        if hasattr(obj, "_prefetched_objects_cache") and "messages" in obj._prefetched_objects_cache:
+            msgs = sorted(obj.messages.all(), key=lambda m: m.created_at, reverse=True)
+            msg = msgs[0] if msgs else None
+        else:
+            msg = obj.messages.order_by("-created_at").first()
         if not msg:
             return None
         return {
@@ -509,4 +519,7 @@ class ConversationSerializer(serializers.ModelSerializer):
         request = self.context.get("request")
         if not request:
             return 0
+        if hasattr(obj, "_prefetched_objects_cache") and "messages" in obj._prefetched_objects_cache:
+            user_id = request.user.id
+            return sum(1 for m in obj.messages.all() if not m.is_read and m.sender_id != user_id)
         return obj.messages.filter(is_read=False).exclude(sender=request.user).count()

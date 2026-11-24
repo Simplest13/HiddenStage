@@ -21,7 +21,7 @@ from apps.commitments.services import accept_quotation, release_commitment
 from apps.core.permissions import IsCustomer, IsCustomerOrProvider
 
 COMMITMENT_QUERYSET = Commitment.objects.select_related(
-    "event", "provider", "customer", "revision"
+    "event", "provider", "provider__provider_profile", "customer", "revision"
 ).prefetch_related("lines__requirement")
 
 
@@ -54,10 +54,12 @@ class QuotationAcceptanceView(APIView):
 
 
 class CustomerCommitmentListView(generics.ListAPIView):
-    permission_classes = [IsCustomer]
+    permission_classes = [IsCustomerOrProvider]
     serializer_class = CommitmentSerializer
 
     def get_queryset(self):
+        if self.request.user.is_provider:
+            return COMMITMENT_QUERYSET.filter(provider=self.request.user)
         return COMMITMENT_QUERYSET.filter(customer=self.request.user)
 
 

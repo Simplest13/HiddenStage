@@ -61,6 +61,7 @@ class Commitment(UUIDModel, TimeStampedModel):
         indexes = [
             models.Index(fields=["customer", "status"], name="commit_customer_status_idx"),
             models.Index(fields=["provider", "status"], name="commit_provider_status_idx"),
+            models.Index(fields=["customer", "provider", "status"], name="commit_cust_prov_stat_idx"),
         ]
         constraints = [
             models.CheckConstraint(

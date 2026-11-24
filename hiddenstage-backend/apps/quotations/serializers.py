@@ -49,6 +49,7 @@ class QuotationSerializer(serializers.ModelSerializer):
     provider_display_name = serializers.SerializerMethodField()
     provider_profile_id = serializers.SerializerMethodField()
     event_name = serializers.CharField(source="event.name", read_only=True)
+    event_date = serializers.DateField(source="event.event_date", read_only=True)
 
     class Meta:
         model = Quotation
@@ -56,6 +57,7 @@ class QuotationSerializer(serializers.ModelSerializer):
             "id",
             "event",
             "event_name",
+            "event_date",
             "provider",
             "provider_display_name",
             "provider_profile_id",
