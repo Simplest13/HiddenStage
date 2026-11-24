@@ -94,4 +94,22 @@ describe('application routes', () => {
     })
     expect(await screen.findByRole('heading', { name: 'Platform Operations' })).toBeInTheDocument()
   })
+
+  it('renders provider onboarding and specialty dynamic category flow', async () => {
+    renderRoute('/onboarding/provider', {
+      status: 'authenticated',
+      roles: ['PROVIDER'],
+      user: {
+        id: 'provider-1',
+        fullName: 'Demo Provider',
+        email: 'provider@example.test',
+        phone: '',
+        emailVerified: true,
+        emailVerificationRequired: true,
+        profileCompleted: false,
+        accountType: 'PROVIDER',
+      },
+    })
+    expect(await screen.findByRole('heading', { name: 'Build your HiddenStage profile.' })).toBeInTheDocument()
+  })
 })

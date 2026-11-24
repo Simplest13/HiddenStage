@@ -52,6 +52,11 @@ export default function ProviderOnboardingPage() {
   const [selectedManager, setSelectedManager] = useState<ApiManagerSearchResult | null>(null)
   const [searchingManagers, setSearchingManagers] = useState(false)
   const [showManagerPopup, setShowManagerPopup] = useState(false)
+  const [showCustomCategory, setShowCustomCategory] = useState(false)
+  const [customCategoryName, setCustomCategoryName] = useState('')
+  const [customCategoryDesc, setCustomCategoryDesc] = useState('')
+  const [creatingCategory, setCreatingCategory] = useState(false)
+  const [customCategoryError, setCustomCategoryError] = useState('')
 
   useEffect(() => {
     if (!managerQuery.trim() || selectedManager) {
@@ -122,8 +127,44 @@ export default function ProviderOnboardingPage() {
   }
 
   function toggleCategory(code: string) {
+    if (code === 'other') {
+      setShowCustomCategory(true)
+      return
+    }
     if (kind === 'INDIVIDUAL_SERVICE_PROVIDER') setSelected([code])
     else setSelected((items) => items.includes(code) ? items.filter((item) => item !== code) : [...items, code])
+  }
+
+  async function handleCreateCustomCategory() {
+    const trimmedName = customCategoryName.trim()
+    if (!trimmedName) {
+      setCustomCategoryError('Enter a category name.')
+      return
+    }
+    setCreatingCategory(true)
+    setCustomCategoryError('')
+    try {
+      const created = await eventsApi.createCategory({
+        name: trimmedName,
+        description: customCategoryDesc.trim() || undefined,
+      })
+      setCategories((prev) => {
+        if (prev.some((c) => c.code === created.code)) return prev
+        return [...prev, created]
+      })
+      if (kind === 'INDIVIDUAL_SERVICE_PROVIDER') {
+        setSelected([created.code])
+      } else {
+        setSelected((items) => [...items.filter((c) => c !== 'other' && c !== created.code), created.code])
+      }
+      setShowCustomCategory(false)
+      setCustomCategoryName('')
+      setCustomCategoryDesc('')
+    } catch (err: unknown) {
+      setCustomCategoryError(err instanceof Error ? err.message : 'Could not create category.')
+    } finally {
+      setCreatingCategory(false)
+    }
   }
 
   function updateCoverage(index: number, field: keyof CoverageDraft, value: string) {
@@ -436,13 +477,86 @@ export default function ProviderOnboardingPage() {
             <fieldset className="provider-onboarding__categories">
               <legend>{kind === 'INDIVIDUAL_SERVICE_PROVIDER' ? 'Primary service category' : 'Services you offer'}</legend>
               <div>
-                {categories.map((category) => (
-                  <label key={category.code}>
-                    <input type={kind === 'INDIVIDUAL_SERVICE_PROVIDER' ? 'radio' : 'checkbox'} name={kind === 'INDIVIDUAL_SERVICE_PROVIDER' ? 'primaryCategory' : undefined} checked={selected.includes(category.code)} onChange={() => toggleCategory(category.code)} />
-                    {category.name}
-                  </label>
-                ))}
+                {categories
+                  .filter((cat) => cat.code !== 'other')
+                  .map((category) => (
+                    <label key={category.code}>
+                      <input
+                        type={kind === 'INDIVIDUAL_SERVICE_PROVIDER' ? 'radio' : 'checkbox'}
+                        name={kind === 'INDIVIDUAL_SERVICE_PROVIDER' ? 'primaryCategory' : undefined}
+                        checked={selected.includes(category.code)}
+                        onChange={() => toggleCategory(category.code)}
+                      />
+                      <span>{category.name}</span>
+                    </label>
+                  ))}
+                <label className={showCustomCategory ? 'is-selected' : ''}>
+                  <input
+                    type={kind === 'INDIVIDUAL_SERVICE_PROVIDER' ? 'radio' : 'checkbox'}
+                    name={kind === 'INDIVIDUAL_SERVICE_PROVIDER' ? 'primaryCategory' : undefined}
+                    checked={showCustomCategory}
+                    onChange={() => setShowCustomCategory(true)}
+                  />
+                  <span>Other</span>
+                </label>
               </div>
+
+              {showCustomCategory && (
+                <div className="provider-onboarding__custom-category" role="region" aria-label="Create Your Own Service Category">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div>
+                      <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: 'var(--color-burgundy, #6b2136)' }}>
+                        Create Your Own Service Category
+                      </h3>
+                      <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.85rem', color: 'var(--color-muted, #737373)' }}>
+                        Can&apos;t find your service? Create a category that best describes what you offer.
+                      </p>
+                    </div>
+                  </div>
+
+                  <Input
+                    label="Category Name (required)"
+                    name="customCategoryName"
+                    required
+                    placeholder="e.g. Beauty"
+                    value={customCategoryName}
+                    onChange={(e) => {
+                      setCustomCategoryName(e.target.value)
+                      if (customCategoryError) setCustomCategoryError('')
+                    }}
+                    error={customCategoryError}
+                  />
+
+                  <Textarea
+                    label="Description (optional)"
+                    name="customCategoryDesc"
+                    placeholder="e.g. Professional beauty, makeup and grooming services for events."
+                    value={customCategoryDesc}
+                    onChange={(e) => setCustomCategoryDesc(e.target.value)}
+                  />
+
+                  <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem', alignItems: 'center' }}>
+                    <Button
+                      type="button"
+                      disabled={creatingCategory}
+                      onClick={() => void handleCreateCustomCategory()}
+                    >
+                      {creatingCategory ? 'Creating Category…' : 'Create Category'}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      disabled={creatingCategory}
+                      onClick={() => {
+                        setShowCustomCategory(false)
+                        setCustomCategoryError('')
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              )}
             </fieldset>
           )}
 
@@ -470,7 +584,16 @@ export default function ProviderOnboardingPage() {
                 <div><dt>Professional type</dt><dd>{roles.find((role) => role.kind === kind)?.name}</dd></div>
                 <div><dt>Name</dt><dd>{displayName || 'Not entered'}</dd></div>
                 <div><dt>Contact</dt><dd>{contact || 'Not entered'}</dd></div>
-                <div><dt>Services</dt><dd>{selected.length ? selected.join(', ') : 'None selected'}</dd></div>
+                <div>
+                  <dt>{kind === 'INDIVIDUAL_SERVICE_PROVIDER' ? 'Specialty' : 'Services'}</dt>
+                  <dd>
+                    {selected.length
+                      ? selected
+                          .map((code) => categories.find((c) => c.code === code)?.name || code)
+                          .join(', ')
+                      : 'None selected'}
+                  </dd>
+                </div>
                 <div><dt>Coverage</dt><dd>{coverage.map((item) => `${item.locality}, ${item.city} ${item.pinCode}`).filter((item) => item !== ',  ').join(' • ') || 'Not entered'}</dd></div>
               </dl>
             </div>

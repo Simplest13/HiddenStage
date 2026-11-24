@@ -22,8 +22,23 @@ from apps.profiles.models import (
 class ServiceCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = ServiceCategory
-        fields = ["id", "code", "name", "description", "sort_order"]
+        fields = ["id", "code", "name", "description", "sort_order", "is_custom"]
         read_only_fields = fields
+
+
+class CustomCategoryCreateSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=80, trim_whitespace=True)
+    description = serializers.CharField(
+        max_length=500, required=False, allow_blank=True, default="", trim_whitespace=True
+    )
+
+    def validate_name(self, value):
+        normalized = normalize_text(value).strip()
+        if not normalized:
+            raise serializers.ValidationError("Enter a category name.")
+        if len(normalized) < 2:
+            raise serializers.ValidationError("Category name must be at least 2 characters.")
+        return normalized
 
 
 class CustomerProfileSerializer(serializers.ModelSerializer):
@@ -275,6 +290,9 @@ class ProviderProfileSerializer(serializers.ModelSerializer):
                 if code not in codes and service.is_active:
                     service.is_active = False
                     service.save(update_fields=["is_active"])
+            if codes and codes[0] in categories:
+                profile.primary_category = categories[codes[0]]
+                profile.save(update_fields=["primary_category"])
 
     def _sync_coverage(self, profile, coverage_rows):
         seen = set()

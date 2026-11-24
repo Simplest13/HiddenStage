@@ -32,6 +32,12 @@ export const eventsApi = {
   categories() {
     return apiRequest<ApiCategory[]>('/catalog/categories/')
   },
+  createCategory(payload: { name: string; description?: string }) {
+    return apiRequest<ApiCategory>('/catalog/categories/custom/', {
+      method: 'POST',
+      ...jsonBody(payload),
+    })
+  },
   list(status?: string) {
     const query = status && status !== 'ALL' ? `?status=${encodeURIComponent(status)}` : ''
     return apiRequest<ApiEventListItem[]>(`/events/${query}`)

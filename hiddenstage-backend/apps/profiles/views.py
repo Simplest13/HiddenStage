@@ -28,6 +28,7 @@ from apps.profiles.serializers import (
     ProviderProfileSerializer,
     ProviderServiceSerializer,
     ServiceCategorySerializer,
+    CustomCategoryCreateSerializer,
 )
 
 
@@ -50,6 +51,48 @@ class ServiceCategoryListView(generics.ListAPIView):
         cache.set("categories:all_active", response.data, timeout=3600)
         response["Cache-Control"] = "public, max-age=3600, stale-while-revalidate=86400"
         return response
+
+
+class CustomCategoryCreateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        request=CustomCategoryCreateSerializer,
+        responses={201: ServiceCategorySerializer, 200: ServiceCategorySerializer},
+    )
+    def post(self, request):
+        serializer = CustomCategoryCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        name = serializer.validated_data["name"]
+        description = serializer.validated_data.get("description", "")
+
+        from django.utils.text import slugify
+        code = slugify(name)[:60]
+        if not code:
+            raise ValidationError({"name": ["Enter a valid category name."]})
+
+        existing = ServiceCategory.objects.filter(
+            Q(code=code) | Q(name__iexact=name)
+        ).first()
+
+        if existing:
+            if not existing.is_active:
+                existing.is_active = True
+                existing.save(update_fields=["is_active"])
+                cache.delete("categories:all_active")
+            return Response(ServiceCategorySerializer(existing).data, status=status.HTTP_200_OK)
+
+        category = ServiceCategory.objects.create(
+            code=code,
+            name=name,
+            description=description,
+            sort_order=100,
+            is_active=True,
+            is_custom=True,
+            created_by=request.user,
+        )
+        cache.delete("categories:all_active")
+        return Response(ServiceCategorySerializer(category).data, status=status.HTTP_201_CREATED)
 
 
 class CustomerProfileView(APIView):

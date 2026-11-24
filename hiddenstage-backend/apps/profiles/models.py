@@ -27,6 +27,14 @@ class ServiceCategory(UUIDModel):
     description = models.TextField(blank=True)
     sort_order = models.PositiveIntegerField(default=0)
     is_active = models.BooleanField(default=True)
+    is_custom = models.BooleanField(default=False)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="created_categories",
+    )
 
     class Meta:
         ordering = ["sort_order", "name"]

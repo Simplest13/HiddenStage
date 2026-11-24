@@ -23,6 +23,14 @@ describe('public discovery pages', () => {
     expect(screen.queryByRole('heading', { name: 'Spaces' })).not.toBeInTheDocument()
   })
 
+  it('navigates directly to category service and professional listings without intermediate page', async () => {
+    renderRoute('/services/food-and-drink')
+    const heading = await screen.findByRole('heading', { level: 1 })
+    expect(heading).toHaveTextContent(/Food & drink Services & Professionals/i)
+    expect(screen.getByRole('radio', { name: /Food & drink/i })).toBeChecked()
+    expect(screen.queryByRole('link', { name: /Browse professionals/i })).not.toBeInTheDocument()
+  })
+
   it('filters provider records by PIN code and opens a demo profile', async () => {
     const user = userEvent.setup()
     renderRoute('/providers')

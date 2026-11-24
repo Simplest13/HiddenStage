@@ -166,11 +166,13 @@ function DemoProviderCard({ provider }: { provider: (typeof demoProviders)[numbe
 }
 
 export function ProviderDirectoryPage() {
+  const { categorySlug } = useParams<{ categorySlug?: string }>()
+  const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const [query, setQuery] = useState(() => searchParams.get('q') ?? '')
   const [pin, setPin] = useState('')
   const [kindFilter, setKindFilter] = useState<string>(() => searchParams.get('kind') ?? '')
-  const category = searchParams.get('category') ?? ''
+  const category = categorySlug || (searchParams.get('category') ?? '')
   const locality = searchParams.get('location') ?? ''
 
   const liveData = useApiData(
@@ -186,17 +188,88 @@ export function ProviderDirectoryPage() {
       `${p.name} ${p.description} ${p.city}`.toLowerCase().includes(query.toLowerCase())
   }), [category, locality, pin, query])
 
-  const setLocality = (value: string) => setSearchParams({ ...(category ? { category } : {}), ...(kindFilter ? { kind: kindFilter } : {}), ...(value ? { location: value } : {}), ...(query ? { q: query } : {}) })
-  const setCategory = (value: string) => setSearchParams({ ...(value ? { category: value } : {}), ...(kindFilter ? { kind: kindFilter } : {}), ...(locality ? { location: locality } : {}), ...(query ? { q: query } : {}) })
-  const setKind = (value: string) => { setKindFilter(value); setSearchParams({ ...(category ? { category } : {}), ...(value ? { kind: value } : {}), ...(locality ? { location: locality } : {}), ...(query ? { q: query } : {}) }) }
+  const setLocality = (value: string) => {
+    if (categorySlug) {
+      const sp = new URLSearchParams()
+      if (kindFilter) sp.set('kind', kindFilter)
+      if (value) sp.set('location', value)
+      if (query) sp.set('q', query)
+      const qStr = sp.toString() ? `?${sp.toString()}` : ''
+      navigate(`${serviceCategoryPath(categorySlug)}${qStr}`)
+    } else {
+      setSearchParams({ ...(category ? { category } : {}), ...(kindFilter ? { kind: kindFilter } : {}), ...(value ? { location: value } : {}), ...(query ? { q: query } : {}) })
+    }
+  }
+
+  const setCategory = (value: string) => {
+    if (categorySlug) {
+      const sp = new URLSearchParams()
+      if (kindFilter) sp.set('kind', kindFilter)
+      if (locality) sp.set('location', locality)
+      if (query) sp.set('q', query)
+      const qStr = sp.toString() ? `?${sp.toString()}` : ''
+      if (value) {
+        navigate(`${serviceCategoryPath(value)}${qStr}`)
+      } else {
+        navigate(`${routes.providers}${qStr}`)
+      }
+    } else {
+      setSearchParams({ ...(value ? { category: value } : {}), ...(kindFilter ? { kind: kindFilter } : {}), ...(locality ? { location: locality } : {}), ...(query ? { q: query } : {}) })
+    }
+  }
+
+  const setKind = (value: string) => {
+    setKindFilter(value)
+    if (categorySlug) {
+      const sp = new URLSearchParams()
+      if (value) sp.set('kind', value)
+      if (locality) sp.set('location', locality)
+      if (query) sp.set('q', query)
+      const qStr = sp.toString() ? `?${sp.toString()}` : ''
+      navigate(`${serviceCategoryPath(categorySlug)}${qStr}`)
+    } else {
+      setSearchParams({ ...(category ? { category } : {}), ...(value ? { kind: value } : {}), ...(locality ? { location: locality } : {}), ...(query ? { q: query } : {}) })
+    }
+  }
+
+  const clearAllFilters = () => {
+    setQuery('')
+    setLocality('')
+    setPin('')
+    setKindFilter('')
+    if (categorySlug) {
+      navigate(routes.providers)
+    } else {
+      setSearchParams({})
+    }
+  }
+
+  const activeCategoryName = category ? (categoryName(category) || category) : ''
 
   return <div className="listing-page">
     <header className="listing-hero">
       <div className="wrap">
-        <Breadcrumb items={[{ label: 'Home', href: routes.home }, { label: 'Event professionals' }]} />
-        <span className="eyebrow">Explore Event Specialists</span>
-        <h1>Meet Event Professionals & Agencies</h1>
-        <p>Discover top-rated event managers, decor stylists, photographers, caterers, performers, and production specialists for your celebration.</p>
+        <Breadcrumb
+          items={
+            activeCategoryName
+              ? [
+                  { label: 'Home', href: routes.home },
+                  { label: 'Services', href: routes.services },
+                  { label: activeCategoryName },
+                ]
+              : [
+                  { label: 'Home', href: routes.home },
+                  { label: 'Event professionals' },
+                ]
+          }
+        />
+        <span className="eyebrow">{activeCategoryName ? `${activeCategoryName} Specialists` : 'Explore Event Specialists'}</span>
+        <h1>{activeCategoryName ? `${activeCategoryName} Services & Professionals` : 'Meet Event Professionals & Agencies'}</h1>
+        <p>
+          {activeCategoryName
+            ? `Discover verified ${activeCategoryName.toLowerCase()} specialists, catering teams, and event service providers for your celebration.`
+            : 'Discover top-rated event managers, decor stylists, photographers, caterers, performers, and production specialists for your celebration.'}
+        </p>
       </div>
     </header>
     <div className="listing-search">
@@ -208,7 +281,7 @@ export function ProviderDirectoryPage() {
     </div>
     <div className="wrap listing-layout">
       <aside className="filter-panel" aria-label="Filter professionals">
-        <div className="filter-panel__head"><h2>Filter results</h2><button type="button" className="filter-clear" onClick={() => { setQuery(''); setLocality(''); setPin(''); setKind(''); setSearchParams({}) }}>Clear all</button></div>
+        <div className="filter-panel__head"><h2>Filter results</h2><button type="button" className="filter-clear" onClick={clearAllFilters}>Clear all</button></div>
         <fieldset className="filter-group">
           <legend>Professional Type</legend>
           <label className="filter-radio"><input type="radio" name="filter-kind" checked={!kindFilter} onChange={() => setKind('')} /><span>All types</span></label>
@@ -245,7 +318,7 @@ export function ProviderDirectoryPage() {
             {demoItems.map((provider) => <DemoProviderCard key={provider.id} provider={provider} />)}
           </div>
         ) : (
-          <EmptyState title="No professionals found" description="Adjust your search, service category, or location filters." action={<Button type="button" variant="secondary" onClick={() => { setQuery(''); setLocality(''); setPin(''); setKind(''); setSearchParams({}) }}>Clear filters</Button>} />
+          <EmptyState title="No professionals found" description="Adjust your search, service category, or location filters." action={<Button type="button" variant="secondary" onClick={clearAllFilters}>Clear filters</Button>} />
         )}
       </section>
     </div>

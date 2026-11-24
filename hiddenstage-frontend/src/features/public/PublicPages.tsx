@@ -565,8 +565,8 @@ export default function PublicPages() {
   const page = useCurrentPage()
   switch (page) {
     case 'home': return <HomePage />
-    case 'services':
-    case 'serviceCategory': return <ServiceDiscoveryPage />
+    case 'services': return <ServiceDiscoveryPage />
+    case 'serviceCategory':
     case 'providers': return <ProviderDirectoryPage />
     case 'providerDetail': return <ProviderProfilePage />
     case 'howItWorks': return <HowItWorksPage />

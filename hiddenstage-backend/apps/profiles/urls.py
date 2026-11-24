@@ -7,6 +7,11 @@ app_name = "profiles"
 urlpatterns = [
     path("catalog/categories/", views.ServiceCategoryListView.as_view(), name="categories"),
     path(
+        "catalog/categories/custom/",
+        views.CustomCategoryCreateView.as_view(),
+        name="categories-custom",
+    ),
+    path(
         "me/customer-profile/",
         views.CustomerProfileView.as_view(),
         name="customer-profile",
