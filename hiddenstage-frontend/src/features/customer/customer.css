@@ -1,6 +1,9 @@
 /* Customer workspace and shared form patterns. */
 .customer-page { display: grid; gap: 1.25rem; width: min(100%, var(--content-width)); margin-inline: auto; padding: 0.5rem 0 2.5rem; }
-.customer-page--standalone { padding-inline: clamp(1.25rem, 4vw, 2.5rem); }
+.customer-page--standalone {
+  padding-inline: clamp(1.25rem, 4vw, 2.5rem);
+  padding-block: clamp(1rem, 2.5vw, 2rem) 3rem;
+}
 .onboarding-topbar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--color-line); }
 .onboarding-topbar > a { text-decoration: none; }
 .onboarding-topbar > span { color: var(--color-muted); font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
@@ -11,6 +14,46 @@
 .customer-page__heading h1, .customer-page__narrow h1 { margin: 0.35rem 0 0.35rem; font: 700 clamp(1.7rem, 2.8vw, 2.15rem)/1.15 var(--font-ui); letter-spacing: -0.02em; }
 .customer-page__heading p, .customer-page__narrow > p { max-width: 42rem; margin: 0; color: var(--color-muted); font-size: 0.9rem; line-height: 1.6; }
 .customer-page > .results-head { margin: 0; }
+
+.account-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr));
+  gap: 0.75rem;
+  padding: 0.9rem 1.1rem;
+  margin-bottom: 1.25rem;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: var(--color-paper-bright, #fff);
+}
+.account-summary > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.account-summary span {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-muted);
+}
+.account-summary strong {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--color-ink);
+  word-break: break-all;
+}
+
+.event-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+@media (max-width: 640px) {
+  .event-form-grid {
+    grid-template-columns: 1fr;
+  }
+}
 
 /* Atmospheric Welcome Hero */
 .dashboard-welcome-hero {

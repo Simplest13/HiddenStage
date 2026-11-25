@@ -59,6 +59,10 @@ export default function ProviderOnboardingPage() {
   const [customCategoryError, setCustomCategoryError] = useState('')
 
   useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [step])
+
+  useEffect(() => {
     if (!managerQuery.trim() || selectedManager) {
       setShowManagerPopup(false)
       return
@@ -366,7 +370,7 @@ export default function ProviderOnboardingPage() {
                   </div>
                 ) : (
                   <div className="manager-search-wrapper">
-                    <div className="event-form-grid">
+                    <div className="manager-search-bar">
                       <Input
                         label="Manager name or business"
                         name="managerQuery"
@@ -473,7 +477,7 @@ export default function ProviderOnboardingPage() {
             </>
           )}
 
-          {step >= 2 && (
+          {step === 2 && (
             <fieldset className="provider-onboarding__categories">
               <legend>{kind === 'INDIVIDUAL_SERVICE_PROVIDER' ? 'Primary service category' : 'Services you offer'}</legend>
               <div>
@@ -505,7 +509,7 @@ export default function ProviderOnboardingPage() {
                 <div className="provider-onboarding__custom-category" role="region" aria-label="Create Your Own Service Category">
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div>
-                      <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: 'var(--color-burgundy, #6b2136)' }}>
+                      <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: 'var(--color-orange, #ff7a00)' }}>
                         Create Your Own Service Category
                       </h3>
                       <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.85rem', color: 'var(--color-muted, #737373)' }}>
