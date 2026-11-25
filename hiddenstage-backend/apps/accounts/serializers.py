@@ -55,7 +55,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 class RegisterSerializer(serializers.Serializer):
     email = serializers.EmailField(max_length=254)
-    username = serializers.CharField(max_length=50, required=False, allow_blank=True)
+    username = serializers.CharField(max_length=50, required=True, allow_blank=False)
     password = serializers.CharField(write_only=True, trim_whitespace=False, max_length=128)
     full_name = serializers.CharField(max_length=150)
     phone = serializers.CharField(max_length=20, required=False, allow_blank=True)
@@ -65,8 +65,6 @@ class RegisterSerializer(serializers.Serializer):
     accept_terms = serializers.BooleanField()
 
     def validate_username(self, value):
-        if not value:
-            return None
         norm = normalize_username(value)
         try:
             validate_username(norm)
@@ -122,7 +120,7 @@ class RegisterSerializer(serializers.Serializer):
         validated_data.pop("accept_terms", None)
         return User.objects.create_user(
             email=validated_data["email"],
-            username=validated_data.get("username") or None,
+            username=validated_data["username"],
             password=validated_data["password"],
             full_name=validated_data["full_name"],
             phone=validated_data.get("phone", ""),

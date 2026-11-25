@@ -47,10 +47,10 @@ export default function AuthPages() {
       setUsernameStatus(null)
       return
     }
-    if (!/^[a-z0-9_]{3,30}$/.test(clean)) {
+    if (!/^[a-z0-9_.]{3,50}$/.test(clean)) {
       setUsernameStatus({
         available: false,
-        message: '3-30 chars: lowercase letters, numbers, and underscores only.',
+        message: '3-50 chars: letters, numbers, underscores, and periods only.',
       })
       return
     }
@@ -97,13 +97,14 @@ export default function AuthPages() {
         if (password !== fields.get('confirmPassword')) throw new Error('Passwords do not match.')
         if (!fields.get('terms')) throw new Error('Accept the terms to continue.')
         const cleanUser = regUsername.trim().toLowerCase().replace(/^@/, '')
-        if (cleanUser && usernameStatus && !usernameStatus.available) {
-          throw new Error(usernameStatus.message || 'Please choose an available username.')
+        if (!cleanUser) throw new Error('Choose a username to create your account.')
+        if (!usernameStatus?.available) {
+          throw new Error(usernameStatus?.message || 'Please choose an available username.')
         }
         const role = String(fields.get('accountType') ?? 'CUSTOMER') === 'PROVIDER' ? 'PROVIDER' : 'CUSTOMER'
         const result = await actions.register({
           full_name: String(fields.get('fullName') ?? '').trim(),
-          username: cleanUser || undefined,
+          username: cleanUser,
           email,
           password,
           phone: String(fields.get('phone') ?? '').trim(),
@@ -211,6 +212,7 @@ export default function AuthPages() {
             value={regUsername}
             onChange={(e) => setRegUsername(e.target.value.toLowerCase())}
             placeholder="e.g. ananya_events"
+            required
             autoCapitalize="none"
             autoCorrect="off"
             spellCheck={false}

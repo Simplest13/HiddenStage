@@ -27,12 +27,36 @@ class RegistrationTests(TestCase):
     def setUp(self):
         self.client = APIClient()
 
+    def test_registration_requires_a_valid_unique_username(self):
+        payload = {
+            "email": "username@example.com",
+            "password": "a-long-enough-passphrase",
+            "full_name": "Username User",
+            "accept_terms": True,
+        }
+        missing = self.client.post(REGISTER, payload, format="json")
+        self.assertEqual(missing.status_code, 400)
+        self.assertIn("username", missing.data)
+
+        payload["username"] = "bad username"
+        invalid = self.client.post(REGISTER, payload, format="json")
+        self.assertEqual(invalid.status_code, 400)
+        self.assertIn("username", invalid.data)
+
+        payload["username"] = "new_user"
+        self.assertEqual(self.client.post(REGISTER, payload, format="json").status_code, 201)
+        payload["email"] = "other@example.com"
+        duplicate = self.client.post(REGISTER, payload, format="json")
+        self.assertEqual(duplicate.status_code, 400)
+        self.assertIn("username", duplicate.data)
+
     @override_settings(EMAIL_VERIFICATION_REQUIRED=True)
     def test_register_creates_unverified_customer(self):
         response = self.client.post(
             REGISTER,
             {
                 "email": "New.User@Example.com",
+                "username": "New_User.1",
                 "password": "a-long-enough-passphrase",
                 "full_name": "  New User  ",
                 "role": "CUSTOMER",
@@ -43,6 +67,7 @@ class RegistrationTests(TestCase):
         self.assertEqual(response.status_code, 201, response.content)
         self.assertEqual(response.data["email"], "new.user@example.com")
         self.assertEqual(response.data["full_name"], "New User")
+        self.assertEqual(response.data["username"], "new_user.1")
         self.assertFalse(response.data["email_verified"])
         user = User.objects.get(email="new.user@example.com")
         self.assertTrue(user.check_password("a-long-enough-passphrase"))
@@ -54,6 +79,7 @@ class RegistrationTests(TestCase):
             REGISTER,
             {
                 "email": "taken@example.com",
+                "username": "taken_user",
                 "password": "a-long-enough-passphrase",
                 "full_name": "Someone",
                 "accept_terms": True,
@@ -68,6 +94,7 @@ class RegistrationTests(TestCase):
             REGISTER,
             {
                 "email": "no-terms@example.com",
+                "username": "no_terms",
                 "password": "a-long-enough-passphrase",
                 "full_name": "No Terms",
                 "accept_terms": False,
@@ -87,6 +114,7 @@ class RegistrationTests(TestCase):
             REGISTER,
             {
                 "email": "emailed@example.com",
+                "username": "emailed_user",
                 "password": "a-long-enough-passphrase",
                 "full_name": "Emailed User",
                 "accept_terms": True,
@@ -109,6 +137,7 @@ class RegistrationTests(TestCase):
             REGISTER,
             {
                 "email": "undelivered@example.com",
+                "username": "undelivered_user",
                 "password": "a-long-enough-passphrase",
                 "full_name": "Undelivered User",
                 "accept_terms": True,
@@ -273,6 +302,7 @@ class VerificationDisabledRegistrationTests(TestCase):
         self.client = APIClient()
         self.payload = {
             "email": "launch@example.com",
+            "username": "launch_user",
             "password": "a-long-enough-passphrase",
             "full_name": "Launch User",
             "accept_terms": True,
@@ -297,7 +327,12 @@ class VerificationDisabledRegistrationTests(TestCase):
         self.assertFalse(me.data["email_verified"])
 
     def test_a_provider_can_register_without_verifying(self):
-        payload = dict(self.payload, email="provider-launch@example.com", role="PROVIDER")
+        payload = dict(
+            self.payload,
+            email="provider-launch@example.com",
+            username="provider_launch",
+            role="PROVIDER",
+        )
         response = self.client.post(REGISTER, payload, format="json")
         self.assertEqual(response.status_code, 201, response.content)
         self.assertEqual(response.data["role"], "PROVIDER")
