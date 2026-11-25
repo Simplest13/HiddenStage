@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link, useMatches, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { customerEventEditPath, routes } from '../../app/routes/routePaths'
+import { Icon } from '../../shared/ui/Icon'
 import { Badge, Button, ButtonLink, Card, EmptyState, ErrorState, Modal, Select, Spinner, Textarea, useToast } from '../../shared/ui'
 import { downloadApiFile } from '../../shared/api/client'
 import { eventsApi } from '../../shared/api/backend/events'
@@ -96,7 +97,7 @@ export default function EventWorkspacePage({ initialTab }: { initialTab?: TabKey
   return <section className="customer-page event-workspace">
     <div className="event-workspace__head">
       <div>
-        <Link className="text-link" to={routes.customer.requests}>← My requests</Link>
+        <Link className="text-link" to={routes.customer.requests}><Icon name="arrowLeft" size={14} /> My requests</Link>
         <div className="event-workspace__badges">
           <EventStatusBadge status={event.status} />
           <span>{event.event_type}</span>

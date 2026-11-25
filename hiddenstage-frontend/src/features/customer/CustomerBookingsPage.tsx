@@ -6,6 +6,7 @@ import { useApiData } from '../../shared/api/backend/useApiData'
 import type { ApiBooking } from '../../shared/api/backend/types'
 import { formatPaise, formatShortDate } from '../../shared/api/backend/format'
 import { Avatar, Button, ButtonLink, Card, Spinner } from '../../shared/ui'
+import { Icon } from '../../shared/ui/Icon'
 
 const LIFECYCLE_STEPS = [
   { key: 'service_requested', label: '1. Request' },
@@ -152,7 +153,7 @@ export function CustomerBookingsPage() {
         </div>
       ) : filteredBookings.length === 0 ? (
         <Card style={{ padding: '3.5rem 2rem', textAlign: 'center', background: 'var(--color-paper-bright)' }}>
-          <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>📅</div>
+          <div style={{ marginBottom: '0.75rem' }}><Icon name="calendarDays" size={40} /></div>
           <h2 style={{ fontSize: '1.25rem', margin: '0 0 0.5rem' }}>No bookings found</h2>
           <p style={{ color: 'var(--color-muted)', maxWidth: '28rem', margin: '0 auto 1.5rem', fontSize: '0.9rem' }}>
             Submit an event request to receive quotations from vetted catering, photography, sound, and venue specialists.
@@ -213,9 +214,9 @@ export function CustomerBookingsPage() {
 
                     <h2 style={{ margin: '0 0 0.35rem', fontSize: '1.35rem', color: 'var(--color-ink)' }}>{b.name}</h2>
                     <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--color-muted)' }}>
-                      📍 {b.venue_name ? `${b.venue_name}, ` : ''}{b.city}, {b.state} • 🗓{' '}
-                      {b.event_date ? formatShortDate(b.event_date) : 'Date TBD'}{' '}
-                      {b.guest_count ? `• 👥 ${b.guest_count} Guests` : ''}
+                      <Icon name="mapPin" size={14} /> {b.venue_name ? `${b.venue_name}, ` : ''}{b.city}, {b.state}
+                      {' • '}<Icon name="calendarDays" size={14} /> {b.event_date ? formatShortDate(b.event_date) : 'Date TBD'}
+                      {b.guest_count ? <> {' • '}<Icon name="users" size={14} /> {b.guest_count} Guests</> : null}
                     </p>
                   </div>
 
@@ -233,7 +234,7 @@ export function CustomerBookingsPage() {
                           setFeedbackSuccess(null)
                         }}
                       >
-                        ✓ Mark Completed
+                        <Icon name="circleCheck" size={14} /> Mark Completed
                       </Button>
                     )}
                     <Button size="sm" variant="secondary" onClick={() => setSelectedBooking(b)}>
@@ -430,7 +431,7 @@ export function CustomerBookingsPage() {
                 <h2 style={{ margin: '0.2rem 0 0', fontSize: '1.35rem' }}>{selectedBooking.name}</h2>
               </div>
               <Button size="sm" variant="quiet" onClick={() => setSelectedBooking(null)}>
-                ✕ Close
+                <Icon name="close" size={14} /> Close
               </Button>
             </div>
 
@@ -467,7 +468,7 @@ export function CustomerBookingsPage() {
                         flexShrink: 0,
                       }}
                     >
-                      {isPassed && !isCurrent ? '✓' : idx + 1}
+                      {isPassed && !isCurrent ? <Icon name="circleCheck" size={16} color="#fff" /> : idx + 1}
                     </div>
                     <div>
                       <strong style={{ fontSize: '0.92rem', color: isCurrent ? 'var(--color-orange)' : 'var(--color-ink)' }}>
@@ -524,7 +525,7 @@ export function CustomerBookingsPage() {
                 <h2 style={{ margin: '0.2rem 0 0', fontSize: '1.35rem' }}>{completeBooking.name}</h2>
               </div>
               <Button size="sm" variant="quiet" disabled={completing} onClick={() => setCompleteBooking(null)}>
-                ✕ Close
+                <Icon name="close" size={14} /> Close
               </Button>
             </div>
 
@@ -541,7 +542,7 @@ export function CustomerBookingsPage() {
                   margin: '1rem 0',
                 }}
               >
-                ✓ {feedbackSuccess}
+                <Icon name="circleCheck" size={16} /> {feedbackSuccess}
               </div>
             ) : (
               <>

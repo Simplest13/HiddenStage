@@ -3,6 +3,7 @@ import { networkApi } from '../../shared/api/backend/ecosystem'
 import { subscribeToRealtime } from '../../shared/api/realtime'
 import type { ApiChatMessage, ApiConversation, ApiCustomerConnection } from '../../shared/api/backend/types'
 import { Avatar, Button, Card, Spinner } from '../../shared/ui'
+import { Icon } from '../../shared/ui/Icon'
 import { useAuth } from '../../app/auth/useAuth'
 
 export function CustomerNetworkPage() {
@@ -421,11 +422,10 @@ export function CustomerNetworkPage() {
                 border: 'none',
                 color: 'var(--color-muted)',
                 cursor: 'pointer',
-                fontSize: '0.75rem',
                 padding: '0.2rem',
               }}
             >
-              ✕
+              <Icon name="close" size={14} />
             </button>
           </div>
         </div>
@@ -484,7 +484,7 @@ export function CustomerNetworkPage() {
                 style={{ height: '2.4rem', fontSize: '0.82rem', paddingLeft: '1.8rem' }}
               />
               <span style={{ position: 'absolute', left: '0.6rem', top: '0.55rem', fontSize: '0.85rem', color: 'var(--color-muted)' }}>
-                🔍
+                <Icon name="search" size={15} />
               </span>
             </div>
 
@@ -521,7 +521,7 @@ export function CustomerNetworkPage() {
             ) : !searchQuery.trim() ? (
               filteredConnections.length === 0 ? (
                 <div style={{ padding: '2rem 1rem', textAlign: 'center', color: 'var(--color-muted)' }}>
-                  <span style={{ fontSize: '1.8rem', display: 'block', marginBottom: '0.4rem' }}>👥</span>
+                  <span style={{ display: 'block', marginBottom: '0.4rem' }}><Icon name="users" size={29} /></span>
                   <p style={{ margin: 0, fontSize: '0.85rem' }}>
                     {isProvider ? 'No customers connected yet.' : 'Your network is empty.'}
                   </p>
@@ -657,7 +657,7 @@ export function CustomerNetworkPage() {
                                   )}
                                 </div>
                                 <span style={{ fontSize: '0.74rem', color: 'var(--color-muted)', display: 'block' }}>
-                                  {p.category} • 📍 {p.city}
+                                  {p.category} • <Icon name="mapPin" size={12} /> {p.city}
                                 </span>
                               </div>
                             </div>
@@ -685,7 +685,7 @@ export function CustomerNetworkPage() {
                 {/* 4. Empty State if nothing matches */}
                 {filteredConnections.length === 0 && unaddedSuggestions.length === 0 && !searchingSuggestions && (
                   <div style={{ padding: '2.5rem 1rem', textAlign: 'center', color: 'var(--color-muted)' }}>
-                    <span style={{ fontSize: '1.8rem', display: 'block', marginBottom: '0.4rem' }}>🔍</span>
+                    <span style={{ display: 'block', marginBottom: '0.4rem' }}><Icon name="search" size={29} /></span>
                     <p style={{ margin: 0, fontSize: '0.85rem' }}>
                       No profiles found matching "{searchQuery}".
                     </p>
@@ -746,7 +746,7 @@ export function CustomerNetworkPage() {
 
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                   <Button size="sm" variant="secondary" onClick={() => window.open(`tel:+918047182200`)}>
-                    📞 Contact Support
+                    <Icon name="phone" size={14} /> Contact Support
                   </Button>
                 </div>
               </div>
@@ -769,7 +769,7 @@ export function CustomerNetworkPage() {
                   </div>
                 ) : messages.length === 0 ? (
                   <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--color-muted)' }}>
-                    <span style={{ fontSize: '2rem', display: 'block', marginBottom: '0.4rem' }}>💬</span>
+                    <span style={{ display: 'block', marginBottom: '0.4rem' }}><Icon name="message" size={32} /></span>
                     <p style={{ margin: 0, fontSize: '0.9rem' }}>Send a message to coordinate your event requirements.</p>
                   </div>
                 ) : (
@@ -816,7 +816,7 @@ export function CustomerNetworkPage() {
                                   fontWeight: 600,
                                 }}
                               >
-                                📎 View Attachment
+                                <Icon name="paperclip" size={14} /> View Attachment
                               </a>
                             </div>
                           )}
@@ -872,7 +872,7 @@ export function CustomerNetworkPage() {
                     fontSize: '1rem',
                   }}
                 >
-                  📎
+                  <Icon name="paperclip" size={18} />
                 </button>
 
                 <div style={{ flex: 1, position: 'relative' }}>
@@ -910,7 +910,7 @@ export function CustomerNetworkPage() {
           ) : (
             <div style={{ flex: 1, display: 'grid', placeItems: 'center', padding: '2rem', textAlign: 'center' }}>
               <div>
-                <span style={{ fontSize: '2.5rem', display: 'block', marginBottom: '0.5rem' }}>💬</span>
+                <span style={{ display: 'block', marginBottom: '0.5rem' }}><Icon name="message" size={40} /></span>
                 <h3 style={{ margin: 0, fontSize: '1.15rem' }}>Select a specialist to start messaging</h3>
                 <p style={{ color: 'var(--color-muted)', fontSize: '0.85rem', marginTop: '0.25rem' }}>
                   Coordinate quotes, schedules, and event details directly.
@@ -953,7 +953,7 @@ export function CustomerNetworkPage() {
                 <h2 style={{ margin: '0.2rem 0 0', fontSize: '1.3rem' }}>Find Specialists by @username</h2>
               </div>
               <Button size="sm" variant="quiet" onClick={() => setShowFindModal(false)}>
-                ✕ Close
+                <Icon name="close" size={14} /> Close
               </Button>
             </div>
 
@@ -999,7 +999,7 @@ export function CustomerNetworkPage() {
                       <div>
                         <strong style={{ fontSize: '0.92rem', color: 'var(--color-ink)' }}>{p.business_name || p.name}</strong>
                         <span style={{ fontSize: '0.75rem', color: 'var(--color-muted)', display: 'block' }}>
-                          {p.username ? `@${p.username}` : ''} • {p.category} • 📍 {p.city}
+                          {p.username ? `@${p.username}` : ''} • {p.category} • <Icon name="mapPin" size={12} /> {p.city}
                         </span>
                       </div>
                     </div>

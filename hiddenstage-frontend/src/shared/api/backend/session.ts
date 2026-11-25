@@ -24,11 +24,15 @@ export const sessionApi = {
   me() {
     return apiRequest<ApiUser>('/auth/me/')
   },
-  register(input: RegisterInput) {
-    return apiRequest<ApiUser>('/auth/register/', { method: 'POST', ...jsonBody(input) })
+  async register(input: RegisterInput) {
+    const user = await apiRequest<ApiUser>('/auth/register/', { method: 'POST', ...jsonBody(input) })
+    resetCsrfToken()
+    return user
   },
-  login(input: LoginInput) {
-    return apiRequest<ApiUser>('/auth/login/', { method: 'POST', ...jsonBody(input) })
+  async login(input: LoginInput) {
+    const user = await apiRequest<ApiUser>('/auth/login/', { method: 'POST', ...jsonBody(input) })
+    resetCsrfToken()
+    return user
   },
   async logout() {
     try {
@@ -66,11 +70,13 @@ export const sessionApi = {
   }) {
     return apiRequest<ApiUser>('/auth/settings/', { method: 'PATCH', ...jsonBody(data) })
   },
-  changePassword(current_password: string, new_password: string) {
-    return apiRequest<{ detail: string }>('/auth/password/change/', {
+  async changePassword(current_password: string, new_password: string) {
+    const result = await apiRequest<{ detail: string }>('/auth/password/change/', {
       method: 'POST',
       ...jsonBody({ current_password, new_password }),
     })
+    resetCsrfToken()
+    return result
   },
   async uploadAvatar(file: File) {
     await ensureCsrfToken()

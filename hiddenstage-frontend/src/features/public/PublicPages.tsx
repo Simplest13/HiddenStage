@@ -6,6 +6,7 @@ import { EmptyState } from '../../shared/ui/feedback'
 import { ProviderDirectoryPage, ProviderProfilePage, ServiceDiscoveryPage } from '../discovery/DiscoveryPages'
 import { categoryName, demoProviders, serviceCategories } from '../discovery/data/catalog'
 import { CategoryIcon } from '../../shared/ui/CategoryIcon'
+import { Icon } from '../../shared/ui/Icon'
 import { Award, Calendar, MapPin, Search, Users } from 'kubai-icons-react'
 import { publicFeedApi } from '../../shared/api/backend/ecosystem'
 import type { ApiPublicFeedEvent } from '../../shared/api/backend/types'
@@ -94,7 +95,7 @@ function CategoryTile({ slug, index }: { slug: string; index: number }) {
     <div className="cat-tile__body">
       <h3>{category.name}</h3>
       <p>{category.sampleOffering}</p>
-      <span className="cat-tile__arrow" aria-hidden="true">→</span>
+      <Icon className="cat-tile__arrow" name="arrowRight" size={16} />
     </div>
   </Link>
 }
@@ -113,7 +114,7 @@ function ProviderPreview({ provider, index = 0 }: { provider: (typeof demoProvid
       <h3><Link to={providerDetailPath(provider.id)}>{provider.name}</Link></h3>
       <p>{provider.description}</p>
       <div className="pro-card__tags">{provider.categories.map((slug) => <Badge key={slug}>{categoryName(slug)}</Badge>)}</div>
-      <Link className="text-link" to={providerDetailPath(provider.id)}>View sample profile <span aria-hidden="true">→</span></Link>
+      <Link className="text-link" to={providerDetailPath(provider.id)}>View sample profile <Icon name="arrowRight" size={14} /></Link>
     </div>
   </article>
 }
@@ -143,7 +144,7 @@ function LiveEventFeed() {
             <p>Upcoming events from hosts seeking quotations. Verified specialists can review scopes and quote directly.</p>
           </div>
           <Link className="section-link" to={routes.forProfessionals}>
-            How to quote <span aria-hidden="true">→</span>
+            How to quote <Icon name="arrowRight" size={14} />
           </Link>
         </div>
 
@@ -154,7 +155,7 @@ function LiveEventFeed() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
                   <Badge tone="accent">{item.event_type || 'Event'}</Badge>
                   <span style={{ fontSize: '0.8rem', color: 'var(--color-fg-muted)' }}>
-                    📍 {item.city}{item.state ? `, ${item.state}` : ''}
+                    <Icon name="mapPin" size={14} /> {item.city}{item.state ? `, ${item.state}` : ''}
                   </span>
                 </div>
 
@@ -163,8 +164,8 @@ function LiveEventFeed() {
                 </h3>
 
                 <div style={{ fontSize: '0.88rem', color: 'var(--color-fg-muted)', marginBottom: '0.75rem', display: 'flex', gap: '1rem' }}>
-                  <span>📅 {item.event_date ? formatShortDate(item.event_date) : 'Flexible Date'}</span>
-                  {item.guest_count ? <span>👥 {item.guest_count} guests</span> : null}
+                  <span><Icon name="calendarDays" size={14} /> {item.event_date ? formatShortDate(item.event_date) : 'Flexible Date'}</span>
+                  {item.guest_count ? <span><Icon name="users" size={14} /> {item.guest_count} guests</span> : null}
                 </div>
 
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
@@ -176,10 +177,10 @@ function LiveEventFeed() {
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--color-border)', paddingTop: '0.85rem' }}>
                 <span style={{ fontSize: '0.8rem', color: 'var(--color-fg-muted)' }}>
-                  👤 {item.anonymized_host || `Host in ${item.city || 'India'}`}
+                  <Icon name="user" size={14} /> {item.anonymized_host || `Host in ${item.city || 'India'}`}
                 </span>
                 <ButtonLink to={routes.forProfessionals} size="sm" variant="secondary">
-                  Quote for Event →
+                  Quote for Event <Icon name="arrowRight" size={14} />
                 </ButtonLink>
               </div>
             </Card>
@@ -229,9 +230,9 @@ function HomePage() {
             <Button type="submit">Search services</Button>
           </form>
           <ul className="hero-trust">
-            <li>Zero booking commission</li>
-            <li>Direct supplier quotations</li>
-            <li>Verified event specialists</li>
+            <li><Icon className="hero-trust__icon" name="circleCheck" size={18} /> Zero booking commission</li>
+            <li><Icon className="hero-trust__icon" name="circleCheck" size={18} /> Direct supplier quotations</li>
+            <li><Icon className="hero-trust__icon" name="circleCheck" size={18} /> Verified event specialists</li>
           </ul>
         </div>
         <div className="hero-collage" aria-hidden="true">
@@ -266,7 +267,7 @@ function HomePage() {
             <h2>Explore event services</h2>
             <p>Hire verified specialists across catering, sound, photography, decoration, and venue spaces.</p>
           </div>
-          <Link className="section-link" to={routes.services}>View all categories <span aria-hidden="true">→</span></Link>
+          <Link className="section-link" to={routes.services}>View all categories <Icon name="arrowRight" size={14} /></Link>
         </div>
         <div className="cat-tabs" role="tablist" aria-label="Service groups">
           {categoryGroups.map((item) => <button key={item.id} type="button" role="tab" aria-selected={group === item.id} className={group === item.id ? 'cat-tabs__active' : ''} onClick={() => setGroup(item.id)}>{item.label}</button>)}
@@ -290,7 +291,7 @@ function HomePage() {
             <p>{step.body}</p>
           </li>)}
         </ol>
-        <div className="section-foot"><ButtonLink to={routes.customer.newRequest}>Request quotations <span aria-hidden="true">→</span></ButtonLink></div>
+        <div className="section-foot"><ButtonLink to={routes.customer.newRequest}>Request quotations <Icon name="arrowRight" size={14} /></ButtonLink></div>
       </div>
     </section>
 
@@ -301,7 +302,7 @@ function HomePage() {
             <h2>Featured event professionals</h2>
             <p>Review verified portfolios, authentic client feedback, and direct service pricing from active suppliers.</p>
           </div>
-          <Link className="section-link" to={routes.providers}>Browse all professionals <span aria-hidden="true">→</span></Link>
+          <Link className="section-link" to={routes.providers}>Browse all professionals <Icon name="arrowRight" size={14} /></Link>
         </div>
         <div className="pro-grid">{demoProviders.slice(0, 3).map((provider, index) => <ProviderPreview key={provider.id} provider={provider} index={index} />)}</div>
       </div>
@@ -343,9 +344,9 @@ function HomePage() {
             <h2>List your business on HiddenStage</h2>
             <p>Showcase your portfolio, receive qualified event requests in your service areas, and manage quotations in one workspace.</p>
             <ul className="check-list">
-              <li>Receive requests matched to your specific services</li>
-              <li>Manage your profile, portfolio albums, and quotations in one place</li>
-              <li>Maintain full control over your pricing and terms</li>
+              <li><Icon className="check-list__icon" name="circleCheck" size={16} /> Receive requests matched to your specific services</li>
+              <li><Icon className="check-list__icon" name="circleCheck" size={16} /> Manage your profile, portfolio albums, and quotations in one place</li>
+              <li><Icon className="check-list__icon" name="circleCheck" size={16} /> Maintain full control over your pricing and terms</li>
             </ul>
             <ButtonLink to={routes.forProfessionals} variant="secondary">Join as a professional</ButtonLink>
           </div>
@@ -450,9 +451,9 @@ function ProfessionalsPage() {
     <section className="section section--paper">
       <div className="wrap">
         <div className="benefits-grid">
-          <article><span className="benefit-icon" aria-hidden="true">◫</span><h3>Show what you offer</h3><p>Describe each service, set indicative prices, and keep your profile accurate.</p></article>
-          <article><span className="benefit-icon" aria-hidden="true">◎</span><h3>Choose your coverage</h3><p>Only the locations you explicitly serve are used when matching requests to your business.</p></article>
-          <article><span className="benefit-icon" aria-hidden="true">▤</span><h3>Quote with clarity</h3><p>Prepare itemised quotations, revise them when needed, and keep a visible revision history.</p></article>
+          <article><span className="benefit-icon" aria-hidden="true"><Icon name="briefcase" size={22} /></span><h3>Show what you offer</h3><p>Describe each service, set indicative prices, and keep your profile accurate.</p></article>
+          <article><span className="benefit-icon" aria-hidden="true"><Icon name="mapPin" size={22} /></span><h3>Choose your coverage</h3><p>Only the locations you explicitly serve are used when matching requests to your business.</p></article>
+          <article><span className="benefit-icon" aria-hidden="true"><Icon name="quote" size={22} /></span><h3>Quote with clarity</h3><p>Prepare itemised quotations, revise them when needed, and keep a visible revision history.</p></article>
         </div>
         <div className="pro-note"><h2>Professional tools are in preparation</h2><p>Profiles in this preview are fictional examples. Verification, ratings, and reviews shown anywhere in the product are demo states, not real-world claims.</p><ButtonLink to={routes.providers} variant="secondary">See demo profile examples</ButtonLink></div>
       </div>
@@ -470,7 +471,7 @@ function AboutPage() {
           <p>We want people to explore service styles, locations, and professional profiles with clarity — and to compare proposals on the details that actually matter.</p>
           <p>No live marketplace, provider availability, or payment is represented in this preview. Sample listings are fictional and clearly labelled.</p>
         </div>
-        <Card className="about-card"><span className="eyebrow">What we value</span><ul className="check-list"><li>Clarity over noise</li><li>Explicit coverage, not vague proximity</li><li>Decisions made with real information</li></ul></Card>
+        <Card className="about-card"><span className="eyebrow">What we value</span><ul className="check-list"><li><Icon className="check-list__icon" name="circleCheck" size={16} /> Clarity over noise</li><li><Icon className="check-list__icon" name="circleCheck" size={16} /> Explicit coverage, not vague proximity</li><li><Icon className="check-list__icon" name="circleCheck" size={16} /> Decisions made with real information</li></ul></Card>
       </div>
     </section>
   </>
@@ -529,7 +530,7 @@ function HelpPage() {
         <aside className="help-aside">
           <h2>Popular topics</h2>
           <ul>{helpEntries.map((item) => <li key={item.q}><button type="button" className="text-link" onClick={() => setQuery(item.q)}>{item.q}</button></li>)}</ul>
-          <div className="help-aside__note"><strong>Still stuck?</strong><p>Use the contact form to see how a message would be validated. Nothing is sent in this preview.</p><Link className="text-link" to={routes.contact}>Go to contact <span aria-hidden="true">→</span></Link></div>
+          <div className="help-aside__note"><strong>Still stuck?</strong><p>Use the contact form to see how a message would be validated. Nothing is sent in this preview.</p><Link className="text-link" to={routes.contact}>Go to contact <Icon name="arrowRight" size={14} /></Link></div>
         </aside>
       </div>
     </section>

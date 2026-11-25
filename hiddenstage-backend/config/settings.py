@@ -30,6 +30,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 load_dotenv(BASE_DIR / ".env")
 
+_env_file = os.environ.get("DJANGO_ENV_FILE", "").strip()
+if _env_file:
+    _env_path = Path(_env_file)
+    if not _env_path.is_absolute():
+        _env_path = BASE_DIR / _env_path
+    load_dotenv(_env_path, override=True)
+
 
 def env_bool(name: str, default: bool = False) -> bool:
     raw = os.environ.get(name)

@@ -1,8 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { ApiError, apiRequest, apiUrl, resolveApiBaseUrl, resolveMediaUrl } from './client'
+import { ApiError, apiRequest, apiUrl, resetCsrfToken, resolveApiBaseUrl, resolveMediaUrl } from './client'
+import { sessionApi } from './backend/session'
 
 describe('API error boundary', () => {
-  afterEach(() => vi.unstubAllGlobals())
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    resetCsrfToken()
+  })
 
   it('preserves backend validation and authorization messages with status codes', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ detail: 'Event date is invalid.' }), { status: 400 })))
@@ -12,6 +16,37 @@ describe('API error boundary', () => {
   it('turns network failures into a consistent retryable API error', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('offline')))
     await expect(apiRequest('/events')).rejects.toMatchObject({ name: 'ApiError', status: 0, message: expect.stringContaining('could not be reached') })
+  })
+
+  it('refreshes the cached CSRF token after registration rotates it', async () => {
+    let csrfRequests = 0
+    let profileRequest: RequestInit | undefined
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      if (url.endsWith('/auth/csrf/')) {
+        csrfRequests += 1
+        const csrfToken = csrfRequests === 1 ? 'before-registration' : 'after-registration'
+        return new Response(JSON.stringify({ csrfToken }), { status: 200 })
+      }
+      if (url.endsWith('/auth/register/')) {
+        return new Response(JSON.stringify({ id: 'user-1' }), { status: 201 })
+      }
+      profileRequest = init
+      return new Response(JSON.stringify({ saved: true }), { status: 200 })
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await sessionApi.register({
+      full_name: 'Test User',
+      email: 'test@example.com',
+      password: 'a-long-enough-passphrase',
+      role: 'CUSTOMER',
+      accept_terms: true,
+    })
+    await apiRequest('/me/customer-profile/', { method: 'PUT', body: '{}' })
+
+    expect(csrfRequests).toBe(2)
+    expect(new Headers(profileRequest?.headers).get('X-CSRFToken')).toBe('after-registration')
   })
 
   it('provides explicit messages for session, ownership, and server failures', () => {

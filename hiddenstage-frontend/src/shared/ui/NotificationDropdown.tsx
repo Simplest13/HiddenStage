@@ -4,6 +4,7 @@ import { sessionApi } from '../api/backend/session'
 import { subscribeToRealtime } from '../api/realtime'
 import type { ApiNotification } from '../api/backend/types'
 import { useAuth } from '../../app/auth/useAuth'
+import { Icon, type IconName } from './Icon'
 
 function resolveNotificationUrl(item: ApiNotification, roles: readonly string[]): string {
   const url = item.action_url
@@ -146,18 +147,18 @@ export function NotificationDropdown() {
     }
   }
 
-  function getIcon(type: string) {
+  function getIcon(type: string): IconName {
     switch (type.toUpperCase()) {
       case 'PAYMENT':
-        return '💳'
+        return 'creditCard'
       case 'MESSAGE':
-        return '💬'
+        return 'message'
       case 'BOOKING':
-        return '📅'
+        return 'calendarDays'
       case 'QUOTATION':
-        return '📜'
+        return 'receipt'
       default:
-        return '🔔'
+        return 'bell'
     }
   }
 
@@ -188,7 +189,7 @@ export function NotificationDropdown() {
           transition: 'all 0.15s ease',
         }}
       >
-        <span>🔔</span>
+        <Icon name="bell" size={18} />
         {unreadCount > 0 && (
           <span
             className="notification-badge"
@@ -328,7 +329,7 @@ export function NotificationDropdown() {
               </div>
             ) : filtered.length === 0 ? (
               <div style={{ padding: '2.5rem 1.5rem', textAlign: 'center', color: 'var(--color-muted)' }}>
-                <span style={{ fontSize: '1.6rem', display: 'block', marginBottom: '0.4rem' }}>✨</span>
+                <span style={{ display: 'block', marginBottom: '0.4rem' }}><Icon name="sparkles" size={26} /></span>
                 <p style={{ margin: 0, fontSize: '0.85rem' }}>No {tab === 'unread' ? 'unread' : ''} notifications right now</p>
               </div>
             ) : (
@@ -354,7 +355,6 @@ export function NotificationDropdown() {
                     >
                       <span
                         style={{
-                          fontSize: '1.15rem',
                           display: 'grid',
                           placeItems: 'center',
                           width: '2rem',
@@ -365,7 +365,7 @@ export function NotificationDropdown() {
                           flexShrink: 0,
                         }}
                       >
-                        {getIcon(item.notification_type)}
+                        <Icon name={getIcon(item.notification_type)} size={18} />
                       </span>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>

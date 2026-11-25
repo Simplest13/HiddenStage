@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { Link, Navigate, useLocation, useMatches } from 'react-router-dom'
 import { Award, Calendar, CircleCheck, Folder, Sparkles } from 'kubai-icons-react'
+import { Icon } from '../../shared/ui/Icon'
 import { customerEventPath, routes } from '../../app/routes/routePaths'
 import { useAuth, useAuthActions, useTheme } from '../../app/auth/useAuth'
 import { Avatar, Button, ButtonLink, Card, EmptyState, ErrorState, Input, Select, Spinner } from '../../shared/ui'
@@ -88,7 +89,7 @@ function DashboardPage() {
         </div>
       </div>
       <div className="dashboard-welcome-hero__actions">
-        <ButtonLink to={routes.customer.newRequest} size="lg" className="button--saffron-hero">Create a request →</ButtonLink>
+        <ButtonLink to={routes.customer.newRequest} size="lg" className="button--saffron-hero">Create a request <Icon name="arrowRight" size={14} /></ButtonLink>
       </div>
     </div>
 
@@ -621,7 +622,7 @@ function SettingsPage() {
                     className={usernameStatus.available ? 'field__hint' : 'field__error'}
                     style={{ color: usernameStatus.available ? 'var(--color-success)' : undefined }}
                   >
-                    {usernameStatus.available ? '✓ ' : '✗ '}
+                    <Icon name={usernameStatus.available ? 'circleCheck' : 'close'} size={14} />
                     {usernameStatus.message}
                   </span>
                 ) : (
@@ -749,7 +750,7 @@ function SettingsPage() {
                   transition: 'all 0.15s ease',
                 }}
               >
-                <div style={{ fontSize: '1.4rem', marginBottom: '0.35rem' }}>🌸</div>
+                <div style={{ marginBottom: '0.35rem' }}><Icon name="flower" size={22} /></div>
                 <strong style={{ display: 'block', fontSize: '0.85rem' }}>Light Pink</strong>
                 <span style={{ fontSize: '0.7rem', color: '#705860' }}>#FFF9FC Canvas</span>
               </button>
@@ -769,7 +770,7 @@ function SettingsPage() {
                   transition: 'all 0.15s ease',
                 }}
               >
-                <div style={{ fontSize: '1.4rem', marginBottom: '0.35rem' }}>🌙</div>
+                <div style={{ marginBottom: '0.35rem' }}><Icon name="moon" size={22} /></div>
                 <strong style={{ display: 'block', fontSize: '0.85rem' }}>Dark Mode</strong>
                 <span style={{ fontSize: '0.7rem', color: '#A8A0B8' }}>#111019 Canvas</span>
               </button>
@@ -848,7 +849,7 @@ function SettingsPage() {
               Event specialists only see your event requirements and city. Direct contact details are shared only when you confirm quotations.
             </p>
             <Link className="text-link" to={routes.privacy}>
-              Read Privacy Policy →
+              Read Privacy Policy <Icon name="arrowRight" size={14} />
             </Link>
           </Card>
         </aside>

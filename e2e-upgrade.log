@@ -1,0 +1,7 @@
+
+Running 1 test using 1 worker
+
+  ok 1 [chromium] › e2e\functional-upgrade.spec.ts:5:3 › functional upgrade › publishes a three-day request with a custom service and keeps the session on the logo (1.3m)
+
+  1 passed (1.4m)
+EXIT=0

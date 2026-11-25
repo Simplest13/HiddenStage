@@ -1,0 +1,69 @@
+Using existing test database for alias 'default' ('test_neondb')...
+Found 16 test(s).
+Operations to perform:
+  Synchronize unmigrated apps: core, corsheaders, drf_spectacular, matching, messages, rest_framework, staticfiles
+  Apply all migrations: accounts, admin, auth, commitments, contenttypes, events, invitations, network, profiles, quotations, sessions
+Synchronizing apps without migrations:
+  Creating tables...
+    Running deferred SQL...
+Running migrations:
+  Applying contenttypes.0001_initial... OK
+  Applying contenttypes.0002_remove_content_type_name... OK
+  Applying auth.0001_initial... OK
+  Applying auth.0002_alter_permission_name_max_length... OK
+  Applying auth.0003_alter_user_email_max_length... OK
+  Applying auth.0004_alter_user_username_opts... OK
+  Applying auth.0005_alter_user_last_login_null... OK
+  Applying auth.0006_require_contenttypes_0002... OK
+  Applying auth.0007_alter_validators_add_error_messages... OK
+  Applying auth.0008_alter_user_username_max_length... OK
+  Applying auth.0009_alter_user_last_name_max_length... OK
+  Applying auth.0010_alter_group_name_max_length... OK
+  Applying auth.0011_update_proxy_permissions... OK
+  Applying auth.0012_alter_user_first_name_max_length... OK
+  Applying accounts.0001_initial... OK
+  Applying admin.0001_initial... OK
+  Applying admin.0002_logentry_remove_auto_add... OK
+  Applying admin.0003_logentry_add_action_flag_choices... OK
+  Applying profiles.0001_initial... OK
+  Applying events.0001_initial... OK
+  Applying quotations.0001_initial... OK
+  Applying commitments.0001_initial... OK
+  Applying events.0002_event_end_date_and_custom_requirements... OK
+  Applying invitations.0001_initial... OK
+  Applying network.0001_initial... OK
+  Applying network.0002_networkinvitation_initiated_by... OK
+  Applying profiles.0002_seed_service_categories... OK
+  Applying profiles.0003_providerprofile_kind_and_more... OK
+  Applying profiles.0004_professional_types_portfolio_and_team... OK
+  Applying profiles.0005_customer_profile_avatar_and_bio... OK
+  Applying quotations.0002_immutability_triggers... OK
+  Applying sessions.0001_initial...test_accepting_a_network_invitation_creates_association (apps.network.tests.NetworkInvitationTests.test_accepting_a_network_invitation_creates_association) ... ok
+test_declining_creates_no_association_and_keeps_history (apps.network.tests.NetworkInvitationTests.test_declining_creates_no_association_and_keeps_history) ... ok
+test_duplicate_pending_invitation_is_rejected (apps.network.tests.NetworkInvitationTests.test_duplicate_pending_invitation_is_rejected) ... ok
+test_ending_an_association_retains_the_row (apps.network.tests.NetworkInvitationTests.test_ending_an_association_retains_the_row) ... ok
+test_expired_invitation_is_marked_when_invitations_are_listed (apps.network.tests.NetworkInvitationTests.test_expired_invitation_is_marked_when_invitations_are_listed) ... ok
+test_manager_cannot_invite_a_manager (apps.network.tests.NetworkInvitationTests.test_manager_cannot_invite_a_manager) ... ok
+test_worker_can_associate_with_two_managers (apps.network.tests.NetworkInvitationTests.test_worker_can_associate_with_two_managers) ... ok
+test_worker_cannot_answer_another_workers_invitation (apps.network.tests.NetworkInvitationTests.test_worker_cannot_answer_another_workers_invitation) ... ok
+test_assignment_is_sent_and_worker_accepts (apps.network.tests.AssignmentTests.test_assignment_is_sent_and_worker_accepts) ... ok
+test_assistant_cannot_add_themselves (apps.profiles.test_professional_types.TeamPermissionTests.test_assistant_cannot_add_themselves) ... 2026-11-20 03:28:33,928 WARNING django.request Bad Request: /api/v1/me/team/
+ok
+test_assistant_without_permission_is_rejected (apps.profiles.test_professional_types.TeamPermissionTests.test_assistant_without_permission_is_rejected) ... 2026-11-20 03:28:53,777 WARNING django.request Forbidden: /api/v1/me/provider-profile/
+ok
+test_manager_grants_scoped_profile_access (apps.profiles.test_professional_types.TeamPermissionTests.test_manager_grants_scoped_profile_access) ... ok
+test_revoking_access_removes_the_permission (apps.profiles.test_professional_types.TeamPermissionTests.test_revoking_access_removes_the_permission) ... ok
+test_anonymous_cannot_list_events (apps.accounts.tests.RolePermissionTests.test_anonymous_cannot_list_events) ... 2026-11-20 03:29:43,098 WARNING django.request Forbidden: /api/v1/events/
+ok
+test_category_catalogue_matches_frontend_slugs (apps.accounts.tests.RolePermissionTests.test_category_catalogue_matches_frontend_slugs) ... ok
+test_provider_cannot_create_customer_event (apps.accounts.tests.RolePermissionTests.test_provider_cannot_create_customer_event) ... 2026-11-20 03:29:53,768 WARNING django.request Forbidden: /api/v1/events/
+ok
+
+----------------------------------------------------------------------
+Ran 16 tests in 458.193s
+
+OK
+Preserving test database for alias 'default' ('test_neondb')...
+ OK
+System check identified no issues (0 silenced).
+EXIT=0

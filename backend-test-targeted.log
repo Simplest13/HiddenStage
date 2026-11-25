@@ -1,0 +1,563 @@
+Using existing test database for alias 'default'...
+2026-11-20 01:13:23,228 WARNING django.request Bad Request: /api/v1/events/
+F2026-11-20 01:13:28,374 WARNING django.request Bad Request: /api/v1/events/
+F2026-11-20 01:13:33,976 WARNING django.request Bad Request: /api/v1/events/
+F2026-11-20 01:13:39,567 WARNING django.request Bad Request: /api/v1/events/
+F2026-11-20 01:13:46,224 WARNING django.request Bad Request: /api/v1/events/
+F...2026-11-20 01:14:35,992 WARNING django.request Not Found: /api/v1/events/dfc08590-3fe8-4a8e-9664-4e2591b59628/attachments/084ca1d5-fc41-4a7e-b731-966bf73a127c/download/
+....2026-11-20 01:17:19,345 WARNING django.request Gone: /api/v1/events/a89b43b3-583a-48af-b193-c3e350e5add3/attachments/81159ed4-0c75-46ba-afb5-3832c58cbc17/download/
+..2026-11-20 01:18:35,325 WARNING django.request Forbidden: /api/v1/events/fb18cef4-261c-4203-87db-3bc85882e768/attachments/d829de8b-2f4b-4333-9748-073958454808/download/
+.2026-11-20 01:19:14,100 WARNING django.request Forbidden: /api/v1/events/835545e3-2982-4956-9c20-148908f9e7c6/attachments/bc61dcd9-06f1-4e11-98eb-aa60de5d1d4e/download/
+.2026-11-20 01:21:07,195 WARNING django.request Bad Request: /api/v1/events/
+..2026-11-20 01:24:09,145 WARNING django.request Bad Request: /api/v1/events/
+.2026-11-20 01:27:40,917 WARNING django.request Bad Request: /api/v1/events/
+..2026-11-20 01:28:31,299 WARNING django.request Bad Request: /api/v1/events/20924066-2b57-49bf-b882-47738537e401/
+....2026-11-20 01:29:58,135 WARNING django.request Bad Request: /api/v1/events/
+F2026-11-20 01:30:01,821 WARNING django.request Bad Request: /api/v1/events/
+F2026-11-20 01:30:08,996 WARNING django.request Bad Request: /api/v1/events/
+.2026-11-20 01:30:12,893 WARNING django.request Bad Request: /api/v1/events/
+E2026-11-20 01:30:17,898 WARNING django.request Bad Request: /api/v1/events/
+F2026-11-20 01:30:22,143 WARNING django.request Bad Request: /api/v1/events/
+E.2026-11-20 01:32:51,716 WARNING django.request Forbidden: /api/v1/network/invitations/b640bc6a-89ba-44f1-82a3-5bb92c92b103/accept/
+.....2026-11-20 01:37:54,217 WARNING django.request Not Found: /api/v1/me/portfolio/528d982c-f60c-4ad9-a44f-e59a7b509e5c/
+....2026-11-20 01:42:15,947 WARNING django.request Bad Request: /api/v1/me/provider-profile/
+..2026-11-20 01:42:57,210 WARNING django.request Bad Request: /api/v1/me/provider-profile/
+.2026-11-20 01:43:24,867 WARNING django.request Bad Request: /api/v1/me/team/
+.FEEE
+======================================================================
+ERROR: test_other_customer_cannot_read_event (apps.events.tests.EventApiTests.test_other_customer_cannot_read_event)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\events\tests.py", line 76, in test_other_customer_cannot_read_event
+    self.assertEqual(client.get(f"{EVENTS}{created['id']}/").status_code, 403)
+                                           ~~~~~~~^^^^^^
+KeyError: 'id'
+
+======================================================================
+ERROR: test_submitted_event_locks_once_invitations_are_outstanding (apps.events.tests.EventApiTests.test_submitted_event_locks_once_invitations_are_outstanding)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\events\tests.py", line 82, in test_submitted_event_locks_once_invitations_are_outstanding
+    event = Event.objects.get(id=created["id"])
+                                 ~~~~~~~^^^^^^
+KeyError: 'id'
+
+======================================================================
+ERROR: test_manager_grants_scoped_profile_access (apps.profiles.test_professional_types.TeamPermissionTests.test_manager_grants_scoped_profile_access)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\models\query.py", line 948, in get_or_create
+    return self.get(**kwargs), False
+           ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\models\query.py", line 635, in get
+    raise self.model.DoesNotExist(
+apps.profiles.models.ServiceCategory.DoesNotExist: ServiceCategory matching query does not exist.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 103, in _execute
+    return self.cursor.execute(sql)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\psycopg\cursor.py", line 117, in execute
+    raise ex.with_traceback(None)
+psycopg.errors.AdminShutdown: terminating connection due to administrator command
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\profiles\test_professional_types.py", line 255, in setUp
+    ensure_categories()
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\core\testutils.py", line 40, in ensure_categories
+    ServiceCategory.objects.get_or_create(
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\models\manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\models\query.py", line 953, in get_or_create
+    with transaction.atomic(using=self.db):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\transaction.py", line 247, in __exit__
+    connection.savepoint_commit(sid)
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\utils\asyncio.py", line 26, in inner
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\backends\base\base.py", line 431, in savepoint_commit
+    self._savepoint_commit(sid)
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\backends\base\base.py", line 375, in _savepoint_commit
+    cursor.execute(self.ops.savepoint_commit_sql(sid))
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 103, in _execute
+    return self.cursor.execute(sql)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\psycopg\cursor.py", line 117, in execute
+    raise ex.with_traceback(None)
+django.db.utils.OperationalError: terminating connection due to administrator command
+
+======================================================================
+ERROR: test_revoking_access_removes_the_permission (apps.profiles.test_professional_types.TeamPermissionTests.test_revoking_access_removes_the_permission)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\backends\base\base.py", line 298, in _cursor
+    return self._prepare_cursor(self.create_cursor(name))
+                                ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\utils\asyncio.py", line 26, in inner
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\backends\postgresql\base.py", line 429, in create_cursor
+    cursor = self.connection.cursor()
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\psycopg\connection.py", line 244, in cursor
+    self._check_connection_ok()
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\psycopg\_connection_base.py", line 539, in _check_connection_ok
+    raise e.OperationalError("the connection is closed")
+psycopg.OperationalError: the connection is closed
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\profiles\test_professional_types.py", line 255, in setUp
+    ensure_categories()
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\core\testutils.py", line 40, in ensure_categories
+    ServiceCategory.objects.get_or_create(
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\models\manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\models\query.py", line 948, in get_or_create
+    return self.get(**kwargs), False
+           ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\models\query.py", line 631, in get
+    num = len(clone)
+          ^^^^^^^^^^
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\models\query.py", line 368, in __len__
+    self._fetch_all()
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\models\query.py", line 1954, in _fetch_all
+    self._result_cache = list(self._iterable_class(self))
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\models\query.py", line 93, in __iter__
+    results = compiler.execute_sql(
+              ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\models\sql\compiler.py", line 1621, in execute_sql
+    cursor = self.connection.cursor()
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\utils\asyncio.py", line 26, in inner
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\backends\base\base.py", line 320, in cursor
+    return self._cursor()
+           ^^^^^^^^^^^^^^
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\backends\base\base.py", line 297, in _cursor
+    with self.wrap_database_errors:
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\backends\base\base.py", line 298, in _cursor
+    return self._prepare_cursor(self.create_cursor(name))
+                                ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\utils\asyncio.py", line 26, in inner
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\backends\postgresql\base.py", line 429, in create_cursor
+    cursor = self.connection.cursor()
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\psycopg\connection.py", line 244, in cursor
+    self._check_connection_ok()
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\psycopg\_connection_base.py", line 539, in _check_connection_ok
+    raise e.OperationalError("the connection is closed")
+django.db.utils.OperationalError: the connection is closed
+
+======================================================================
+ERROR: tearDownClass (apps.profiles.test_professional_types.TeamPermissionTests)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\backends\base\base.py", line 279, in ensure_connection
+    self.connect()
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\utils\asyncio.py", line 26, in inner
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\backends\base\base.py", line 258, in connect
+    self.init_connection_state()
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\backends\postgresql\base.py", line 401, in init_connection_state
+    commit = self._configure_connection(self.connection)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\backends\postgresql\base.py", line 373, in _configure_connection
+    commit_tz = self._configure_timezone(connection)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\backends\postgresql\base.py", line 356, in _configure_timezone
+    cursor.execute(self.ops.set_time_zone_sql(), [timezone_name])
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\psycopg\cursor.py", line 117, in execute
+    raise ex.with_traceback(None)
+psycopg.errors.InvalidCatalogName: database "test_neondb" does not exist
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\transaction.py", line 307, in __exit__
+    connection.set_autocommit(True)
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\backends\base\base.py", line 473, in set_autocommit
+    self.ensure_connection()
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\test\testcases.py", line 311, in patched_ensure_connection
+    real_ensure_connection(self, *args, **kwargs)
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\utils\asyncio.py", line 26, in inner
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\backends\base\base.py", line 278, in ensure_connection
+    with self.wrap_database_errors:
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\backends\base\base.py", line 279, in ensure_connection
+    self.connect()
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\utils\asyncio.py", line 26, in inner
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\backends\base\base.py", line 258, in connect
+    self.init_connection_state()
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\backends\postgresql\base.py", line 401, in init_connection_state
+    commit = self._configure_connection(self.connection)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\backends\postgresql\base.py", line 373, in _configure_connection
+    commit_tz = self._configure_timezone(connection)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\backends\postgresql\base.py", line 356, in _configure_timezone
+    cursor.execute(self.ops.set_time_zone_sql(), [timezone_name])
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\psycopg\cursor.py", line 117, in execute
+    raise ex.with_traceback(None)
+django.db.utils.ProgrammingError: database "test_neondb" does not exist
+
+======================================================================
+FAIL: test_anonymous_cannot_download_or_upload (apps.events.test_attachments.AttachmentStorageTests.test_anonymous_cannot_download_or_upload)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\events\test_attachments.py", line 62, in setUp
+    self.assertEqual(created.status_code, 201, created.content)
+AssertionError: 400 != 201 : b'{"requirements":[{"category":["Unknown service category: photography."]}]}'
+
+======================================================================
+FAIL: test_another_customer_cannot_download_or_list (apps.events.test_attachments.AttachmentStorageTests.test_another_customer_cannot_download_or_list)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\events\test_attachments.py", line 62, in setUp
+    self.assertEqual(created.status_code, 201, created.content)
+AssertionError: 400 != 201 : b'{"requirements":[{"category":["Unknown service category: photography."]}]}'
+
+======================================================================
+FAIL: test_download_url_authorises_through_the_api_not_storage (apps.events.test_attachments.AttachmentStorageTests.test_download_url_authorises_through_the_api_not_storage)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\events\test_attachments.py", line 62, in setUp
+    self.assertEqual(created.status_code, 201, created.content)
+AssertionError: 400 != 201 : b'{"requirements":[{"category":["Unknown service category: photography."]}]}'
+
+======================================================================
+FAIL: test_mismatched_file_type_is_rejected (apps.events.test_attachments.AttachmentStorageTests.test_mismatched_file_type_is_rejected)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\events\test_attachments.py", line 62, in setUp
+    self.assertEqual(created.status_code, 201, created.content)
+AssertionError: 400 != 201 : b'{"requirements":[{"category":["Unknown service category: photography."]}]}'
+
+======================================================================
+FAIL: test_owner_can_upload_and_download_private_attachment (apps.events.test_attachments.AttachmentStorageTests.test_owner_can_upload_and_download_private_attachment)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\events\test_attachments.py", line 62, in setUp
+    self.assertEqual(created.status_code, 201, created.content)
+AssertionError: 400 != 201 : b'{"requirements":[{"category":["Unknown service category: photography."]}]}'
+
+======================================================================
+FAIL: test_create_and_submit_event (apps.events.tests.EventApiTests.test_create_and_submit_event)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\events\tests.py", line 44, in test_create_and_submit_event
+    self.assertEqual(response.status_code, 201, response.content)
+AssertionError: 400 != 201 : b'{"requirements":[{"category":["Unknown service category: photography."]}]}'
+
+======================================================================
+FAIL: test_end_time_must_follow_start_time (apps.events.tests.EventApiTests.test_end_time_must_follow_start_time)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\events\tests.py", line 61, in test_end_time_must_follow_start_time
+    self.assertIn("end_time", response.data)
+AssertionError: 'end_time' not found in {'requirements': [{'category': [ErrorDetail(string='Unknown service category: photography.', code='invalid')]}]}
+
+======================================================================
+FAIL: test_past_event_date_cannot_be_submitted (apps.events.tests.EventApiTests.test_past_event_date_cannot_be_submitted)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\events\tests.py", line 69, in test_past_event_date_cannot_be_submitted
+    self.assertIn("event_date", response.data)
+AssertionError: 'event_date' not found in {'requirements': [{'category': [ErrorDetail(string='Unknown service category: photography.', code='invalid')]}]}
+
+======================================================================
+FAIL: test_assistant_without_permission_is_rejected (apps.profiles.test_professional_types.TeamPermissionTests.test_assistant_without_permission_is_rejected)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\profiles\test_professional_types.py", line 301, in test_assistant_without_permission_is_rejected
+    self.assertEqual(response.status_code, 403)
+AssertionError: 200 != 403
+
+----------------------------------------------------------------------
+Ran 48 tests in 1844.122s
+
+FAILED (failures=9, errors=5)
+Preserving test database for alias 'default'...
+Found 48 test(s).
+System check identified no issues (0 silenced).
+", line 2408, in prefetch_related_objects
+    obj_list, additional_lookups = prefetch_one_level(
+                                   ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\models\query.py", line 2572, in prefetch_one_level
+    ) = prefetcher.get_prefetch_querysets(
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\models\fields\related_descriptors.py", line 800, in get_prefetch_querysets
+    for rel_obj in queryset:
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\models\query.py", line 386, in __iter__
+    self._fetch_all()
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\models\query.py", line 1954, in _fetch_all
+    self._result_cache = list(self._iterable_class(self))
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\models\query.py", line 93, in __iter__
+    results = compiler.execute_sql(
+              ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\models\sql\compiler.py", line 1623, in execute_sql
+    cursor.execute(sql, params)
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\psycopg\cursor.py", line 117, in execute
+    raise ex.with_traceback(None)
+django.db.utils.OperationalError: deadlock detected
+LINE 1: ...atus", "events_eventattachment"."created_at" FROM "events_ev...
+                                                             ^
+DETAIL:  Process 8415 waits for AccessShareLock on relation 58749 of database 58345; blocked by process 8892.
+Process 8892 waits for AccessExclusiveLock on relation 59046 of database 58345; blocked by process 8415.
+HINT:  See server log for query details.
+
+======================================================================
+ERROR: test_existing_internal_events_without_end_date_still_work (apps.events.test_functional_upgrades.MultiDayEventTests.test_existing_internal_events_without_end_date_still_work)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\psycopg\cursor.py", line 117, in execute
+    raise ex.with_traceback(None)
+psycopg.errors.DeadlockDetected: deadlock detected
+LINE 1: INSERT INTO "events_event" ("id", "created_at", "updated_at"...
+                    ^
+DETAIL:  Process 8415 waits for RowExclusiveLock on relation 58723 of database 58345; blocked by process 9538.
+Process 9538 waits for AccessExclusiveLock on relation 58427 of database 58345; blocked by process 8415.
+HINT:  See server log for query details.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\events\test_functional_upgrades.py", line 123, in test_existing_internal_events_without_end_date_still_work
+    event = make_event(self.customer, submit=False)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\core\testutils.py", line 115, in make_event
+    return create_event_with_requirements(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\events\services.py", line 131, in create_event_with_requirements
+    event = Event.objects.create(customer=customer, **payload)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\models\manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\models\query.py", line 665, in create
+    obj.save(force_insert=True, using=self.db)
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\events\models.py", line 94, in save
+    super().save(*args, **kwargs)
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\models\base.py", line 902, in save
+    self.save_base(
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\models\base.py", line 1008, in save_base
+    updated = self._save_table(
+              ^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\models\base.py", line 1169, in _save_table
+    results = self._do_insert(
+              ^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\models\base.py", line 1210, in _do_insert
+    return manager._insert(
+           ^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\models\manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\models\query.py", line 1873, in _insert
+    return query.get_compiler(using=using).execute_sql(returning_fields)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\models\sql\compiler.py", line 1882, in execute_sql
+    cursor.execute(sql, params)
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 105, in _execute
+    return self.cursor.execute(sql, params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\psycopg\cursor.py", line 117, in execute
+    raise ex.with_traceback(None)
+django.db.utils.OperationalError: deadlock detected
+LINE 1: INSERT INTO "events_event" ("id", "created_at", "updated_at"...
+                    ^
+DETAIL:  Process 8415 waits for RowExclusiveLock on relation 58723 of database 58345; blocked by process 9538.
+Process 9538 waits for AccessExclusiveLock on relation 58427 of database 58345; blocked by process 8415.
+HINT:  See server log for query details.
+
+======================================================================
+ERROR: test_other_customer_cannot_read_event (apps.events.tests.EventApiTests.test_other_customer_cannot_read_event)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\events\tests.py", line 76, in test_other_customer_cannot_read_event
+    self.assertEqual(client.get(f"{EVENTS}{created['id']}/").status_code, 403)
+                                           ~~~~~~~^^^^^^
+KeyError: 'id'
+
+======================================================================
+ERROR: test_submitted_event_locks_once_invitations_are_outstanding (apps.events.tests.EventApiTests.test_submitted_event_locks_once_invitations_are_outstanding)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\events\tests.py", line 82, in test_submitted_event_locks_once_invitations_are_outstanding
+    event = Event.objects.get(id=created["id"])
+                                 ~~~~~~~^^^^^^
+KeyError: 'id'
+
+======================================================================
+FAIL: test_anonymous_cannot_download_or_upload (apps.events.test_attachments.AttachmentStorageTests.test_anonymous_cannot_download_or_upload)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\events\test_attachments.py", line 62, in setUp
+    self.assertEqual(created.status_code, 201, created.content)
+AssertionError: 400 != 201 : b'{"end_date":["This field is required."]}'
+
+======================================================================
+FAIL: test_another_customer_cannot_download_or_list (apps.events.test_attachments.AttachmentStorageTests.test_another_customer_cannot_download_or_list)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\events\test_attachments.py", line 62, in setUp
+    self.assertEqual(created.status_code, 201, created.content)
+AssertionError: 400 != 201 : b'{"end_date":["This field is required."]}'
+
+======================================================================
+FAIL: test_download_url_authorises_through_the_api_not_storage (apps.events.test_attachments.AttachmentStorageTests.test_download_url_authorises_through_the_api_not_storage)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\events\test_attachments.py", line 62, in setUp
+    self.assertEqual(created.status_code, 201, created.content)
+AssertionError: 400 != 201 : b'{"end_date":["This field is required."]}'
+
+======================================================================
+FAIL: test_mismatched_file_type_is_rejected (apps.events.test_attachments.AttachmentStorageTests.test_mismatched_file_type_is_rejected)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\events\test_attachments.py", line 62, in setUp
+    self.assertEqual(created.status_code, 201, created.content)
+AssertionError: 400 != 201 : b'{"end_date":["This field is required."]}'
+
+======================================================================
+FAIL: test_owner_can_upload_and_download_private_attachment (apps.events.test_attachments.AttachmentStorageTests.test_owner_can_upload_and_download_private_attachment)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\events\test_attachments.py", line 62, in setUp
+    self.assertEqual(created.status_code, 201, created.content)
+AssertionError: 400 != 201 : b'{"end_date":["This field is required."]}'
+
+======================================================================
+FAIL: test_omitting_end_date_defaults_to_a_one_day_event (apps.events.test_functional_upgrades.MultiDayEventTests.test_omitting_end_date_defaults_to_a_one_day_event)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\events\test_functional_upgrades.py", line 117, in test_omitting_end_date_defaults_to_a_one_day_event
+    self.assertEqual(response.status_code, 201, response.content)
+AssertionError: 400 != 201 : b'{"end_date":["This field is required."]}'
+
+======================================================================
+FAIL: test_create_and_submit_event (apps.events.tests.EventApiTests.test_create_and_submit_event)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\events\tests.py", line 44, in test_create_and_submit_event
+    self.assertEqual(response.status_code, 201, response.content)
+AssertionError: 400 != 201 : b'{"end_date":["This field is required."],"requirements":[{"category":["Unknown service category: photography."]}]}'
+
+======================================================================
+FAIL: test_end_time_must_follow_start_time (apps.events.tests.EventApiTests.test_end_time_must_follow_start_time)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\events\tests.py", line 61, in test_end_time_must_follow_start_time
+    self.assertIn("end_time", response.data)
+AssertionError: 'end_time' not found in {'end_date': [ErrorDetail(string='This field is required.', code='required')], 'requirements': [{'category': [ErrorDetail(string='Unknown service category: photography.', code='invalid')]}]}
+
+======================================================================
+FAIL: test_event_requires_at_least_one_requirement_to_submit (apps.events.tests.EventApiTests.test_event_requires_at_least_one_requirement_to_submit)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\events\tests.py", line 54, in test_event_requires_at_least_one_requirement_to_submit
+    self.assertIn("requirements", response.data)
+AssertionError: 'requirements' not found in {'end_date': [ErrorDetail(string='This field is required.', code='required')]}
+
+======================================================================
+FAIL: test_past_event_date_cannot_be_submitted (apps.events.tests.EventApiTests.test_past_event_date_cannot_be_submitted)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\events\tests.py", line 69, in test_past_event_date_cannot_be_submitted
+    self.assertIn("event_date", response.data)
+AssertionError: 'event_date' not found in {'end_date': [ErrorDetail(string='This field is required.', code='required')], 'requirements': [{'category': [ErrorDetail(string='Unknown service category: photography.', code='invalid')]}]}
+
+======================================================================
+FAIL: test_assistant_without_permission_is_rejected (apps.profiles.test_professional_types.TeamPermissionTests.test_assistant_without_permission_is_rejected)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\profiles\test_professional_types.py", line 290, in test_assistant_without_permission_is_rejected
+    {"invite_email": self.assistant.email, "permissions": ["MANAGE_PORTFOLIO"]},
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 200 != 403
+
+======================================================================
+FAIL: test_manager_grants_scoped_profile_access (apps.profiles.test_professional_types.TeamPermissionTests.test_manager_grants_scoped_profile_access)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\profiles\test_professional_types.py", line 274, in test_manager_grants_scoped_profile_access
+AssertionError: '' != 'Managed by the team'
++ Managed by the team
+
+
+----------------------------------------------------------------------
+Ran 47 tests in 1965.525s
+
+FAILED (failures=12, errors=4)
+Preserving test database for alias 'default' ('test_neondb')...
+Found 47 test(s).
+Operations to perform:
+  Synchronize unmigrated apps: core, corsheaders, drf_spectacular, matching, messages, rest_framework, staticfiles
+  Apply all migrations: accounts, admin, auth, commitments, contenttypes, events, invitations, network, profiles, quotations, sessions
+Synchronizing apps without migrations:
+  Creating tables...
+    Running deferred SQL...
+Running migrations:
+  No migrations to apply.
+System check identified no issues (0 silenced).
+EXIT=1
+EXIT=1

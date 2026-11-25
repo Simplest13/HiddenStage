@@ -1,6 +1,7 @@
 import { Link, Outlet, useMatches } from 'react-router-dom'
 import { Brand } from './PublicLayout'
 import { routes } from '../app/routes/routePaths'
+import { Icon } from '../shared/ui/Icon'
 import './layouts.css'
 
 export function AuthenticationLayout() {
@@ -15,9 +16,9 @@ export function AuthenticationLayout() {
         <h2>Find the right people for the moment you’re planning.</h2>
         <p>Tell us what your event needs, compare considered proposals, and choose the professionals you want to work with.</p>
         <ul className="auth-layout__list">
-          <li>Free to use — no commission on your booking</li>
-          <li>Personalised quotes for every service</li>
-          <li>Compare experience, coverage, and price in one place</li>
+          <li><Icon className="auth-layout__check" name="circleCheck" size={16} /> Free to use — no commission on your booking</li>
+          <li><Icon className="auth-layout__check" name="circleCheck" size={16} /> Personalised quotes for every service</li>
+          <li><Icon className="auth-layout__check" name="circleCheck" size={16} /> Compare experience, coverage, and price in one place</li>
         </ul>
       </div>
       <p className="auth-layout__quote">“A good event starts with the right people in the room — and the right people behind it.”</p>
@@ -25,7 +26,7 @@ export function AuthenticationLayout() {
     <section className="auth-layout__panel">
       <div className="auth-layout__top">
         <Brand />
-        <Link to={routes.home}>← Back to HiddenStage</Link>
+        <Link to={routes.home}><Icon name="arrowLeft" size={14} /> Back to HiddenStage</Link>
       </div>
       <section className="auth-card">
         <Outlet />

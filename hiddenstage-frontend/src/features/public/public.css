@@ -46,7 +46,7 @@
 .hero-search .button { min-height: 3.35rem; align-self: center; padding-inline: 1.4rem; }
 .hero-trust { display: flex; flex-wrap: wrap; gap: 0.6rem 1.4rem; margin: 1.5rem 0 0; padding: 0; list-style: none; color: #ffffff; font-size: 0.85rem; font-weight: 500; }
 .hero-trust li { display: flex; align-items: center; gap: 0.5rem; }
-.hero-trust li::before { display: grid; width: 1.25rem; height: 1.25rem; place-items: center; border-radius: 50%; color: #ffffff; background: var(--color-orange); content: '✓'; font-size: 0.7rem; font-weight: 800; box-shadow: 0 2px 8px rgba(255, 122, 0, 0.45); }
+.hero-trust__icon { flex: 0 0 auto; color: var(--color-orange); }
 .hero-demo-note { margin: 1.15rem 0 0; color: #e4c4b6; font-size: 0.71rem; }
 
 .hero-collage {
@@ -241,7 +241,7 @@
 
 .check-list { display: grid; gap: 0.55rem; margin: 0; padding: 0; list-style: none; color: var(--color-muted); font-size: 0.87rem; }
 .check-list li { display: flex; align-items: flex-start; gap: 0.5rem; }
-.check-list li::before { display: grid; flex: 0 0 auto; width: 1.1rem; height: 1.1rem; margin-top: 0.14rem; place-items: center; border-radius: 50%; color: var(--color-burgundy); background: var(--color-tint-strong); content: '✓'; font-size: 0.58rem; font-weight: 800; }
+.check-list__icon { flex: 0 0 auto; margin-top: 0.12rem; color: var(--color-burgundy); }
 
 .final-cta { display: flex; align-items: center; justify-content: space-between; gap: 2rem; padding: clamp(1.5rem, 3vw, 2.25rem); border: 1px solid var(--color-line); border-radius: var(--radius-lg); background: var(--color-tint); }
 .final-cta h2 { margin: 0 0 0.35rem; font: 700 clamp(1.4rem, 2.4vw, 1.8rem)/1.2 var(--font-ui); }

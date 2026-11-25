@@ -6,8 +6,9 @@ import { EmptyState, Spinner } from '../../shared/ui/feedback'
 import { Modal } from '../../shared/ui/overlays'
 import { Breadcrumb } from '../../shared/ui/navigation'
 import { categoryName, demoProviders, serviceCategories } from './data/catalog'
-import { categoryGlyph, providerInitials } from '../../shared/ui/monogram'
+import { categoryIconName, providerInitials } from '../../shared/ui/monogram'
 import { CategoryIcon } from '../../shared/ui/CategoryIcon'
+import { Icon } from '../../shared/ui/Icon'
 import { Clock, MapPin, Phone, ShieldCheck } from 'kubai-icons-react'
 import { marketplaceApi } from '../../shared/api/backend/marketplace'
 import { useApiData } from '../../shared/api/backend/useApiData'
@@ -52,7 +53,7 @@ export function ServiceDiscoveryPage() {
           <h2>{items.length} service {items.length === 1 ? 'category' : 'categories'}</h2>
           {location && <p className="results-head__note">Showing categories with demo coverage matching “{location}”. <Link to={`${routes.providers}?location=${encodeURIComponent(location)}`}>See matching professionals</Link>.</p>}
         </div>
-        <Link className="section-link" to={routes.providers}>Browse professionals <span aria-hidden="true">→</span></Link>
+        <Link className="section-link" to={routes.providers}>Browse professionals <Icon name="arrowRight" size={14} /></Link>
       </div>
       {items.length ? <div className="service-grid">
         {items.map((category, index) => <article className="service-tile" key={category.slug}>
@@ -127,7 +128,7 @@ function PublicProviderCard({ provider }: { provider: ApiPublicDirectoryProvider
             {provider.starting_price_paise ? `Starting from ${formatPaise(provider.starting_price_paise)}` : (provider.coverage_count ? `Covers ${provider.coverage_count} location${provider.coverage_count === 1 ? '' : 's'}` : 'Custom quotes available')}
           </span>
           <ButtonLink to={providerDetailPath(provider.username || provider.id)} variant="secondary" size="sm">
-            View Profile →
+            View Profile <Icon name="arrowRight" size={14} />
           </ButtonLink>
         </div>
       </div>
@@ -157,7 +158,7 @@ function DemoProviderCard({ provider }: { provider: (typeof demoProviders)[numbe
         <div className="directory-card__footer">
           <span className="directory-card__coverage">Covers {provider.coverage.join(' · ')}</span>
           <ButtonLink to={providerDetailPath(provider.id)} variant="secondary" size="sm">
-            View Profile →
+            View Profile <Icon name="arrowRight" size={14} />
           </ButtonLink>
         </div>
       </div>
@@ -361,7 +362,7 @@ function LightboxModal({
           style={{ background: 'none', border: 'none', color: '#ffffff', fontSize: '1.75rem', cursor: 'pointer', padding: '0.25rem 0.5rem' }}
           aria-label="Close photo preview"
         >
-          ✕
+          <Icon name="close" size={22} />
         </button>
       </div>
 
@@ -456,7 +457,7 @@ export function ProviderProfilePage() {
           <div className="wrap">
             <Breadcrumb items={[{ label: 'Home', href: routes.home }, { label: 'Professionals', href: routes.providers }, { label: demoProvider.name }]} />
             <div className="profile-hero__layout">
-              <div className="profile-hero__media" aria-hidden="true"><span>{providerInitials(demoProvider.name)}</span><small>{categoryGlyph(categoryName(demoProvider.categories[0] ?? ''))}</small></div>
+              <div className="profile-hero__media" aria-hidden="true"><span>{providerInitials(demoProvider.name)}</span><small><Icon name={categoryIconName(categoryName(demoProvider.categories[0] ?? ''))} size={16} /></small></div>
               <div className="profile-hero__copy">
                 <span className="eyebrow">Preview profile</span>
                 <h1>{demoProvider.name}</h1>
@@ -660,7 +661,7 @@ export function ProviderProfilePage() {
                 <div className="wmg-card-section">
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                     <h2>Services Offered</h2>
-                    <Button type="button" size="sm" variant="quiet" onClick={() => setActiveTab('services')}>View all services →</Button>
+                    <Button type="button" size="sm" variant="quiet" onClick={() => setActiveTab('services')}>View all services <Icon name="arrowRight" size={14} /></Button>
                   </div>
                   <div className="wmg-services-grid">
                     {(p.services || []).slice(0, 3).map((service) => (
@@ -686,13 +687,13 @@ export function ProviderProfilePage() {
                 <div className="wmg-card-section">
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                     <h2>Photo Showcase</h2>
-                    <Button type="button" size="sm" variant="quiet" onClick={() => setActiveTab('photos')}>View all {photos.length} photos →</Button>
+                    <Button type="button" size="sm" variant="quiet" onClick={() => setActiveTab('photos')}>View all {photos.length} photos <Icon name="arrowRight" size={14} /></Button>
                   </div>
                   <div className="wmg-gallery-grid">
                     {photos.slice(0, 6).map((photo, idx) => (
                       <div key={photo.url} className="wmg-gallery-item" onClick={() => setLightboxIndex(idx)}>
                         <img src={photo.url} alt={photo.title} />
-                        <div className="wmg-gallery-item__overlay">Enlarge 🔍</div>
+                        <div className="wmg-gallery-item__overlay">Enlarge <Icon name="search" size={14} /></div>
                       </div>
                     ))}
                   </div>
@@ -745,9 +746,9 @@ export function ProviderProfilePage() {
                 <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--color-border)' }}>
                   <h3>Connect & Channels</h3>
                   <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
-                    {p.website && <a href={p.website} target="_blank" rel="noopener noreferrer" className="text-link">🌐 Website ↗</a>}
-                    {p.instagram && <a href={`https://instagram.com/${p.instagram.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="text-link">📸 Instagram ↗</a>}
-                    {p.youtube && <a href={p.youtube} target="_blank" rel="noopener noreferrer" className="text-link">🎥 YouTube Channel ↗</a>}
+                    {p.website && <a href={p.website} target="_blank" rel="noopener noreferrer" className="text-link"><Icon name="globe" size={14} /> Website <Icon name="arrowUpRight" size={14} /></a>}
+                    {p.instagram && <a href={`https://instagram.com/${p.instagram.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="text-link"><Icon name="camera" size={14} /> Instagram <Icon name="arrowUpRight" size={14} /></a>}
+                    {p.youtube && <a href={p.youtube} target="_blank" rel="noopener noreferrer" className="text-link"><Icon name="video" size={14} /> YouTube Channel <Icon name="arrowUpRight" size={14} /></a>}
                   </div>
                 </div>
               )}
@@ -816,7 +817,7 @@ export function ProviderProfilePage() {
                         {item.description && <p style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)', margin: 0 }}>{item.description}</p>}
                         {item.external_url && (
                           <a href={item.external_url} target="_blank" rel="noopener noreferrer" style={{ marginTop: 'auto', paddingTop: '0.5rem', fontSize: '0.85rem' }} className="text-link">
-                            External Showcase Link ↗
+                            External Showcase Link <Icon name="arrowUpRight" size={14} />
                           </a>
                         )}
                       </div>
@@ -838,7 +839,7 @@ export function ProviderProfilePage() {
                   {photos.map((photo, idx) => (
                     <div key={photo.url} className="wmg-gallery-item" onClick={() => setLightboxIndex(idx)}>
                       <img src={photo.url} alt={photo.title} />
-                      <div className="wmg-gallery-item__overlay">Enlarge 🔍</div>
+                      <div className="wmg-gallery-item__overlay">Enlarge <Icon name="search" size={14} /></div>
                     </div>
                   ))}
                 </div>
@@ -870,7 +871,7 @@ export function ProviderProfilePage() {
                           {vid.description && <p style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)', margin: '0.25rem 0' }}>{vid.description}</p>}
                           {vid.external_url && !embedUrl && (
                             <a href={vid.external_url} target="_blank" rel="noopener noreferrer" className="text-link" style={{ fontSize: '0.85rem' }}>
-                              Watch on external platform ↗
+                              Watch on external platform <Icon name="arrowUpRight" size={14} />
                             </a>
                           )}
                         </div>
@@ -928,7 +929,7 @@ export function ProviderProfilePage() {
             <div className="wmg-card-section">
               <h2>Verified Client Reviews</h2>
               <div style={{ padding: '2rem 1rem', textAlign: 'center', background: 'var(--color-surface-subtle, #f8f9fa)', borderRadius: '12px', border: '1px solid var(--color-border)' }}>
-                <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>⭐</div>
+                <div style={{ marginBottom: '0.5rem' }}><Icon name="star" size={36} /></div>
                 <h3 style={{ margin: '0 0 0.5rem 0' }}>Verified Reviews & Ratings</h3>
                 <p style={{ maxWidth: '480px', margin: '0 auto', color: 'var(--color-text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
                   Reviews on HiddenStage are submitted exclusively by verified clients upon event completion to prevent manufactured testimonials.
@@ -966,9 +967,9 @@ export function ProviderProfilePage() {
             </div>
 
             <div style={{ marginTop: '1.25rem', paddingTop: '1.25rem', borderTop: '1px solid var(--color-border)', fontSize: '0.8rem', color: 'var(--color-text-muted)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <div>🛡️ Verified Platform Supplier</div>
-              <div>⚡ Direct Quotation & Booking</div>
-              <div>📋 Explicit Location Coverage Guarantee</div>
+              <div><Icon name="shieldCheck" size={16} /> Verified Platform Supplier</div>
+              <div><Icon name="quote" size={16} /> Direct Quotation & Booking</div>
+              <div><Icon name="mapPin" size={16} /> Explicit Location Coverage Guarantee</div>
             </div>
           </div>
         </aside>

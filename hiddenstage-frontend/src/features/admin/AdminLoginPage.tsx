@@ -5,6 +5,7 @@ import { useAuth, useAuthActions } from '../../app/auth/useAuth'
 import { Button, Card, Input } from '../../shared/ui'
 import { Brand } from '../../layouts/PublicLayout'
 import { isApiError } from '../../shared/api/client'
+import { Icon } from '../../shared/ui/Icon'
 import './admin.css'
 
 export default function AdminLoginPage() {
@@ -129,7 +130,7 @@ export default function AdminLoginPage() {
                 className="admin-login-fill-btn"
                 onClick={handleAutoFill}
               >
-                ⚡ Fill default admin credentials
+                <Icon name="sparkles" size={15} /> Fill default admin credentials
               </button>
             </div>
 
@@ -143,7 +144,7 @@ export default function AdminLoginPage() {
           </form>
 
           <div className="admin-login-card__footer">
-            <Link to={routes.home}>← Return to HiddenStage public site</Link>
+            <Link to={routes.home}><Icon name="arrowLeft" size={14} /> Return to HiddenStage public site</Link>
           </div>
         </Card>
       </div>

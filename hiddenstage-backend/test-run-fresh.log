@@ -1,0 +1,200 @@
+Found 141 test(s).
+Creating test database for alias 'default' ('test_neondb')...
+Operations to perform:
+  Synchronize unmigrated apps: core, corsheaders, drf_spectacular, matching, messages, rest_framework, staticfiles
+  Apply all migrations: accounts, admin, auth, commitments, contenttypes, events, invitations, network, profiles, quotations, sessions
+Synchronizing apps without migrations:
+  Creating tables...
+    Running deferred SQL...
+Running migrations:
+  Applying contenttypes.0001_initial... OK
+  Applying contenttypes.0002_remove_content_type_name... OK
+  Applying auth.0001_initial... OK
+  Applying auth.0002_alter_permission_name_max_length... OK
+  Applying auth.0003_alter_user_email_max_length... OK
+  Applying auth.0004_alter_user_username_opts... OK
+  Applying auth.0005_alter_user_last_login_null... OK
+  Applying auth.0006_require_contenttypes_0002... OK
+  Applying auth.0007_alter_validators_add_error_messages... OK
+  Applying auth.0008_alter_user_username_max_length... OK
+  Applying auth.0009_alter_user_last_name_max_length... OK
+  Applying auth.0010_alter_group_name_max_length... OK
+  Applying auth.0011_update_proxy_permissions... OK
+  Applying auth.0012_alter_user_first_name_max_length... OK
+  Applying accounts.0001_initial... OK
+  Applying admin.0001_initial... OK
+  Applying admin.0002_logentry_remove_auto_add... OK
+  Applying admin.0003_logentry_add_action_flag_choices... OK
+  Applying profiles.0001_initial... OK
+  Applying events.0001_initial... OK
+  Applying quotations.0001_initial... OK
+  Applying commitments.0001_initial... OK
+  Applying events.0002_event_end_date_and_custom_requirements... OK
+  Applying invitations.0001_initial... OK
+  Applying network.0001_initial... OK
+  Applying network.0002_networkinvitation_initiated_by... OK
+  Applying profiles.0002_seed_service_categories... OK
+  Applying profiles.0003_providerprofile_kind_and_more... OK
+  Applying profiles.0004_professional_types_portfolio_and_team... OK
+  Applying profiles.0005_customer_profile_avatar_and_bio... OK
+  Applying quotations.0002_immutability_triggers... OK
+  Applying sessions.0001_initial... OK
+System check identified no issues (0 silenced).
+test_duplicate_email_is_not_disclosed (apps.accounts.tests.RegistrationTests.test_duplicate_email_is_not_disclosed) ... 2026-11-20 09:43:42,307 WARNING django.request Bad Request: /api/v1/auth/register/
+ok
+test_password_reset_email_uses_the_frontend_route (apps.accounts.tests.RegistrationTests.test_password_reset_email_uses_the_frontend_route) ... ok
+test_register_creates_unverified_customer (apps.accounts.tests.RegistrationTests.test_register_creates_unverified_customer) ... ok
+test_registration_reports_a_delivery_failure (apps.accounts.tests.RegistrationTests.test_registration_reports_a_delivery_failure) ... 2026-11-20 09:43:59,210 ERROR apps.accounts.views Verification email delivery failed for user d4743841-1a52-4057-8cf2-ab707b64369f
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\accounts\views.py", line 72, in post
+    send_verification_email(user, raw_token)
+  File "C:\Python312\Lib\unittest\mock.py", line 1134, in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\unittest\mock.py", line 1138, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\unittest\mock.py", line 1193, in _execute_mock_call
+    raise effect
+RuntimeError
+ok
+test_registration_sends_a_working_verification_link (apps.accounts.tests.RegistrationTests.test_registration_sends_a_working_verification_link) ... ok
+test_terms_are_required (apps.accounts.tests.RegistrationTests.test_terms_are_required) ... 2026-11-20 09:44:12,173 WARNING django.request Bad Request: /api/v1/auth/register/
+ok
+test_verification_token_is_single_use (apps.accounts.tests.RegistrationTests.test_verification_token_is_single_use) ... 2026-11-20 09:44:21,533 WARNING django.request Bad Request: /api/v1/auth/email/verify/
+ok
+test_anonymous_cannot_list_events (apps.accounts.tests.RolePermissionTests.test_anonymous_cannot_list_events) ... 2026-11-20 09:44:29,055 WARNING django.request Forbidden: /api/v1/events/
+ok
+test_category_catalogue_matches_frontend_slugs (apps.accounts.tests.RolePermissionTests.test_category_catalogue_matches_frontend_slugs) ... ok
+test_provider_cannot_create_customer_event (apps.accounts.tests.RolePermissionTests.test_provider_cannot_create_customer_event) ... 2026-11-20 09:44:42,555 WARNING django.request Forbidden: /api/v1/events/
+ok
+test_anonymous_cannot_read_me (apps.accounts.tests.SessionTests.test_anonymous_cannot_read_me) ... 2026-11-20 09:44:50,138 WARNING django.request Forbidden: /api/v1/auth/me/
+ok
+test_login_me_logout_round_trip (apps.accounts.tests.SessionTests.test_login_me_logout_round_trip) ... 2026-11-20 09:45:02,221 WARNING django.request Forbidden: /api/v1/auth/me/
+ok
+test_login_with_wrong_password_fails_generically (apps.accounts.tests.SessionTests.test_login_with_wrong_password_fails_generically) ... 2026-11-20 09:45:06,547 WARNING django.request Forbidden: /api/v1/auth/login/
+ok
+test_session_write_requires_csrf_header (apps.accounts.tests.SessionTests.test_session_write_requires_csrf_header) ... 2026-11-20 09:45:15,538 WARNING django.request Forbidden: /api/v1/auth/logout/
+ok
+test_a_provider_can_register_without_verifying (apps.accounts.tests.VerificationDisabledRegistrationTests.test_a_provider_can_register_without_verifying) ... ok
+test_an_existing_unverified_account_can_sign_in (apps.accounts.tests.VerificationDisabledRegistrationTests.test_an_existing_unverified_account_can_sign_in) ... ok
+test_registration_needs_no_email_and_issues_no_token (apps.accounts.tests.VerificationDisabledRegistrationTests.test_registration_needs_no_email_and_issues_no_token) ... ok
+test_registration_signs_the_account_in_immediately (apps.accounts.tests.VerificationDisabledRegistrationTests.test_registration_signs_the_account_in_immediately) ... ok
+test_resend_reports_nothing_was_sent (apps.accounts.tests.VerificationDisabledRegistrationTests.test_resend_reports_nothing_was_sent) ... ok
+test_the_verification_link_still_works_when_presented (apps.accounts.tests.VerificationDisabledRegistrationTests.test_the_verification_link_still_works_when_presented) ... ok
+test_a_verified_account_passes_while_required (apps.accounts.tests.VerificationPolicyTests.test_a_verified_account_passes_while_required) ... ok
+test_an_unverified_account_is_barred_while_required (apps.accounts.tests.VerificationPolicyTests.test_an_unverified_account_is_barred_while_required) ... ok
+test_anonymous_is_never_satisfied (apps.accounts.tests.VerificationPolicyTests.test_anonymous_is_never_satisfied) ... ok
+test_switching_the_requirement_off_admits_unverified_accounts (apps.accounts.tests.VerificationPolicyTests.test_switching_the_requirement_off_admits_unverified_accounts) ... ok
+test_the_requirement_can_be_switched_on (apps.accounts.tests.VerificationPolicyTests.test_the_requirement_can_be_switched_on) ... ok
+test_the_requirement_is_a_boolean_setting (apps.accounts.tests.VerificationPolicyTests.test_the_requirement_is_a_boolean_setting) ... ok
+test_an_unverified_customer_may_accept_when_verification_is_disabled (apps.commitments.tests.AcceptanceVerificationSwitchTests.test_an_unverified_customer_may_accept_when_verification_is_disabled) ... ok
+test_the_gate_still_applies_when_verification_is_required (apps.commitments.tests.AcceptanceVerificationSwitchTests.test_the_gate_still_applies_when_verification_is_required) ... 2026-11-20 09:48:00,143 WARNING django.request Bad Request: /api/v1/quotations/c84f9a84-595a-4491-a400-a761c0183bb7/acceptance/
+ok
+test_accepting_a_package_commits_every_item_in_it (apps.commitments.tests.PackageAcceptanceTests.test_accepting_a_package_commits_every_item_in_it) ... ok
+test_packaged_requirement_cannot_be_accepted_alone (apps.commitments.tests.PackageAcceptanceTests.test_packaged_requirement_cannot_be_accepted_alone) ... 2026-11-20 09:49:35,900 WARNING django.request Bad Request: /api/v1/quotations/c4afec5f-d41b-4274-856a-82e33ec3ce40/acceptance/
+ok
+test_unknown_package_key_is_rejected (apps.commitments.tests.PackageAcceptanceTests.test_unknown_package_key_is_rejected) ... 2026-11-20 09:50:14,965 WARNING django.request Bad Request: /api/v1/quotations/831fa4ba-a3e9-4abf-8028-e4b3e8265dc8/acceptance/
+ok
+test_unpriced_requirement_is_rejected (apps.commitments.tests.PackageAcceptanceTests.test_unpriced_requirement_is_rejected) ... 2026-11-20 09:50:54,214 WARNING django.request Bad Request: /api/v1/quotations/f7bd0861-5fe3-4dec-83a7-bf6a22db3a8b/acceptance/
+ok
+test_a_quoted_line_can_only_ever_be_committed_once (apps.commitments.tests.SimpleAcceptanceTests.test_a_quoted_line_can_only_ever_be_committed_once) ... ok
+test_acceptance_creates_commitment_lines_and_audit (apps.commitments.tests.SimpleAcceptanceTests.test_acceptance_creates_commitment_lines_and_audit) ... ok
+test_commitment_list_is_scoped_to_the_signed_in_party (apps.commitments.tests.SimpleAcceptanceTests.test_commitment_list_is_scoped_to_the_signed_in_party) ... 2026-11-20 09:53:22,352 WARNING django.request Forbidden: /api/v1/commitments/b3c96e30-3d23-46d5-8e77-24d32d8268ce/
+ok
+test_expired_revision_cannot_be_accepted (apps.commitments.tests.SimpleAcceptanceTests.test_expired_revision_cannot_be_accepted) ... 2026-11-20 09:54:00,717 WARNING django.request Conflict: /api/v1/quotations/32c47825-10dc-48a7-8fd6-f48de623a7f0/acceptance/
+ok
+test_foreign_customer_cannot_accept (apps.commitments.tests.SimpleAcceptanceTests.test_foreign_customer_cannot_accept) ... 2026-11-20 09:54:37,943 WARNING django.request Forbidden: /api/v1/quotations/ecae1c7e-316b-493c-85e5-ec902f1fb839/acceptance/
+ok
+test_provider_cannot_accept_on_the_customers_behalf (apps.commitments.tests.SimpleAcceptanceTests.test_provider_cannot_accept_on_the_customers_behalf) ... 2026-11-20 09:55:12,781 WARNING django.request Forbidden: /api/v1/quotations/5a37cf23-a88d-4b1c-a777-4ea88d06cef0/acceptance/
+ok
+test_provider_cannot_release_customer_commitment (apps.commitments.tests.SimpleAcceptanceTests.test_provider_cannot_release_customer_commitment) ... 2026-11-20 09:55:57,956 WARNING django.request Forbidden: /api/v1/commitments/9ac63cc8-deba-4af6-b056-22fe18352507/release/
+ok
+test_reaccepting_the_same_quotation_conflicts (apps.commitments.tests.SimpleAcceptanceTests.test_reaccepting_the_same_quotation_conflicts) ... 2026-11-20 09:56:41,157 WARNING django.request Conflict: /api/v1/quotations/b9410d31-0ff4-43de-8763-c23400eb8569/acceptance/
+ok
+test_release_is_audited_and_idempotency_is_refused (apps.commitments.tests.SimpleAcceptanceTests.test_release_is_audited_and_idempotency_is_refused) ... 2026-11-20 09:57:34,617 WARNING django.request Conflict: /api/v1/commitments/3be3e1cf-86c8-4803-b141-ec3cea3894aa/release/
+ok
+test_selection_is_required (apps.commitments.tests.SimpleAcceptanceTests.test_selection_is_required) ... 2026-11-20 09:58:07,358 WARNING django.request Bad Request: /api/v1/quotations/6389f84f-b89a-41a5-9627-1c93574c1bcc/acceptance/
+ok
+test_unverified_customer_cannot_accept (apps.commitments.tests.SimpleAcceptanceTests.test_unverified_customer_cannot_accept) ... 2026-11-20 09:58:52,204 WARNING django.request Bad Request: /api/v1/quotations/6106f3a7-8941-4ab2-8b46-32fc18e83fe9/acceptance/
+ok
+test_anonymous_cannot_download_or_upload (apps.events.test_attachments.AttachmentStorageTests.test_anonymous_cannot_download_or_upload) ... 2026-11-20 09:59:06,402 WARNING django.request Forbidden: /api/v1/events/89dad45f-7d61-4cda-bd80-f8bbe5b160ac/attachments/5e8a7627-46be-4212-bb60-eb53c635a772/download/
+2026-11-20 09:59:06,406 WARNING django.request Forbidden: /api/v1/events/89dad45f-7d61-4cda-bd80-f8bbe5b160ac/attachments/
+ok
+test_another_customer_cannot_download_or_list (apps.events.test_attachments.AttachmentStorageTests.test_another_customer_cannot_download_or_list) ... 2026-11-20 09:59:18,306 WARNING django.request Forbidden: /api/v1/events/3d405140-af6a-4186-8299-8d1296cc2e58/attachments/42373f24-ed5d-48e2-b4d6-e2a23ed72792/download/
+2026-11-20 09:59:19,752 WARNING django.request Forbidden: /api/v1/events/3d405140-af6a-4186-8299-8d1296cc2e58/attachments/
+ok
+test_download_url_authorises_through_the_api_not_storage (apps.events.test_attachments.AttachmentStorageTests.test_download_url_authorises_through_the_api_not_storage) ... ok
+test_mismatched_file_type_is_rejected (apps.events.test_attachments.AttachmentStorageTests.test_mismatched_file_type_is_rejected) ... 2026-11-20 09:59:39,547 WARNING django.request Bad Request: /api/v1/events/8ff3178e-31b0-44a6-bab5-29078ac701cc/attachments/
+ok
+test_owner_can_upload_and_download_private_attachment (apps.events.test_attachments.AttachmentStorageTests.test_owner_can_upload_and_download_private_attachment) ... ok
+test_s3_with_bucket_wires_the_s3_backend (apps.events.test_attachments.MediaStorageConfigurationTests.test_s3_with_bucket_wires_the_s3_backend) ... ok
+test_s3_without_bucket_is_rejected (apps.events.test_attachments.MediaStorageConfigurationTests.test_s3_without_bucket_is_rejected) ... ok
+test_unknown_media_storage_backend_is_rejected (apps.events.test_attachments.MediaStorageConfigurationTests.test_unknown_media_storage_backend_is_rejected) ... ok
+test_deleted_attachment_is_not_found (apps.events.test_functional_upgrades.AttachmentAuthorisationTests.test_deleted_attachment_is_not_found) ... 2026-11-20 10:00:39,499 WARNING django.request Not Found: /api/v1/events/183be5f3-e9f4-471b-8c10-79cdb8e481fe/attachments/a83f66e5-da4d-4614-874e-94cdd4cce768/download/
+ok
+test_directory_components_are_stripped_from_the_download_name (apps.events.test_functional_upgrades.AttachmentAuthorisationTests.test_directory_components_are_stripped_from_the_download_name) ... ok
+test_image_preview_is_inline (apps.events.test_functional_upgrades.AttachmentAuthorisationTests.test_image_preview_is_inline) ... ok
+test_invited_provider_can_download (apps.events.test_functional_upgrades.AttachmentAuthorisationTests.test_invited_provider_can_download) ... ok
+test_missing_file_returns_gone_not_a_false_success (apps.events.test_functional_upgrades.AttachmentAuthorisationTests.test_missing_file_returns_gone_not_a_false_success) ... 2026-11-20 10:02:29,758 WARNING django.request Gone: /api/v1/events/252d0fd4-26b0-478b-802c-c8294dbce558/attachments/eba2e2ce-0ae7-47a5-a19f-b3ef3681dddb/download/
+ok
+test_owner_downloads_their_attachment (apps.events.test_functional_upgrades.AttachmentAuthorisationTests.test_owner_downloads_their_attachment) ... ok
+test_unrelated_customer_is_denied (apps.events.test_functional_upgrades.AttachmentAuthorisationTests.test_unrelated_customer_is_denied) ... 2026-11-20 10:03:21,187 WARNING django.request Forbidden: /api/v1/events/cd50ccfd-be39-483e-b82d-e44afd9e9bed/attachments/0b0d8bb4-62b7-4363-89f1-287336dc8a66/download/
+ok
+test_unrelated_provider_is_denied (apps.events.test_functional_upgrades.AttachmentAuthorisationTests.test_unrelated_provider_is_denied) ... 2026-11-20 10:03:48,234 WARNING django.request Forbidden: /api/v1/events/e191f754-4be5-4f83-923c-de4d7c8483e3/attachments/a4477d24-61af-4889-96be-978d2c98e48a/download/
+ok
+test_custom_name_outside_other_is_rejected (apps.events.test_functional_upgrades.CustomServiceTests.test_custom_name_outside_other_is_rejected) ... 2026-11-20 10:03:59,812 WARNING django.request Bad Request: /api/v1/events/
+ok
+test_custom_requirement_is_stored_on_the_request_only (apps.events.test_functional_upgrades.CustomServiceTests.test_custom_requirement_is_stored_on_the_request_only) ... ok
+test_other_without_a_custom_name_is_rejected (apps.events.test_functional_upgrades.CustomServiceTests.test_other_without_a_custom_name_is_rejected) ... 2026-11-20 10:04:20,558 WARNING django.request Bad Request: /api/v1/events/
+ok
+test_end_date_before_start_is_rejected (apps.events.test_functional_upgrades.MultiDayEventTests.test_end_date_before_start_is_rejected) ... 2026-11-20 10:04:33,257 WARNING django.request Bad Request: /api/v1/events/
+ok
+test_existing_internal_events_without_end_date_still_work (apps.events.test_functional_upgrades.MultiDayEventTests.test_existing_internal_events_without_end_date_still_work) ... ok
+test_moving_start_beyond_end_date_is_rejected_without_silent_overwrite (apps.events.test_functional_upgrades.MultiDayEventTests.test_moving_start_beyond_end_date_is_rejected_without_silent_overwrite) ... 2026-11-20 10:04:58,742 WARNING django.request Bad Request: /api/v1/events/d6d1e20b-0f4c-4cc3-a760-f255e54821e7/
+ok
+test_omitting_end_date_defaults_to_a_one_day_event (apps.events.test_functional_upgrades.MultiDayEventTests.test_omitting_end_date_defaults_to_a_one_day_event) ... ok
+test_one_day_event_end_date_equals_start (apps.events.test_functional_upgrades.MultiDayEventTests.test_one_day_event_end_date_equals_start) ... ok
+test_two_three_and_seven_day_events_persist_their_range (apps.events.test_functional_upgrades.MultiDayEventTests.test_two_three_and_seven_day_events_persist_their_range) ... ok
+test_create_and_submit_event (apps.events.tests.EventApiTests.test_create_and_submit_event) ... ok
+test_end_time_must_follow_start_time (apps.events.tests.EventApiTests.test_end_time_must_follow_start_time) ... 2026-11-20 10:05:55,084 WARNING django.request Bad Request: /api/v1/events/
+ok
+test_event_requires_at_least_one_requirement_to_submit (apps.events.tests.EventApiTests.test_event_requires_at_least_one_requirement_to_submit) ... 2026-11-20 10:06:01,867 WARNING django.request Bad Request: /api/v1/events/
+ok
+test_other_customer_cannot_read_event (apps.events.tests.EventApiTests.test_other_customer_cannot_read_event) ... 2026-11-20 10:06:10,750 WARNING django.request Forbidden: /api/v1/events/a6e938a0-326c-43b0-ad7f-b6fd6024ba4d/
+ok
+test_past_event_date_cannot_be_submitted (apps.events.tests.EventApiTests.test_past_event_date_cannot_be_submitted) ... 2026-11-20 10:06:14,330 WARNING django.request Bad Request: /api/v1/events/
+ok
+test_submitted_event_locks_once_invitations_are_outstanding (apps.events.tests.EventApiTests.test_submitted_event_locks_once_invitations_are_outstanding) ... 2026-11-20 10:06:31,407 WARNING django.request Conflict: /api/v1/events/2275dc65-ac93-4a51-b351-bc8293c89fa3/
+ok
+test_customer_cannot_read_the_provider_opportunity_feed (apps.matching.tests.ProviderOpportunityTests.test_customer_cannot_read_the_provider_opportunity_feed) ... 2026-11-20 10:06:51,925 WARNING django.request Forbidden: /api/v1/provider/opportunities/
+ok
+test_matched_worker_sees_the_public_request (apps.matching.tests.ProviderOpportunityTests.test_matched_worker_sees_the_public_request) ... ok
+test_opportunity_hides_customer_contact_and_exact_venue (apps.matching.tests.ProviderOpportunityTests.test_opportunity_hides_customer_contact_and_exact_venue) ... ok
+test_provider_kind_is_exposed_in_public_detail (apps.matching.tests.ProviderOpportunityTests.test_provider_kind_is_exposed_in_public_detail) ... ok
+test_provider_outside_coverage_does_not_see_the_request (apps.matching.tests.ProviderOpportunityTests.test_provider_outside_coverage_does_not_see_the_request) ... ok
+test_provider_without_the_category_does_not_see_the_request (apps.matching.tests.ProviderOpportunityTests.test_provider_without_the_category_does_not_see_the_request) ... ok
+test_worker_can_create_a_quotation_without_an_invitation (apps.matching.tests.ProviderOpportunityTests.test_worker_can_create_a_quotation_without_an_invitation) ... ok
+test_assignment_detail_is_private (apps.network.tests.AssignmentTests.test_assignment_detail_is_private) ... 2026-11-20 10:10:29,630 WARNING django.request Forbidden: /api/v1/assignments/08edb18c-e7a9-4305-be07-2c14ef75da95/
+2026-11-20 10:10:29,639 WARNING django.request Forbidden: /api/v1/assignments/08edb18c-e7a9-4305-be07-2c14ef75da95/
+ok
+test_assignment_is_sent_and_worker_accepts (apps.network.tests.AssignmentTests.test_assignment_is_sent_and_worker_accepts) ... ok
+test_assignment_lifecycle_start_and_complete (apps.network.tests.AssignmentTests.test_assignment_lifecycle_start_and_complete) ... ok
+test_cancelled_assignment_does_not_block_and_history_remains (apps.network.tests.AssignmentTests.test_cancelled_assignment_does_not_block_and_history_remains) ... ok
+test_customer_cannot_list_assignments (apps.network.tests.AssignmentTests.test_customer_cannot_list_assignments) ... 2026-11-20 10:15:58,362 WARNING django.request Forbidden: /api/v1/assignments/
+ok
+test_declined_assignment_can_be_reassigned_without_losing_history (apps.network.tests.AssignmentTests.test_declined_assignment_can_be_reassigned_without_losing_history) ... ok
+test_ending_network_does_not_cancel_accepted_assignment (apps.network.tests.AssignmentTests.test_ending_network_does_not_cancel_accepted_assignment) ... ok
+test_manager_assignment_list_is_scoped_to_own_assignments (apps.network.tests.AssignmentTests.test_manager_assignment_list_is_scoped_to_own_assignments) ... ok
+test_manager_cannot_assign_another_managers_commitment (apps.network.tests.AssignmentTests.test_manager_cannot_assign_another_managers_commitment) ... ok
+test_overlapping_assignment_cannot_be_accepted (apps.network.tests.AssignmentTests.test_overlapping_assignment_cannot_be_accepted) ... ok
+test_pending_assignment_does_not_block_but_accepted_assignment_does (apps.network.tests.AssignmentTests.test_pending_assignment_does_not_block_but_accepted_assignment_does) ... ok
+test_unassociated_worker_cannot_be_assigned (apps.network.tests.AssignmentTests.test_unassociated_worker_cannot_be_assigned) ... ok
+test_worker_cannot_accept_another_workers_assignment (apps.network.tests.AssignmentTests.test_worker_cannot_accept_another_workers_assignment) ... ok
+test_accepting_a_network_invitation_creates_association (apps.network.tests.NetworkInvitationTests.test_accepting_a_network_invitation_creates_association) ... ok
+test_declining_creates_no_association_and_keeps_history (apps.network.tests.NetworkInvitationTests.test_declining_creates_no_association_and_keeps_history) ... ok
+test_duplicate_pending_invitation_is_rejected (apps.network.tests.NetworkInvitationTests.test_duplicate_pending_invitation_is_rejected) ... ok
+test_ending_an_association_retains_the_row (apps.network.tests.NetworkInvitationTests.test_ending_an_association_retains_the_row) ... ok
+test_expired_invitation_is_marked_when_invitations_are_listed (apps.network.tests.NetworkInvitationTests.test_expired_invitation_is_marked_when_invitations_are_listed) ... ok
+test_manager_cannot_invite_a_manager (apps.network.tests.NetworkInvitationTests.test_manager_cannot_invite_a_manager) ... ok
+test_worker_can_associate_with_two_managers (apps.network.tests.NetworkInvitationTests.test_worker_can_associate_with_two_managers) ... 

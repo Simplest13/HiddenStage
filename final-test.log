@@ -1,0 +1,37 @@
+
+> hiddenstage-frontend@0.0.0 test
+> vitest run
+
+
+[1m[30m[46m RUN [49m[39m[22m [36mv5.1.0 [39m[90mC:/Users/Admin/OneDrive/Desktop/HiddenStage Code/HiddenStage/hiddenstage-frontend[39m
+
+ [32m✓[39m src/app/router/routes.test.tsx [2m([22m[2m8 tests[22m[2m)[22m[33m 2691[2mms[22m[39m
+   [32m✓[39m application routes [2m(8)[22m
+     [33m[2m✓[22m[39m renders the public homepage[33m 552[2mms[22m[39m
+     [33m[2m✓[22m[39m redirects an anonymous visitor away from a protected workspace[33m 616[2mms[22m[39m
+     [33m[2m✓[22m[39m sends a verified customer without a profile to onboarding[33m 412[2mms[22m[39m
+     [33m[2m✓[22m[39m keeps a provider out of the organiser workspace[33m 366[2mms[22m[39m
+     [33m[2m✓[22m[39m renders the customer dashboard for a completed organiser[33m 411[2mms[22m[39m
+ [32m✓[39m src/features/public/public-pages.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[33m 4239[2mms[22m[39m
+   [32m✓[39m public discovery pages [2m(4)[22m
+     [33m[2m✓[22m[39m filters demo services by category search and location[33m 1351[2mms[22m[39m
+     [33m[2m✓[22m[39m filters provider records by PIN code and opens a demo profile[33m 1084[2mms[22m[39m
+     [33m[2m✓[22m[39m validates contact details and clearly reports that nothing was sent[33m 1712[2mms[22m[39m
+ [32m✓[39m src/shared/ui/overlays.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[33m 479[2mms[22m[39m
+   [32m✓[39m Modal [2m(2)[22m
+     [33m[2m✓[22m[39m labels the dialog and restores keyboard focus within it[33m 444[2mms[22m[39m
+ [32m✓[39m src/shared/ui/primitives.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[33m 394[2mms[22m[39m
+   [32m✓[39m accessible UI primitives [2m(2)[22m
+     [33m[2m✓[22m[39m renders a named button with its selected visual variant[33m 317[2mms[22m[39m
+ [32m✓[39m src/shared/api/client.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 38[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m5 passed[39m[22m[90m (5)[39m
+[2m      Tests [22m [1m[32m20 passed[39m[22m[90m (20)[39m
+[2m   Start at [22m 01:34:29
+[2m   Duration [22m 26.15s[2m (environment 66%, tests 18%, setup 12%, import 3%, transform 1%)[22m
+
+[2mEnvironment [22m [33mjsdom was created 5 times[39m[2m · 29.23s total, 66% of tracked time[22m
+[2m            [22m [2mcreate it once per worker with [22m[33mpool: 'vmThreads'[39m[2m (keeps per-file isolation) or [22m[33misolate: false[39m[2m (shares it across files)[22m
+[2m            [22m [2mlearn more: https://vitest.dev/guide/improving-performance#test-environments[22m
+
+TEST=0

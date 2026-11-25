@@ -1,4 +1,5 @@
 import { useAuthActions, useTheme } from '../../app/auth/useAuth'
+import { Icon } from './Icon'
 
 export function ThemeToggle() {
   const authActions = useAuthActions()
@@ -26,7 +27,7 @@ export function ThemeToggle() {
         transition: 'all 0.15s ease',
       }}
     >
-      <span aria-hidden="true">{theme === 'dark' ? '☀️' : '🌙'}</span>
+      <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={18} />
     </button>
   )
 }

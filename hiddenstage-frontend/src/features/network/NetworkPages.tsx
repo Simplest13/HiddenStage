@@ -20,6 +20,7 @@ import type {
 } from '../../shared/api/backend/types'
 import { isApiError } from '../../shared/api/client'
 import { Avatar, Badge, Button, ButtonLink, Card, EmptyState, ErrorState, Input, Modal, Select, Spinner, Textarea, useToast } from '../../shared/ui'
+import { Icon } from '../../shared/ui/Icon'
 import '../customer/customer.css'
 import '../provider/provider.css'
 import './network.css'
@@ -154,7 +155,7 @@ function NetworkPage() {
       </div>
       {customerConnections.length === 0 ? (
         <Card style={{ padding: '2rem 1.5rem', textAlign: 'center', background: 'var(--color-canvas)', border: '1px dashed var(--color-line)' }}>
-          <span style={{ fontSize: '2rem', display: 'block', marginBottom: '0.5rem' }}>👥</span>
+          <span style={{ display: 'block', marginBottom: '0.5rem' }}><Icon name="users" size={32} /></span>
           <h3 style={{ margin: '0 0 0.35rem', fontSize: '1.05rem' }}>No customer connections yet</h3>
           <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--color-muted)' }}>
             When event hosts add you to their network from your directory profile, they will appear here so you can inspect their details and message them.
@@ -189,10 +190,10 @@ function NetworkPage() {
               </p>
               <div className="network-actions">
                 <Button type="button" size="sm" onClick={() => setInspectingCustomer(conn)}>
-                  Inspect Customer 🔍
+                  Inspect Customer <Icon name="search" size={14} />
                 </Button>
                 <ButtonLink to={routes.provider.customerNetwork} size="sm" variant="secondary">
-                  Message Client 💬
+                  Message Client <Icon name="message" size={14} />
                 </ButtonLink>
               </div>
             </Card>
@@ -320,7 +321,7 @@ function NetworkPage() {
 
           <div className="modal-actions" style={{ marginTop: '0.5rem', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
             <Button type="button" variant="secondary" onClick={() => setInspectingCustomer(null)}>Close</Button>
-            <ButtonLink to={routes.provider.customerNetwork} onClick={() => setInspectingCustomer(null)}>Open Chat & Messages 💬</ButtonLink>
+            <ButtonLink to={routes.provider.customerNetwork} onClick={() => setInspectingCustomer(null)}>Open Chat &amp; Messages <Icon name="message" size={14} /></ButtonLink>
           </div>
         </div>
       )}

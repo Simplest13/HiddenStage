@@ -62,8 +62,8 @@
 .choice__mark { display: grid; flex: 0 0 auto; width: 1.15rem; height: 1.15rem; place-items: center; border: 1px solid var(--color-line-strong); border-radius: 3px; background: var(--color-paper-bright); }
 .choice__mark--radio { border-radius: 50%; }
 .choice input:checked + .choice__mark { border-color: var(--color-burgundy); background: var(--color-burgundy); }
-.choice input:checked + .choice__mark::after { content: '✓'; color: white; font-size: 0.7rem; }
-.choice input[type='radio']:checked + .choice__mark::after { width: 0.42rem; height: 0.42rem; border-radius: 50%; background: white; content: ''; }
+.choice input:checked + .choice__mark::after { width: 0.32rem; height: 0.56rem; margin-top: -0.12rem; border: solid white; border-width: 0 2px 2px 0; content: ''; transform: rotate(45deg); }
+.choice input[type='radio']:checked + .choice__mark::after { width: 0.42rem; height: 0.42rem; margin: 0; border: 0; border-radius: 50%; background: white; content: ''; transform: none; }
 .choice input:focus-visible + .choice__mark { outline: 3px solid rgb(181 140 79 / 40%); outline-offset: 2px; }
 
 .card { border: 1px solid var(--color-line); border-radius: var(--radius-md); padding: 1.5rem; background: var(--color-paper-bright); }

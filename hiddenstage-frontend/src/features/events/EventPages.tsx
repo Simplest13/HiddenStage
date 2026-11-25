@@ -8,6 +8,7 @@ import { addDays, formatDate, formatPaise, formatTime, formatTimeRange } from '.
 import type { ApiAttachment, ApiCategory, EventStatus } from '../../shared/api/backend/types'
 import { downloadApiFile, isApiError } from '../../shared/api/client'
 import { Badge, Button, ButtonLink, Card, ErrorState, Input, Modal, Select, Spinner, Textarea, useToast } from '../../shared/ui'
+import { Icon } from '../../shared/ui/Icon'
 import './events.css'
 
 type Step = 0 | 1 | 2 | 3 | 4
@@ -343,7 +344,7 @@ export default function EventPages() {
       <ol className="wizard-steps" aria-label={`Step ${step + 1} of ${stepLabels.length}`}>
         {stepLabels.map((label, index) => <li key={label} className={index < step ? 'wizard-steps__done' : index === step ? 'wizard-steps__active' : ''}>
           <button type="button" className="wizard-step-button" onClick={() => goTo(index as Step)} aria-current={index === step ? 'step' : undefined}>
-            <b>{index < step ? '✓' : index + 1}</b><small>{label}</small>
+            <b>{index < step ? <Icon name="circleCheck" size={16} color="#fff" /> : index + 1}</b><small>{label}</small>
           </button>
         </li>)}
       </ol>
@@ -398,7 +399,7 @@ export default function EventPages() {
           : 'Your changes will replace the current brief. Suppliers who already replied will see the updated request.'}</p>
         <ul className="confirm-summary">
           <li><span>Event</span><strong>{values.name || '—'}</strong></li>
-          <li><span>Date</span><strong>{values.date ? (values.startTime && values.endTime && values.endTime <= values.startTime ? `${formatDate(values.date)} → ${formatDate(addDays(values.date, 1))} (Overnight)` : formatDate(values.date)) : '—'}</strong></li>
+          <li><span>Date</span><strong>{values.date ? (values.startTime && values.endTime && values.endTime <= values.startTime ? `${formatDate(values.date)} – ${formatDate(addDays(values.date, 1))} (Overnight)` : formatDate(values.date)) : '—'}</strong></li>
           <li><span>Area</span><strong>{[values.locality, values.city, values.pinCode].filter(Boolean).join(', ') || '—'}</strong></li>
           <li><span>Services</span><strong>{requirements.length}</strong></li>
           <li><span>Attachments</span><strong>{existingAttachments.length + files.length}</strong></li>
@@ -460,12 +461,12 @@ function BasicDetails({ values, errors, onChange }: { values: EventValues; error
       </div>
       {isOvernight && (!values.endDate || values.endDate === computedEndDate) && (
         <div className="event-overnight-note" role="status" style={{ gridColumn: '1 / -1' }}>
-          <span>🌙 Overnight event — ends on <strong>{formatDate(computedEndDate)}</strong> at <strong>{formatTime(values.endTime)}</strong></span>
+          <span><Icon name="moon" size={15} /> Overnight event — ends on <strong>{formatDate(computedEndDate)}</strong> at <strong>{formatTime(values.endTime)}</strong></span>
         </div>
       )}
       {isMultiDay && !isOvernight && (
         <div className="event-overnight-note" role="status" style={{ gridColumn: '1 / -1' }}>
-          <span>🗓️ Multi-day event — from <strong>{formatDate(values.date)}</strong> to <strong>{formatDate(effectiveEndDate)}</strong></span>
+          <span><Icon name="calendarDays" size={15} /> Multi-day event — from <strong>{formatDate(values.date)}</strong> to <strong>{formatDate(effectiveEndDate)}</strong></span>
         </div>
       )}
     </div>

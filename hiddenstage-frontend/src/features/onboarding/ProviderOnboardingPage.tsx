@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthActions } from '../../app/auth/useAuth'
 import { routes } from '../../app/routes/routePaths'
+import { Icon } from '../../shared/ui/Icon'
 import { eventsApi } from '../../shared/api/backend/events'
 import { networkApi } from '../../shared/api/backend/network'
 import { profilesApi } from '../../shared/api/backend/profiles'
@@ -344,7 +345,7 @@ export default function ProviderOnboardingPage() {
                   <div className="manager-selected-card">
                     <div>
                       <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-orange, #ff7a00)', display: 'block', marginBottom: '0.2rem' }}>
-                        ✓ Affiliated Event Manager Selected
+                        <Icon name="circleCheck" size={14} /> Affiliated Event Manager Selected
                       </span>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                         <strong style={{ fontSize: '1rem' }}>{selectedManager.display_name}</strong>
@@ -365,7 +366,7 @@ export default function ProviderOnboardingPage() {
                         setShowManagerPopup(false)
                       }}
                     >
-                      Change Manager ✕
+                      Change Manager <Icon name="close" size={14} />
                     </Button>
                   </div>
                 ) : (

@@ -1,5 +1,6 @@
 import { useState, type KeyboardEvent, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
+import { Icon } from './Icon'
 import './ui.css'
 
 export function Breadcrumb({ items }: { items: Array<{ label: string; href?: string }> }) {
@@ -27,7 +28,7 @@ export function Tabs({ tabs, value, onChange }: { tabs: Array<{ id: string; labe
 export function Dropdown({ label, children }: { label: string; children: ReactNode }) {
   const [open, setOpen] = useState(false)
   return <div className="dropdown">
-    <button type="button" className="button button--quiet" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((current) => !current)}>{label}<span aria-hidden="true">⌄</span></button>
+    <button type="button" className="button button--quiet" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((current) => !current)}>{label}<Icon name="chevronDown" size={14} /></button>
     {open && <div role="menu" className="dropdown__menu" onKeyDown={(event) => { if (event.key === 'Escape') setOpen(false) }}>{children}</div>}
   </div>
 }

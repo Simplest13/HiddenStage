@@ -4,6 +4,7 @@ import { routes } from '../../app/routes/routePaths'
 import { useAuth } from '../../app/auth/useAuth'
 import { networkApi } from '../../shared/api/backend/ecosystem'
 import { Avatar, Badge, Button, ButtonLink, Card, Input, Spinner } from '../../shared/ui'
+import { Icon } from '../../shared/ui/Icon'
 
 const CATEGORIES = [
   { id: 'ALL', label: 'All Specialists' },
@@ -156,7 +157,7 @@ export function HomepageMyNetworksPage() {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
-          <span style={{ fontSize: '1.6rem' }}>🛡️</span>
+          <Icon name="shieldCheck" size={25} />
           <div>
             <strong style={{ display: 'block', fontSize: '0.95rem' }}>Verified Credentials</strong>
             <span style={{ fontSize: '0.82rem', color: 'var(--color-fg-muted)' }}>Background-checked event professionals</span>
@@ -164,7 +165,7 @@ export function HomepageMyNetworksPage() {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
-          <span style={{ fontSize: '1.6rem' }}>💬</span>
+          <Icon name="message" size={25} />
           <div>
             <strong style={{ display: 'block', fontSize: '0.95rem' }}>Direct Messaging</strong>
             <span style={{ fontSize: '0.82rem', color: 'var(--color-fg-muted)' }}>Communicate & share files with zero barriers</span>
@@ -172,7 +173,7 @@ export function HomepageMyNetworksPage() {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
-          <span style={{ fontSize: '1.6rem' }}>💎</span>
+          <Icon name="award" size={25} />
           <div>
             <strong style={{ display: 'block', fontSize: '0.95rem' }}>Zero Agency Markup</strong>
             <span style={{ fontSize: '0.82rem', color: 'var(--color-fg-muted)' }}>Pay transparent, line-item supplier rates</span>
@@ -237,7 +238,7 @@ export function HomepageMyNetworksPage() {
                       )}
 
                       <div style={{ fontSize: '0.85rem', color: 'var(--color-fg-muted)', marginTop: '0.2rem' }}>
-                        {p.city ? `📍 ${p.city}` : 'National Service'}
+                        {p.city ? <><Icon name="mapPin" size={14} /> {p.city}</> : 'National Service'}
                       </div>
                     </div>
                   </div>
@@ -264,7 +265,7 @@ export function HomepageMyNetworksPage() {
                       to={routes.customer.network}
                       style={{ flex: 1, background: '#16a34a', borderColor: '#16a34a', color: '#fff' }}
                     >
-                      ✓ Chat in App
+                      <Icon name="circleCheck" size={14} /> Chat in App
                     </ButtonLink>
                   ) : (
                     <Button

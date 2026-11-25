@@ -1,17 +1,19 @@
-const categoryGlyphMap: Array<[RegExp, string]> = [
-  [/space|venue/i, '⌂'],
-  [/food|cater/i, '✦'],
-  [/music|performance/i, '♪'],
-  [/photo/i, '◉'],
-  [/video/i, '▶'],
-  [/decor|styl/i, '❀'],
-  [/dj|sound/i, '♫'],
-  [/host/i, '✧'],
-  [/plan/i, '◷'],
+import type { IconName } from './Icon'
+
+const categoryIconMap: Array<[RegExp, IconName]> = [
+  [/space|venue/i, 'mapPin'],
+  [/food|cater/i, 'briefcase'],
+  [/music|performance/i, 'music'],
+  [/photo/i, 'camera'],
+  [/video/i, 'video'],
+  [/decor|styl/i, 'flower'],
+  [/dj|sound/i, 'music'],
+  [/host/i, 'users'],
+  [/plan/i, 'calendar'],
 ]
 
-export function categoryGlyph(name: string) {
-  return categoryGlyphMap.find(([pattern]) => pattern.test(name))?.[1] ?? name.slice(0, 1).toUpperCase()
+export function categoryIconName(name: string): IconName {
+  return categoryIconMap.find(([pattern]) => pattern.test(name))?.[1] ?? 'star'
 }
 
 export function providerInitials(name: string) {

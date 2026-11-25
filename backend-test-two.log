@@ -1,0 +1,7 @@
+Using existing test database for alias 'default'...
+2026-11-20 01:24:49,847 WARNING django.request Bad Request: /api/v1/events/
+F2026-11-20 01:24:54,718 WARNING django.request Bad Request: /api/v1/events/
+F2026-11-20 01:24:59,682 WARNING django.request Bad Request: /api/v1/events/
+F2026-11-20 01:25:04,182 WARNING django.request Bad Request: /api/v1/events/
+F2026-11-20 01:25:09,253 WARNING django.request Bad Request: /api/v1/events/
+F...

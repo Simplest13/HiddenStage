@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, type ReactNode, type RefObject } from 'react'
 import { Button } from './primitives'
+import { Icon } from './Icon'
 import './ui.css'
 
 type OverlayProps = { open: boolean; title: string; onClose: () => void; children: ReactNode }
@@ -38,7 +39,7 @@ export function Modal({ open, title, onClose, children }: OverlayProps) {
   if (!open) return null
   return <div className="overlay" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose() }}>
     <section className="modal" role="dialog" aria-modal="true" aria-labelledby={titleId}>
-      <header className="modal__header"><h2 id={titleId}>{title}</h2><Button ref={closeRef} variant="quiet" aria-label="Close dialog" onClick={onClose}>×</Button></header>
+      <header className="modal__header"><h2 id={titleId}>{title}</h2><Button ref={closeRef} variant="quiet" aria-label="Close dialog" onClick={onClose}><Icon name="close" size={16} /></Button></header>
       <div className="modal__body">{children}</div>
     </section>
   </div>
@@ -51,7 +52,7 @@ export function Drawer({ open, title, onClose, children }: OverlayProps) {
   if (!open) return null
   return <div className="overlay overlay--drawer" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose() }}>
     <aside className="drawer" role="dialog" aria-modal="true" aria-labelledby={titleId}>
-      <header className="modal__header"><h2 id={titleId}>{title}</h2><Button ref={closeRef} variant="quiet" aria-label="Close panel" onClick={onClose}>×</Button></header>
+      <header className="modal__header"><h2 id={titleId}>{title}</h2><Button ref={closeRef} variant="quiet" aria-label="Close panel" onClick={onClose}><Icon name="close" size={16} /></Button></header>
       <div className="modal__body">{children}</div>
     </aside>
   </div>

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, useLocation, useMatches, useNavigate, useSearchParams } from 'react-router-dom'
 import { routes } from '../../app/routes/routePaths'
+import { Icon } from '../../shared/ui/Icon'
 import { useAuth, useAuthActions } from '../../app/auth/useAuth'
 import type { SessionUser } from '../../app/auth/authTypes'
 import { Button, Input, Select } from '../../shared/ui'
@@ -222,7 +223,7 @@ export default function AuthPages() {
             {usernameChecking ? (
               <span style={{ color: 'var(--color-fg-muted)' }}>Checking availability…</span>
             ) : usernameStatus?.available ? (
-              <span style={{ color: '#16a34a', fontWeight: 600 }}>✓ @{regUsername.trim().replace(/^@/, '')} is available!</span>
+              <span style={{ color: '#16a34a', fontWeight: 600 }}><Icon name="circleCheck" size={14} /> @{regUsername.trim().replace(/^@/, '')} is available!</span>
             ) : null}
           </div>
         </div>

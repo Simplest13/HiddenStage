@@ -1,0 +1,517 @@
+Creating test database for alias 'default'...
+Got an error creating the test database: database "test_neondb" already exists
+Destroying old test database for alias 'default'...
+2026-11-20 00:36:40,498 WARNING django.request Bad Request: /api/v1/auth/register/
+...2026-11-20 00:36:54,506 ERROR apps.accounts.views Verification email delivery failed for user 5fd0dbe4-3620-4516-b83f-f38f72c016b5
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\accounts\views.py", line 72, in post
+    send_verification_email(user, raw_token)
+  File "C:\Python312\Lib\unittest\mock.py", line 1134, in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\unittest\mock.py", line 1138, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\unittest\mock.py", line 1193, in _execute_mock_call
+    raise effect
+RuntimeError
+..2026-11-20 00:37:04,877 WARNING django.request Bad Request: /api/v1/auth/register/
+.2026-11-20 00:37:11,606 WARNING django.request Bad Request: /api/v1/auth/email/verify/
+.2026-11-20 00:37:16,618 WARNING django.request Forbidden: /api/v1/events/
+.F2026-11-20 00:37:26,399 WARNING django.request Forbidden: /api/v1/events/
+.2026-11-20 00:37:32,067 WARNING django.request Forbidden: /api/v1/auth/me/
+.2026-11-20 00:37:40,272 WARNING django.request Forbidden: /api/v1/auth/me/
+.2026-11-20 00:37:43,417 WARNING django.request Forbidden: /api/v1/auth/login/
+.2026-11-20 00:37:50,056 WARNING django.request Forbidden: /api/v1/auth/logout/
+..............2026-11-20 00:39:36,838 WARNING django.request Bad Request: /api/v1/quotations/8c0246b1-b0ae-498c-9405-7da428122d2b/acceptance/
+..2026-11-20 00:40:37,704 WARNING django.request Bad Request: /api/v1/quotations/a57a42d4-155f-4f76-b1ca-8fa60b71b0d7/acceptance/
+.2026-11-20 00:41:05,185 WARNING django.request Bad Request: /api/v1/quotations/2b2d3a61-6b1d-4dc3-84fe-0ff019570ae9/acceptance/
+.2026-11-20 00:41:32,777 WARNING django.request Bad Request: /api/v1/quotations/2556a01c-0feb-4636-91c5-af0c0394b492/acceptance/
+...2026-11-20 00:43:15,524 WARNING django.request Forbidden: /api/v1/commitments/9087b571-31b9-4ad9-95fa-4c5d2a9cb884/
+.2026-11-20 00:43:41,722 WARNING django.request Conflict: /api/v1/quotations/c954af30-d455-4c3a-a05a-9f5d5d54a30a/acceptance/
+.2026-11-20 00:44:07,751 WARNING django.request Forbidden: /api/v1/quotations/259e1377-0e9e-401e-acf7-c38dc3d464cc/acceptance/
+.2026-11-20 00:44:32,055 WARNING django.request Forbidden: /api/v1/quotations/a7b2a207-2223-451f-ada9-6d6a684c4928/acceptance/
+.2026-11-20 00:45:03,324 WARNING django.request Forbidden: /api/v1/commitments/4ec705d0-96de-41f9-b332-e4eb2ca18ff1/release/
+.2026-11-20 00:45:35,036 WARNING django.request Conflict: /api/v1/quotations/4b850143-053b-4286-bbcf-ccc7b534d30e/acceptance/
+.2026-11-20 00:46:10,830 WARNING django.request Conflict: /api/v1/commitments/4b835c4c-6b1c-4280-9669-c59846e3486b/release/
+.2026-11-20 00:46:38,532 WARNING django.request Bad Request: /api/v1/quotations/fe1a6421-7151-4753-aeda-d5097533b108/acceptance/
+.2026-11-20 00:47:16,478 WARNING django.request Bad Request: /api/v1/quotations/537370e9-5216-418d-93a9-096072b6f31f/acceptance/
+.2026-11-20 00:47:22,998 WARNING django.request Bad Request: /api/v1/events/
+F2026-11-20 00:47:26,732 WARNING django.request Bad Request: /api/v1/events/
+F2026-11-20 00:47:30,534 WARNING django.request Bad Request: /api/v1/events/
+F2026-11-20 00:47:34,217 WARNING django.request Bad Request: /api/v1/events/
+F2026-11-20 00:47:37,848 WARNING django.request Bad Request: /api/v1/events/
+F...2026-11-20 00:47:56,755 WARNING django.request Bad Request: /api/v1/events/
+F2026-11-20 00:47:59,681 WARNING django.request Bad Request: /api/v1/events/
+F2026-11-20 00:48:02,431 WARNING django.request Bad Request: /api/v1/events/
+F2026-11-20 00:48:05,221 WARNING django.request Bad Request: /api/v1/events/
+E2026-11-20 00:48:08,913 WARNING django.request Bad Request: /api/v1/events/
+F2026-11-20 00:48:11,841 WARNING django.request Bad Request: /api/v1/events/
+E2026-11-20 00:48:27,872 WARNING django.request Forbidden: /api/v1/provider/opportunities/
+.......EEEEEEEEEEEEEEE.E..EE..2026-11-20 01:04:59,162 WARNING django.request Bad Request: /api/v1/provider/quotations/8822f534-dabc-4e6b-84f3-6dc5ed8d2eae/revisions/eb0a6577-79d7-4158-b369-7086291a3f75/
+.2026-11-20 01:05:40,843 WARNING django.request Bad Request: /api/v1/provider/quotations/0e91dce6-88b5-4a17-9f19-4ed7d6f1b88e/revisions/1c5d7e4f-3d48-43fa-8a89-db54ff18e6ac/
+..2026-11-20 01:07:12,802 WARNING django.request Conflict: /api/v1/provider/quotations/74400a3d-4cf9-4d85-9a2d-f7d674146f9c/revisions/223d3422-fb2e-4917-9110-b2c4774b0f25/
+.2026-11-20 01:07:33,985 WARNING django.request Forbidden: /api/v1/provider/quotations/
+.2026-11-20 01:08:08,708 WARNING django.request Forbidden: /api/v1/events/18303cdb-6ef7-4856-9a35-e25a41c4bfc8/quotations/
+..2026-11-20 01:09:00,321 WARNING django.request Forbidden: /api/v1/provider/quotations/c1c81122-40eb-45be-aea4-47ca28dd241b/
+.2026-11-20 01:09:29,604 WARNING django.request Forbidden: /api/v1/provider/quotations/
+..2026-11-20 01:10:15,581 WARNING django.request Bad Request: /api/v1/provider/quotations/
+...FFFF.FF
+======================================================================
+ERROR: test_other_customer_cannot_read_event (apps.events.tests.EventApiTests.test_other_customer_cannot_read_event)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\events\tests.py", line 76, in test_other_customer_cannot_read_event
+    self.assertEqual(client.get(f"{EVENTS}{created['id']}/").status_code, 403)
+                                           ~~~~~~~^^^^^^
+KeyError: 'id'
+
+======================================================================
+ERROR: test_submitted_event_locks_once_invitations_are_outstanding (apps.events.tests.EventApiTests.test_submitted_event_locks_once_invitations_are_outstanding)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\events\tests.py", line 82, in test_submitted_event_locks_once_invitations_are_outstanding
+    event = Event.objects.get(id=created["id"])
+                                 ~~~~~~~^^^^^^
+KeyError: 'id'
+
+======================================================================
+ERROR: test_assignment_detail_is_private (apps.network.tests.AssignmentTests.test_assignment_detail_is_private)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\network\tests.py", line 171, in setUp
+    connect(self.manager, self.worker)
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\network\tests.py", line 50, in connect
+    respond_to_network_invitation(
+  File "C:\Python312\Lib\contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+TypeError: respond_to_network_invitation() got an unexpected keyword argument 'worker'
+
+======================================================================
+ERROR: test_assignment_is_sent_and_worker_accepts (apps.network.tests.AssignmentTests.test_assignment_is_sent_and_worker_accepts)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\network\tests.py", line 171, in setUp
+    connect(self.manager, self.worker)
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\network\tests.py", line 50, in connect
+    respond_to_network_invitation(
+  File "C:\Python312\Lib\contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+TypeError: respond_to_network_invitation() got an unexpected keyword argument 'worker'
+
+======================================================================
+ERROR: test_assignment_lifecycle_start_and_complete (apps.network.tests.AssignmentTests.test_assignment_lifecycle_start_and_complete)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\network\tests.py", line 171, in setUp
+    connect(self.manager, self.worker)
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\network\tests.py", line 50, in connect
+    respond_to_network_invitation(
+  File "C:\Python312\Lib\contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+TypeError: respond_to_network_invitation() got an unexpected keyword argument 'worker'
+
+======================================================================
+ERROR: test_cancelled_assignment_does_not_block_and_history_remains (apps.network.tests.AssignmentTests.test_cancelled_assignment_does_not_block_and_history_remains)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\network\tests.py", line 171, in setUp
+    connect(self.manager, self.worker)
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\network\tests.py", line 50, in connect
+    respond_to_network_invitation(
+  File "C:\Python312\Lib\contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+TypeError: respond_to_network_invitation() got an unexpected keyword argument 'worker'
+
+======================================================================
+ERROR: test_customer_cannot_list_assignments (apps.network.tests.AssignmentTests.test_customer_cannot_list_assignments)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\network\tests.py", line 171, in setUp
+    connect(self.manager, self.worker)
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\network\tests.py", line 50, in connect
+    respond_to_network_invitation(
+  File "C:\Python312\Lib\contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+TypeError: respond_to_network_invitation() got an unexpected keyword argument 'worker'
+
+======================================================================
+ERROR: test_declined_assignment_can_be_reassigned_without_losing_history (apps.network.tests.AssignmentTests.test_declined_assignment_can_be_reassigned_without_losing_history)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\network\tests.py", line 171, in setUp
+    connect(self.manager, self.worker)
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\network\tests.py", line 50, in connect
+    respond_to_network_invitation(
+  File "C:\Python312\Lib\contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+TypeError: respond_to_network_invitation() got an unexpected keyword argument 'worker'
+
+======================================================================
+ERROR: test_ending_network_does_not_cancel_accepted_assignment (apps.network.tests.AssignmentTests.test_ending_network_does_not_cancel_accepted_assignment)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\network\tests.py", line 171, in setUp
+    connect(self.manager, self.worker)
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\network\tests.py", line 50, in connect
+    respond_to_network_invitation(
+  File "C:\Python312\Lib\contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+TypeError: respond_to_network_invitation() got an unexpected keyword argument 'worker'
+
+======================================================================
+ERROR: test_manager_assignment_list_is_scoped_to_own_assignments (apps.network.tests.AssignmentTests.test_manager_assignment_list_is_scoped_to_own_assignments)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\network\tests.py", line 171, in setUp
+    connect(self.manager, self.worker)
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\network\tests.py", line 50, in connect
+    respond_to_network_invitation(
+  File "C:\Python312\Lib\contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+TypeError: respond_to_network_invitation() got an unexpected keyword argument 'worker'
+
+======================================================================
+ERROR: test_manager_cannot_assign_another_managers_commitment (apps.network.tests.AssignmentTests.test_manager_cannot_assign_another_managers_commitment)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\network\tests.py", line 171, in setUp
+    connect(self.manager, self.worker)
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\network\tests.py", line 50, in connect
+    respond_to_network_invitation(
+  File "C:\Python312\Lib\contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+TypeError: respond_to_network_invitation() got an unexpected keyword argument 'worker'
+
+======================================================================
+ERROR: test_overlapping_assignment_cannot_be_accepted (apps.network.tests.AssignmentTests.test_overlapping_assignment_cannot_be_accepted)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\network\tests.py", line 171, in setUp
+    connect(self.manager, self.worker)
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\network\tests.py", line 50, in connect
+    respond_to_network_invitation(
+  File "C:\Python312\Lib\contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+TypeError: respond_to_network_invitation() got an unexpected keyword argument 'worker'
+
+======================================================================
+ERROR: test_pending_assignment_does_not_block_but_accepted_assignment_does (apps.network.tests.AssignmentTests.test_pending_assignment_does_not_block_but_accepted_assignment_does)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\network\tests.py", line 171, in setUp
+    connect(self.manager, self.worker)
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\network\tests.py", line 50, in connect
+    respond_to_network_invitation(
+  File "C:\Python312\Lib\contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+TypeError: respond_to_network_invitation() got an unexpected keyword argument 'worker'
+
+======================================================================
+ERROR: test_unassociated_worker_cannot_be_assigned (apps.network.tests.AssignmentTests.test_unassociated_worker_cannot_be_assigned)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\network\tests.py", line 171, in setUp
+    connect(self.manager, self.worker)
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\network\tests.py", line 50, in connect
+    respond_to_network_invitation(
+  File "C:\Python312\Lib\contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+TypeError: respond_to_network_invitation() got an unexpected keyword argument 'worker'
+
+======================================================================
+ERROR: test_worker_cannot_accept_another_workers_assignment (apps.network.tests.AssignmentTests.test_worker_cannot_accept_another_workers_assignment)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\network\tests.py", line 171, in setUp
+    connect(self.manager, self.worker)
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\network\tests.py", line 50, in connect
+    respond_to_network_invitation(
+  File "C:\Python312\Lib\contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+TypeError: respond_to_network_invitation() got an unexpected keyword argument 'worker'
+
+======================================================================
+ERROR: test_accepting_a_network_invitation_creates_association (apps.network.tests.NetworkInvitationTests.test_accepting_a_network_invitation_creates_association)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\network\tests.py", line 94, in test_accepting_a_network_invitation_creates_association
+    accepted, association = respond_to_network_invitation(
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+TypeError: respond_to_network_invitation() got an unexpected keyword argument 'worker'
+
+======================================================================
+ERROR: test_declining_creates_no_association_and_keeps_history (apps.network.tests.NetworkInvitationTests.test_declining_creates_no_association_and_keeps_history)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\network\tests.py", line 107, in test_declining_creates_no_association_and_keeps_history
+    declined, association = respond_to_network_invitation(
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python312\Lib\contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+TypeError: respond_to_network_invitation() got an unexpected keyword argument 'worker'
+
+======================================================================
+ERROR: test_ending_an_association_retains_the_row (apps.network.tests.NetworkInvitationTests.test_ending_an_association_retains_the_row)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\network\tests.py", line 142, in test_ending_an_association_retains_the_row
+    association = connect(self.manager, self.worker)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\network\tests.py", line 50, in connect
+    respond_to_network_invitation(
+  File "C:\Python312\Lib\contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+TypeError: respond_to_network_invitation() got an unexpected keyword argument 'worker'
+
+======================================================================
+ERROR: test_worker_can_associate_with_two_managers (apps.network.tests.NetworkInvitationTests.test_worker_can_associate_with_two_managers)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\network\tests.py", line 125, in test_worker_can_associate_with_two_managers
+    connect(self.manager, self.worker)
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\network\tests.py", line 50, in connect
+    respond_to_network_invitation(
+  File "C:\Python312\Lib\contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+TypeError: respond_to_network_invitation() got an unexpected keyword argument 'worker'
+
+======================================================================
+ERROR: test_worker_cannot_answer_another_workers_invitation (apps.network.tests.NetworkInvitationTests.test_worker_cannot_answer_another_workers_invitation)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\network\tests.py", line 137, in test_worker_cannot_answer_another_workers_invitation
+    respond_to_network_invitation(
+  File "C:\Python312\Lib\contextlib.py", line 81, in inner
+    return func(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^
+TypeError: respond_to_network_invitation() got an unexpected keyword argument 'worker'
+
+======================================================================
+FAIL: test_category_catalogue_matches_frontend_slugs (apps.accounts.tests.RolePermissionTests.test_category_catalogue_matches_frontend_slugs)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\accounts\tests.py", line 215, in test_category_catalogue_matches_frontend_slugs
+    self.assertEqual(
+AssertionError: Items in the first set but not the second:
+'other'
+
+======================================================================
+FAIL: test_anonymous_cannot_download_or_upload (apps.events.test_attachments.AttachmentStorageTests.test_anonymous_cannot_download_or_upload)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\events\test_attachments.py", line 62, in setUp
+    self.assertEqual(created.status_code, 201, created.content)
+AssertionError: 400 != 201 : b'{"end_date":["This field is required."]}'
+
+======================================================================
+FAIL: test_another_customer_cannot_download_or_list (apps.events.test_attachments.AttachmentStorageTests.test_another_customer_cannot_download_or_list)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\events\test_attachments.py", line 62, in setUp
+    self.assertEqual(created.status_code, 201, created.content)
+AssertionError: 400 != 201 : b'{"end_date":["This field is required."]}'
+
+======================================================================
+FAIL: test_download_url_authorises_through_the_api_not_storage (apps.events.test_attachments.AttachmentStorageTests.test_download_url_authorises_through_the_api_not_storage)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\events\test_attachments.py", line 62, in setUp
+    self.assertEqual(created.status_code, 201, created.content)
+AssertionError: 400 != 201 : b'{"end_date":["This field is required."]}'
+
+======================================================================
+FAIL: test_mismatched_file_type_is_rejected (apps.events.test_attachments.AttachmentStorageTests.test_mismatched_file_type_is_rejected)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\events\test_attachments.py", line 62, in setUp
+    self.assertEqual(created.status_code, 201, created.content)
+AssertionError: 400 != 201 : b'{"end_date":["This field is required."]}'
+
+======================================================================
+FAIL: test_owner_can_upload_and_download_private_attachment (apps.events.test_attachments.AttachmentStorageTests.test_owner_can_upload_and_download_private_attachment)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\events\test_attachments.py", line 62, in setUp
+    self.assertEqual(created.status_code, 201, created.content)
+AssertionError: 400 != 201 : b'{"end_date":["This field is required."]}'
+
+======================================================================
+FAIL: test_create_and_submit_event (apps.events.tests.EventApiTests.test_create_and_submit_event)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\events\tests.py", line 44, in test_create_and_submit_event
+    self.assertEqual(response.status_code, 201, response.content)
+AssertionError: 400 != 201 : b'{"end_date":["This field is required."]}'
+
+======================================================================
+FAIL: test_end_time_must_follow_start_time (apps.events.tests.EventApiTests.test_end_time_must_follow_start_time)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\events\tests.py", line 61, in test_end_time_must_follow_start_time
+    self.assertIn("end_time", response.data)
+AssertionError: 'end_time' not found in {'end_date': [ErrorDetail(string='This field is required.', code='required')]}
+
+======================================================================
+FAIL: test_event_requires_at_least_one_requirement_to_submit (apps.events.tests.EventApiTests.test_event_requires_at_least_one_requirement_to_submit)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\events\tests.py", line 54, in test_event_requires_at_least_one_requirement_to_submit
+    self.assertIn("requirements", response.data)
+AssertionError: 'requirements' not found in {'end_date': [ErrorDetail(string='This field is required.', code='required')]}
+
+======================================================================
+FAIL: test_past_event_date_cannot_be_submitted (apps.events.tests.EventApiTests.test_past_event_date_cannot_be_submitted)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\events\tests.py", line 69, in test_past_event_date_cannot_be_submitted
+    self.assertIn("event_date", response.data)
+AssertionError: 'event_date' not found in {'end_date': [ErrorDetail(string='This field is required.', code='required')]}
+
+======================================================================
+FAIL: test_managed_url_overrides_discrete_postgres_variables (apps.core.test_database_url.DatabaseUrlTests.test_managed_url_overrides_discrete_postgres_variables)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\core\test_database_url.py", line 73, in test_managed_url_overrides_discrete_postgres_variables
+    self.assertEqual(result["user"], "neon_user")
+AssertionError: 'neondb_owner' != 'neon_user'
+- neondb_owner
++ neon_user
+
+
+======================================================================
+FAIL: test_non_postgres_scheme_is_rejected (apps.core.test_database_url.DatabaseUrlTests.test_non_postgres_scheme_is_rejected)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\core\test_database_url.py", line 88, in test_non_postgres_scheme_is_rejected
+    self.assertFalse(result["ok"])
+AssertionError: True is not false
+
+======================================================================
+FAIL: test_sslmode_from_url_query_is_honoured (apps.core.test_database_url.DatabaseUrlTests.test_sslmode_from_url_query_is_honoured)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\core\test_database_url.py", line 84, in test_sslmode_from_url_query_is_honoured
+    self.assertEqual(result["sslmode"], "verify-full")
+AssertionError: 'require' != 'verify-full'
+- require
++ verify-full
+
+
+======================================================================
+FAIL: test_test_run_accepts_the_local_docker_database (apps.core.test_database_url.DatabaseUrlTests.test_test_run_accepts_the_local_docker_database)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\core\test_database_url.py", line 121, in test_test_run_accepts_the_local_docker_database
+    self.assertEqual(result["host"], "127.0.0.1")
+AssertionError: 'ep-bold-rain-bduglzuj-pooler.c-8.us-east-2.aws.neon.tech' != '127.0.0.1'
+- ep-bold-rain-bduglzuj-pooler.c-8.us-east-2.aws.neon.tech
++ 127.0.0.1
+
+
+======================================================================
+FAIL: test_test_run_refuses_a_remote_database (apps.core.test_database_url.DatabaseUrlTests.test_test_run_refuses_a_remote_database)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\core\test_database_url.py", line 96, in test_test_run_refuses_a_remote_database
+    self.assertFalse(result["ok"])
+AssertionError: True is not false
+
+======================================================================
+FAIL: test_without_url_the_discrete_variables_still_apply (apps.core.test_database_url.DatabaseUrlTests.test_without_url_the_discrete_variables_still_apply)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\apps\core\test_database_url.py", line 136, in test_without_url_the_discrete_variables_still_apply
+    self.assertEqual(result["name"], "fallback_db")
+AssertionError: 'neondb' != 'fallback_db'
+- neondb
++ fallback_db
+
+
+----------------------------------------------------------------------
+Ran 107 tests in 2339.362s
+
+FAILED (failures=16, errors=20)
+Destroying test database for alias 'default'...
+Found 107 test(s).
+System check identified no issues (0 silenced).
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 103, in _execute
+    return self.cursor.execute(sql)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\psycopg\cursor.py", line 117, in execute
+    raise ex.with_traceback(None)
+psycopg.errors.ObjectInUse: database "test_neondb" is being accessed by other users
+DETAIL:  There are 4 other sessions using the database.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\manage.py", line 21, in <module>
+    main()
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\manage.py", line 17, in main
+    execute_from_command_line(sys.argv)
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\core\management\__init__.py", line 442, in execute_from_command_line
+    utility.execute()
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\core\management\__init__.py", line 436, in execute
+    self.fetch_command(subcommand).run_from_argv(self.argv)
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\core\management\commands\test.py", line 24, in run_from_argv
+    super().run_from_argv(argv)
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\core\management\base.py", line 420, in run_from_argv
+    self.execute(*args, **cmd_options)
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\core\management\base.py", line 464, in execute
+    output = self.handle(*args, **options)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\core\management\commands\test.py", line 63, in handle
+    failures = test_runner.run_tests(test_labels)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\test\runner.py", line 1094, in run_tests
+    self.teardown_databases(old_config)
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\test\runner.py", line 1022, in teardown_databases
+    _teardown_databases(
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\test\utils.py", line 379, in teardown_databases
+    connection.creation.destroy_test_db(old_name, verbosity, keepdb)
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\backends\base\creation.py", line 311, in destroy_test_db
+    self._destroy_test_db(test_database_name, verbosity)
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\backends\postgresql\creation.py", line 91, in _destroy_test_db
+    return super()._destroy_test_db(test_database_name, verbosity)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\backends\base\creation.py", line 327, in _destroy_test_db
+    cursor.execute(
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 79, in execute
+    return self._execute_with_wrappers(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 92, in _execute_with_wrappers
+    return executor(sql, params, many, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 100, in _execute
+    with self.db.wrap_database_errors:
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\utils.py", line 91, in __exit__
+    raise dj_exc_value.with_traceback(traceback) from exc_value
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\django\db\backends\utils.py", line 103, in _execute
+    return self.cursor.execute(sql)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\OneDrive\Desktop\HiddenStage Code\HiddenStage\hiddenstage-backend\.venv\Lib\site-packages\psycopg\cursor.py", line 117, in execute
+    raise ex.with_traceback(None)
+django.db.utils.OperationalError: database "test_neondb" is being accessed by other users
+DETAIL:  There are 4 other sessions using the database.
+EXIT=1

@@ -4,6 +4,20 @@ import * as path from 'path'
 const ARTIFACT_DIR = 'C:/Users/User/.gemini/antigravity/brain/44f122d2-7693-41a1-bb43-f685e6ad4b07'
 
 test.describe('Official Logo and Consistent Greeting Verification', () => {
+  test('dark mode uses the supplied dark logo while light mode keeps the existing logo', async ({ page }) => {
+    await page.goto('/')
+    await page.evaluate(() => localStorage.setItem('hiddenstage-theme', 'light'))
+    await page.reload()
+
+    await expect(page.locator('.site-header .brand__logo')).toHaveAttribute('src', '/logo.png')
+
+    await page.evaluate(() => localStorage.setItem('hiddenstage-theme', 'dark'))
+    await page.reload()
+
+    await expect(page.locator('.site-header .brand__logo')).toHaveAttribute('src', '/logo-dark.png')
+    await expect(page.locator('.site-footer .brand__logo')).toHaveAttribute('src', '/logo-dark.png')
+  })
+
   test('public site renders the high quality logo in header and footer', async ({ page }) => {
     await page.goto('/')
     await page.waitForLoadState('networkidle')

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react'
 import { Link, useMatches, useOutletContext, useParams, useSearchParams } from 'react-router-dom'
 import { Award, CircleCheck, FileText, Mail, ShieldCheck, Sparkles } from 'kubai-icons-react'
+import { Icon } from '../../shared/ui/Icon'
 import { customerEventPath, providerQuotePath, routes } from '../../app/routes/routePaths'
 import { useAuth } from '../../app/auth/useAuth'
 import { Badge, Button, ButtonLink, Card, EmptyState, ErrorState, Input, Modal, Select, Spinner, Textarea, useToast } from '../../shared/ui'
@@ -211,7 +212,7 @@ function DashboardPage({ workspaceProfile }: { workspaceProfile?: ApiProviderPro
         </div>
       </div>
       <div className="dashboard-welcome-hero__actions">
-        <ButtonLink to={presentation.primaryAction.to} size="lg" className="button--saffron-hero">{presentation.primaryAction.label} →</ButtonLink>
+        <ButtonLink to={presentation.primaryAction.to} size="lg" className="button--saffron-hero">{presentation.primaryAction.label} <Icon name="arrowRight" size={14} /></ButtonLink>
       </div>
     </div>
     {data.error && <ErrorState description={data.error} onRetry={data.reload} />}
@@ -549,7 +550,7 @@ function ProfilePage() {
                 className="button button--secondary"
                 style={{ textDecoration: 'none' }}
               >
-                Preview Public Profile ↗
+                Preview Public Profile <Icon name="arrowUpRight" size={14} />
               </a>
             </div>
           ) : undefined
@@ -571,7 +572,7 @@ function ProfilePage() {
               </div>
               <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.85rem', color: 'var(--color-muted)' }}>
                 {scoreInfo.score === 100
-                  ? '🎉 Outstanding! Your profile is 100% complete with services, coverage, and media showcase.'
+                  ? <><Icon name="sparkles" size={14} /> Outstanding! Your profile is 100% complete with services, coverage, and media showcase.</>
                   : `Next step: Add ${scoreInfo.missing.slice(0, 2).join(' & ')} to reach full customer discoverability.`}
               </p>
             </div>
@@ -1349,12 +1350,12 @@ function PortfolioManager({ categories, onItemsChanged }: { categories: { code: 
                 {item.description && <p style={{ fontSize: '0.875rem', margin: '0 0 0.5rem 0', color: 'var(--color-muted)' }}>{item.description}</p>}
                 {item.external_url && (
                   <a href={item.external_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.85rem' }}>
-                    View Link ↗
+                    View Link <Icon name="arrowUpRight" size={14} />
                   </a>
                 )}
                 {item.media && (
                   <a href={item.media} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.85rem' }}>
-                    View Media ↗
+                    View Media <Icon name="arrowUpRight" size={14} />
                   </a>
                 )}
               </div>

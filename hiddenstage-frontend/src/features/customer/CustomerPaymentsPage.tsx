@@ -4,6 +4,7 @@ import { paymentsApi } from '../../shared/api/backend/ecosystem'
 import type { ApiInvoice, ApiPaymentTransaction } from '../../shared/api/backend/types'
 import { formatPaise, formatShortDate } from '../../shared/api/backend/format'
 import { Badge, Button, ButtonLink, Card, Spinner } from '../../shared/ui'
+import { Icon } from '../../shared/ui/Icon'
 
 export function CustomerPaymentsPage() {
   const [summary, setSummary] = useState<{
@@ -117,7 +118,7 @@ export function CustomerPaymentsPage() {
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <span style={{ fontSize: '1.3rem' }}>🛡️</span>
+            <Icon name="shieldCheck" size={21} />
             <div>
               <strong style={{ color: '#16a34a', display: 'block' }}>Payment Confirmed & Escrow Secured</strong>
               <span style={{ fontSize: '0.9rem', color: 'var(--color-fg-muted)' }}>{paySuccess}</span>
@@ -293,8 +294,8 @@ export function CustomerPaymentsPage() {
                               {ev.event_name}
                             </h3>
                             <div style={{ fontSize: '0.85rem', color: 'var(--color-fg-muted)', display: 'flex', gap: '1rem' }}>
-                              <span>📅 {ev.event_date ? formatShortDate(ev.event_date) : 'Date TBD'}</span>
-                              <span>🧾 {ev.invoices_count} milestone invoice(s)</span>
+                              <span><Icon name="calendarDays" size={14} /> {ev.event_date ? formatShortDate(ev.event_date) : 'Date TBD'}</span>
+                              <span><Icon name="receipt" size={14} /> {ev.invoices_count} milestone invoice(s)</span>
                             </div>
                           </div>
 
@@ -339,7 +340,7 @@ export function CustomerPaymentsPage() {
                               size="sm"
                               to={routes.customer.requestDetail.replace(':eventId', ev.event_id)}
                             >
-                              Event Workspace →
+                              Event Workspace <Icon name="arrowRight" size={14} />
                             </ButtonLink>
                           </div>
                         </div>
@@ -495,7 +496,7 @@ export function CustomerPaymentsPage() {
                           </td>
                           <td style={{ padding: '0.85rem 1rem' }}>
                             <span style={{ fontSize: '0.85rem', color: '#16a34a', fontWeight: 600 }}>
-                              🛡️ Secured in Escrow
+                              <Icon name="shieldCheck" size={14} /> Secured in Escrow
                             </span>
                           </td>
                         </tr>
@@ -550,7 +551,7 @@ export function CustomerPaymentsPage() {
                   fontSize: '1.5rem',
                 }}
               >
-                🛡️
+                <Icon name="shieldCheck" size={24} />
               </div>
               <div>
                 <h2 style={{ fontSize: '1.35rem', margin: 0, fontWeight: 800 }}>
@@ -611,7 +612,7 @@ export function CustomerPaymentsPage() {
                 marginBottom: '1.75rem',
               }}
             >
-              🔒 <strong>HiddenStage Escrow Guarantee:</strong> This payment is held in a protected settlement trust. Funds are only disbursed to the specialist once milestones are fulfilled and confirmed.
+              <Icon name="lock" size={15} /> <strong>HiddenStage Escrow Guarantee:</strong> This payment is held in a protected settlement trust. Funds are only disbursed to the specialist once milestones are fulfilled and confirmed.
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>

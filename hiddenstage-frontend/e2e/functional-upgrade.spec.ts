@@ -161,7 +161,7 @@ test.describe('HiddenStage Functional Upgrade E2E Suite', () => {
 
     // Item appears in showcase list
     await expect(page.getByText('Lakeside Sunset Wedding 2026')).toBeVisible({ timeout: 15000 })
-    await expect(page.getByText('View Link ↗')).toBeVisible()
+    await expect(page.getByText('View Link')).toBeVisible()
 
     // Switch to Team & Delegation tab
     await page.getByRole('button', { name: 'Team & Delegation' }).click()

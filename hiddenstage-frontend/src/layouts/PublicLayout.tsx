@@ -3,16 +3,22 @@ import { Link, NavLink, Outlet } from 'react-router-dom'
 import { routes } from '../app/routes/routePaths'
 import { Avatar, ButtonLink } from '../shared/ui/primitives'
 import { ThemeToggle } from '../shared/ui/ThemeToggle'
-import { useAuth, useAuthActions } from '../app/auth/useAuth'
+import { Icon } from '../shared/ui/Icon'
+import { useAuth, useAuthActions, useTheme } from '../app/auth/useAuth'
 import './layouts.css'
 
 const COPYRIGHT_YEAR = new Date().getFullYear()
 
 export function Brand({ inverse = false, to }: { inverse?: boolean; to?: string }) {
+  const theme = useTheme()
+  const logoSrc = theme === 'dark'
+    ? '/logo-dark.png'
+    : inverse ? '/logo-inverse.png' : '/logo.png'
+
   return (
     <Link to={to ?? routes.home} className={`brand ${inverse ? 'brand--inverse' : ''}`} aria-label="HiddenStage home">
       <img
-        src={inverse ? '/logo-inverse.png' : '/logo.png'}
+        src={logoSrc}
         alt="HiddenStage"
         className="brand__logo"
       />
@@ -51,7 +57,7 @@ export function PublicLayout() {
         <Brand />
         <button className="mobile-menu-button" type="button" aria-expanded={menuOpen} aria-controls="public-nav" onClick={() => setMenuOpen((open) => !open)}>
           <span className="sr-only">{menuOpen ? 'Close menu' : 'Open menu'}</span>
-          <span aria-hidden="true">{menuOpen ? '×' : '☰'}</span>
+          <Icon name={menuOpen ? 'close' : 'menu'} />
         </button>
         <nav id="public-nav" className={`site-nav ${menuOpen ? 'site-nav--open' : ''}`} aria-label="Main navigation">
           <NavLink to={routes.services} onClick={() => setMenuOpen(false)}>Explore services</NavLink>

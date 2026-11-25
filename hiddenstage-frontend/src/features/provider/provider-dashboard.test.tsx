@@ -138,13 +138,13 @@ describe('provider dashboard configuration', () => {
     expect(await screen.findByRole('heading', { name: /Coordinate accepted bookings with your team/ })).toBeInTheDocument()
     expect(screen.getByText('Active commitments')).toBeInTheDocument()
     expect(screen.getAllByText('Assignment invitations')).toHaveLength(2)
-    expect(screen.getByRole('link', { name: 'Open assignments →' })).toHaveAttribute('href', routes.provider.assignments)
+    expect(screen.getByRole('link', { name: 'Open assignments' })).toHaveAttribute('href', routes.provider.assignments)
   })
 
   it('renders the Talent-specific opportunity overview', async () => {
     renderProviderDashboard('TALENT')
     expect(await screen.findByRole('heading', { name: /Showcase your talent and find performances/ })).toBeInTheDocument()
     expect(screen.getByText('Performance opportunities')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Update talent profile →' })).toHaveAttribute('href', routes.provider.profile)
+    expect(screen.getAllByRole('link', { name: 'Update talent profile' }).map((link) => link.getAttribute('href'))).toContain(routes.provider.profile)
   })
 })

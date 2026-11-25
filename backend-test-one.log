@@ -1,0 +1,25 @@
+Using existing test database for alias 'default' ('test_neondb')...
+test_end_date_before_start_is_rejected (apps.events.test_functional_upgrades.MultiDayEventTests.test_end_date_before_start_is_rejected) ... 2026-11-20 01:21:48,214 WARNING django.request Bad Request: /api/v1/events/
+ok
+test_existing_internal_events_without_end_date_still_work (apps.events.test_functional_upgrades.MultiDayEventTests.test_existing_internal_events_without_end_date_still_work) ... ok
+test_moving_start_beyond_end_date_is_rejected_without_silent_overwrite (apps.events.test_functional_upgrades.MultiDayEventTests.test_moving_start_beyond_end_date_is_rejected_without_silent_overwrite) ... 2026-11-20 01:22:35,627 WARNING django.request Bad Request: /api/v1/events/4bc259bc-6730-4ff6-9be4-5947473e156b/
+ok
+test_omitting_end_date_defaults_to_a_one_day_event (apps.events.test_functional_upgrades.MultiDayEventTests.test_omitting_end_date_defaults_to_a_one_day_event) ... ok
+test_one_day_event_end_date_equals_start (apps.events.test_functional_upgrades.MultiDayEventTests.test_one_day_event_end_date_equals_start) ... ok
+test_two_three_and_seven_day_events_persist_their_range (apps.events.test_functional_upgrades.MultiDayEventTests.test_two_three_and_seven_day_events_persist_their_range) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 142.197s
+
+OK
+Preserving test database for alias 'default' ('test_neondb')...
+Found 6 test(s).
+Operations to perform:
+  Synchronize unmigrated apps: core, corsheaders, drf_spectacular, matching, messages, rest_framework, staticfiles
+  Apply all migrations: accounts, admin, auth, commitments, contenttypes, events, invitations, network, profiles, quotations, sessions
+Synchronizing apps without migrations:
+  Creating tables...
+    Running deferred SQL...
+Running migrations:
+  No migrations to apply.
+System check identified no issues (0 silenced).
