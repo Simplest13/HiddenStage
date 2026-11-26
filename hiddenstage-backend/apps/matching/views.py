@@ -31,7 +31,7 @@ class PublicDirectoryView(APIView):
 
     @extend_schema(responses={200: PublicDirectoryProviderSerializer(many=True)})
     def get(self, request):
-        cache_key = f"pub_dir:{request.query_params.get('q', '')}:{request.query_params.get('category', '')}:{request.query_params.get('location', '')}"
+        cache_key = f"pub_dir:{request.query_params.get('q', '')}:{request.query_params.get('category', '')}:{request.query_params.get('location', '')}:{request.query_params.get('featured', '')}"
         cached = cache.get(cache_key)
         if cached is not None:
             return Response(cached)
@@ -76,7 +76,13 @@ class PublicDirectoryView(APIView):
                 | Q(coverage__pin_code__startswith=location)
             )
 
-        queryset = queryset.order_by("display_name")
+        featured = request.query_params.get("featured", "").strip().lower()
+        if featured in ("true", "1"):
+            queryset = queryset.filter(is_featured=True)
+        elif featured in ("false", "0"):
+            queryset = queryset.filter(is_featured=False)
+
+        queryset = queryset.order_by("-is_featured", "display_name")
 
         results = []
         for p in queryset:
@@ -134,6 +140,7 @@ class PublicDirectoryView(APIView):
                 ],
                 "rating": None,
                 "review_count": 0,
+                "is_featured": bool(getattr(p, "is_featured", False)),
             })
         data = PublicDirectoryProviderSerializer(results, many=True).data
         cache.set(cache_key, data, timeout=60)

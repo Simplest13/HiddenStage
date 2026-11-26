@@ -139,6 +139,29 @@
   color: var(--color-success);
 }
 
+.admin-action-btn--feature {
+  color: var(--color-orange);
+  border-color: rgba(255, 122, 0, 0.45);
+}
+
+.admin-action-btn--feature:hover {
+  background: rgba(255, 122, 0, 0.12);
+  border-color: var(--color-orange);
+  color: var(--color-orange);
+}
+
+.admin-action-btn--unfeature {
+  color: #ff9800;
+  background: rgba(255, 152, 0, 0.08);
+  border-color: rgba(255, 152, 0, 0.45);
+}
+
+.admin-action-btn--unfeature:hover {
+  background: rgba(255, 152, 0, 0.18);
+  border-color: #ff9800;
+  color: #ff9800;
+}
+
 .admin-tabs {
   display: flex;
   gap: 0.5rem;

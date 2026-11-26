@@ -175,7 +175,7 @@ function AdminOverviewPage() {
           <Card className="admin-card">
             <span className="dashboard-stat__label">Provider Verification</span>
             <strong>{metrics.providers.verified}</strong>
-            <p>{metrics.providers.pending} pending review · {metrics.providers.unverified} unverified</p>
+            <p>{metrics.providers.pending} pending review · {(metrics.providers as any).featured ?? 0} featured on homepage</p>
           </Card>
           <Card className="admin-card">
             <span className="dashboard-stat__label">Active Commitments</span>
@@ -625,6 +625,53 @@ function AdminModerationPage() {
   const [verifyNote, setVerifyNote] = useState('')
   const [verifyPending, setVerifyPending] = useState(false)
 
+  // Provider featured & filter state
+  const [providerSearch, setProviderSearch] = useState('')
+  const [featuredFilter, setFeaturedFilter] = useState<'ALL' | 'FEATURED' | 'NON_FEATURED'>('ALL')
+  const [verificationFilter, setVerificationFilter] = useState('ALL')
+  const [featuredActionPending, setFeaturedActionPending] = useState<string | null>(null)
+
+  const providers = useMemo(() => providersData.data ?? [], [providersData.data])
+  const filteredProviders = useMemo(() => {
+    return providers.filter((p) => {
+      if (featuredFilter === 'FEATURED' && !p.is_featured) return false
+      if (featuredFilter === 'NON_FEATURED' && p.is_featured) return false
+      if (verificationFilter !== 'ALL' && p.verification_status !== verificationFilter) return false
+      if (providerSearch) {
+        const q = providerSearch.toLowerCase()
+        const inName = p.display_name.toLowerCase().includes(q)
+        const inEmail = p.user_email.toLowerCase().includes(q)
+        const inServices = p.services.some((s) => s.category_name.toLowerCase().includes(q))
+        const inCities = p.coverage.some((c) => c.city.toLowerCase().includes(q) || c.locality.toLowerCase().includes(q))
+        return inName || inEmail || inServices || inCities
+      }
+      return true
+    })
+  }, [providers, featuredFilter, verificationFilter, providerSearch])
+
+  async function handleToggleFeatured(p: AdminProvider) {
+    const nextState = !p.is_featured
+    try {
+      setFeaturedActionPending(p.id)
+      await adminApi.toggleProviderFeatured(
+        p.id,
+        nextState,
+        nextState ? 'Marked as featured event professional' : 'Removed from featured event professionals'
+      )
+      showToast(
+        nextState
+          ? `"${p.display_name}" is now featured on the homepage and directory!`
+          : `"${p.display_name}" removed from featured.`,
+        'success'
+      )
+      providersData.reload()
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to update featured status', 'error')
+    } finally {
+      setFeaturedActionPending(null)
+    }
+  }
+
   // Event withdraw modal state
   const [eventTarget, setEventTarget] = useState<AdminEvent | null>(null)
   const [eventReason, setEventReason] = useState('')
@@ -719,6 +766,49 @@ function AdminModerationPage() {
 
       {tab === 'providers' && (
         <div className="dashboard-panel">
+          <div className="admin-filters" style={{ marginBottom: '1.25rem', display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+            <input
+              type="search"
+              placeholder="Search by name, email, city, or service..."
+              value={providerSearch}
+              onChange={(e) => setProviderSearch(e.target.value)}
+              style={{ minWidth: '260px', padding: '0.45rem 0.75rem' }}
+            />
+            <select
+              value={featuredFilter}
+              onChange={(e) => setFeaturedFilter(e.target.value as any)}
+              style={{ padding: '0.45rem 0.75rem' }}
+            >
+              <option value="ALL">All Event Professionals ({providers.length})</option>
+              <option value="FEATURED">★ Featured Only ({providers.filter((p) => p.is_featured).length})</option>
+              <option value="NON_FEATURED">Standard / Not Featured ({providers.filter((p) => !p.is_featured).length})</option>
+            </select>
+            <select
+              value={verificationFilter}
+              onChange={(e) => setVerificationFilter(e.target.value)}
+              style={{ padding: '0.45rem 0.75rem' }}
+            >
+              <option value="ALL">All Verification States</option>
+              <option value="VERIFIED">Verified</option>
+              <option value="PENDING">Pending Review</option>
+              <option value="UNVERIFIED">Unverified</option>
+              <option value="REJECTED">Rejected</option>
+            </select>
+            {(providerSearch || featuredFilter !== 'ALL' || verificationFilter !== 'ALL') && (
+              <Button
+                variant="quiet"
+                size="sm"
+                onClick={() => {
+                  setProviderSearch('')
+                  setFeaturedFilter('ALL')
+                  setVerificationFilter('ALL')
+                }}
+              >
+                Reset Filters
+              </Button>
+            )}
+          </div>
+
           {providersData.loading && <Spinner label="Loading providers" />}
           {providersData.error && <ErrorState description={providersData.error} onRetry={providersData.reload} />}
 
@@ -731,55 +821,87 @@ function AdminModerationPage() {
                   <th>Declared Services</th>
                   <th>Coverage</th>
                   <th>Status</th>
-                  <th style={{ textAlign: 'right' }}>Review</th>
+                  <th>Featured</th>
+                  <th style={{ textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {(providersData.data ?? []).map((p) => (
-                  <tr key={p.id}>
-                    <td>
-                      <strong>{p.display_name}</strong>
-                      <div style={{ fontSize: '0.78rem', color: 'var(--color-muted)' }}>
-                        {p.user_email} · {p.contact || 'No phone'}
-                      </div>
-                    </td>
-                    <td>
-                      <Badge tone={p.kind === 'MANAGER' ? 'accent' : 'neutral'}>{p.kind}</Badge>
-                    </td>
-                    <td>
-                      {p.services.map((s) => s.category_name).join(', ') || <small>None added</small>}
-                    </td>
-                    <td>
-                      {p.coverage.map((c) => `${c.city} (${c.pin_code})`).join(', ') || <small>None</small>}
-                    </td>
-                    <td>
-                      <Badge
-                        tone={
-                          p.verification_status === 'VERIFIED'
-                            ? 'success'
-                            : p.verification_status === 'REJECTED'
-                            ? 'warning'
-                            : 'neutral'
-                        }
-                      >
-                        {p.verification_status}
-                      </Badge>
-                    </td>
-                    <td style={{ textAlign: 'right' }}>
-                      <button
-                        type="button"
-                        className="admin-action-btn"
-                        onClick={() => {
-                          setVerifyModalTarget(p)
-                          setTargetStatus(p.verification_status === 'VERIFIED' ? 'REJECTED' : 'VERIFIED')
-                          setVerifyNote('')
-                        }}
-                      >
-                        Verify / Review
-                      </button>
+                {filteredProviders.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-muted)' }}>
+                      No event professionals match the selected filters.
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  filteredProviders.map((p) => (
+                    <tr key={p.id}>
+                      <td>
+                        <strong>{p.display_name}</strong>
+                        <div style={{ fontSize: '0.78rem', color: 'var(--color-muted)' }}>
+                          {p.user_email} · {p.contact || 'No phone'}
+                        </div>
+                      </td>
+                      <td>
+                        <Badge tone={p.kind === 'MANAGER' ? 'accent' : 'neutral'}>{p.kind}</Badge>
+                      </td>
+                      <td>
+                        {p.services.map((s) => s.category_name).join(', ') || <small>None added</small>}
+                      </td>
+                      <td>
+                        {p.coverage.map((c) => `${c.city} (${c.pin_code})`).join(', ') || <small>None</small>}
+                      </td>
+                      <td>
+                        <Badge
+                          tone={
+                            p.verification_status === 'VERIFIED'
+                              ? 'success'
+                              : p.verification_status === 'REJECTED'
+                              ? 'warning'
+                              : 'neutral'
+                          }
+                        >
+                          {p.verification_status}
+                        </Badge>
+                      </td>
+                      <td>
+                        {p.is_featured ? (
+                          <Badge tone="accent">
+                            ★ Featured
+                          </Badge>
+                        ) : (
+                          <span style={{ color: 'var(--color-muted)', fontSize: '0.82rem' }}>—</span>
+                        )}
+                      </td>
+                      <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                        <button
+                          type="button"
+                          className={`admin-action-btn ${p.is_featured ? 'admin-action-btn--unfeature' : 'admin-action-btn--feature'}`}
+                          style={{ marginRight: '0.5rem' }}
+                          onClick={() => handleToggleFeatured(p)}
+                          disabled={featuredActionPending === p.id}
+                          title={p.is_featured ? 'Remove from Featured on homepage' : 'Set as Featured on homepage'}
+                        >
+                          {featuredActionPending === p.id
+                            ? 'Updating...'
+                            : p.is_featured
+                            ? '★ Remove Featured'
+                            : '☆ Set as Featured'}
+                        </button>
+                        <button
+                          type="button"
+                          className="admin-action-btn"
+                          onClick={() => {
+                            setVerifyModalTarget(p)
+                            setTargetStatus(p.verification_status === 'VERIFIED' ? 'REJECTED' : 'VERIFIED')
+                            setVerifyNote('')
+                          }}
+                        >
+                          Verify / Review
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>

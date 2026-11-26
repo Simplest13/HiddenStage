@@ -62,6 +62,7 @@ export type AdminProvider = {
   description: string
   business_name: string
   verification_status: 'UNVERIFIED' | 'PENDING' | 'VERIFIED' | 'REJECTED'
+  is_featured: boolean
   completed_at: string | null
   services: { id: string; category: string; category_name: string; title: string; base_price_paise: number; is_active: boolean }[]
   coverage: { id: string; pin_code: string; locality: string; city: string; state: string }[]
@@ -156,11 +157,12 @@ export const adminApi = {
   ) {
     return apiRequest<AdminUser>(`/admin/users/${userId}/`, { method: 'PATCH', ...jsonBody(payload) })
   },
-  listProviders(params?: { verification_status?: string; kind?: string; q?: string }) {
+  listProviders(params?: { verification_status?: string; kind?: string; q?: string; featured?: boolean }) {
     const query = new URLSearchParams()
     if (params?.verification_status) query.set('verification_status', params.verification_status)
     if (params?.kind) query.set('kind', params.kind)
     if (params?.q) query.set('q', params.q)
+    if (params?.featured !== undefined) query.set('featured', String(params.featured))
     const qs = query.toString()
     return apiRequest<AdminProvider[]>(`/admin/providers/${qs ? `?${qs}` : ''}`)
   },
@@ -171,6 +173,12 @@ export const adminApi = {
     return apiRequest<AdminProvider>(`/admin/providers/${providerId}/verification/`, {
       method: 'POST',
       ...jsonBody(payload),
+    })
+  },
+  toggleProviderFeatured(providerId: string, isFeatured: boolean, note?: string) {
+    return apiRequest<AdminProvider>(`/admin/providers/${providerId}/featured/`, {
+      method: 'POST',
+      ...jsonBody({ is_featured: isFeatured, note }),
     })
   },
   listBusinesses(params?: { q?: string }) {

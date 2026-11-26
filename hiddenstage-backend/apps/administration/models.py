@@ -11,6 +11,10 @@ class AdminAuditAction(models.TextChoices):
         "PROVIDER_VERIFICATION_UPDATED",
         "Provider verification updated",
     )
+    PROVIDER_FEATURED_UPDATED = (
+        "PROVIDER_FEATURED_UPDATED",
+        "Provider featured status updated",
+    )
     BUSINESS_UPDATED = "BUSINESS_UPDATED", "Business updated"
     USER_UPDATED = "USER_UPDATED", "User updated"
     EVENT_WITHDRAWN = "EVENT_WITHDRAWN", "Event withdrawn by admin"

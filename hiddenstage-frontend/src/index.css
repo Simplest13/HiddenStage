@@ -313,11 +313,17 @@ p { text-wrap: pretty; }
   align-items: center;
   justify-content: center;
   background: var(--color-burgundy);
-  color: var(--color-champagne);
+  color: #FFFFFF;
   font: 700 0.9rem/1 var(--font-ui);
   border-radius: var(--radius-pill);
   letter-spacing: 0.02em;
   margin-top: 0.05rem;
+}
+
+[data-theme="dark"] .how-steps__number {
+  background: #F8B6C1;
+  color: #0B0C10;
+  font-weight: 800;
 }
 .how-steps__text {
   flex: 1 1 auto;

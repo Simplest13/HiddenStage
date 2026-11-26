@@ -642,6 +642,7 @@ export type ApiPublicDirectoryProvider = {
   }>
   rating?: number | null
   review_count: number
+  is_featured?: boolean
 }
 
 export type InvitationStatus = 'PENDING' | 'ACCEPTED' | 'DECLINED' | 'WITHDRAWN' | 'EXPIRED'

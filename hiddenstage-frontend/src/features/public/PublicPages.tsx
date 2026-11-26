@@ -9,7 +9,9 @@ import { CategoryIcon } from '../../shared/ui/CategoryIcon'
 import { Icon } from '../../shared/ui/Icon'
 import { Award, Calendar, MapPin, Search, Users } from 'kubai-icons-react'
 import { publicFeedApi } from '../../shared/api/backend/ecosystem'
-import type { ApiPublicFeedEvent } from '../../shared/api/backend/types'
+import { marketplaceApi } from '../../shared/api/backend/marketplace'
+import { useApiData } from '../../shared/api/backend/useApiData'
+import type { ApiPublicDirectoryProvider, ApiPublicFeedEvent } from '../../shared/api/backend/types'
 import { formatShortDate } from '../../shared/api/backend/format'
 import spacesImg from '../../assets/hero/spaces.jpg'
 import foodImg from '../../assets/hero/food.jpg'
@@ -100,23 +102,62 @@ function CategoryTile({ slug, index }: { slug: string; index: number }) {
   </Link>
 }
 
-function ProviderPreview({ provider, index = 0 }: { provider: (typeof demoProviders)[number]; index?: number }) {
-  const fallbacks = ['/hero/photography.jpg', '/hero/music.jpg', '/hero/food.jpg', '/hero/spaces.jpg']
-  const imgUrl = demoProviderImages[provider.id] || fallbacks[index % fallbacks.length]
-  return <article className="pro-card">
-    <Link to={providerDetailPath(provider.id)} className="pro-card__media" aria-hidden="true">
-      <img src={imgUrl} alt={provider.name} className="pro-card__img" />
-      <div className="pro-card__overlay" />
-      <span className="pro-card__chip">Featured profile</span>
-    </Link>
-    <div className="pro-card__body">
-      <div className="pro-card__meta"><span>{provider.city}</span><span className="pro-card__rating">Demo listing</span></div>
-      <h3><Link to={providerDetailPath(provider.id)}>{provider.name}</Link></h3>
-      <p>{provider.description}</p>
-      <div className="pro-card__tags">{provider.categories.map((slug) => <Badge key={slug}>{categoryName(slug)}</Badge>)}</div>
-      <Link className="text-link" to={providerDetailPath(provider.id)}>View sample profile <Icon name="arrowRight" size={14} /></Link>
-    </div>
-  </article>
+function ProviderPreview({
+  provider,
+  index = 0,
+}: {
+  provider: ApiPublicDirectoryProvider | (typeof demoProviders)[number]
+  index?: number
+}) {
+  const fallbacks = [spacesImg, foodImg, photoImg, musicImg]
+  const displayName =
+    ('display_name' in provider && provider.display_name)
+      ? provider.display_name
+      : ('name' in provider ? provider.name : 'Event Professional')
+  const targetId = ('username' in provider && provider.username) ? provider.username : provider.id
+  const detailUrl = providerDetailPath(targetId)
+  const isDemo = !('display_name' in provider && provider.display_name)
+  const imgUrl =
+    ('cover_image' in provider && provider.cover_image) ||
+    ('logo' in provider && provider.logo) ||
+    demoProviderImages[provider.id] ||
+    fallbacks[index % fallbacks.length]
+  const cats: string[] = provider.categories || []
+  const verification = 'verification_status' in provider ? provider.verification_status : undefined
+
+  return (
+    <article className="pro-card">
+      <Link to={detailUrl} className="pro-card__media" aria-hidden="true">
+        <img src={imgUrl} alt={displayName} className="pro-card__img" />
+        <div className="pro-card__overlay" />
+        <span className="pro-card__chip">Featured profile</span>
+      </Link>
+      <div className="pro-card__body">
+        <div className="pro-card__meta">
+          <span>{provider.city || 'Available across locations'}</span>
+          <span className="pro-card__rating">
+            {isDemo ? (
+              'Demo listing'
+            ) : verification === 'VERIFIED' ? (
+              <span style={{ color: 'var(--color-success)', fontWeight: 600 }}>✓ Verified Partner</span>
+            ) : (
+              'Registered Professional'
+            )}
+          </span>
+        </div>
+        <h3><Link to={detailUrl}>{displayName}</Link></h3>
+        {provider.description && <p>{provider.description}</p>}
+        {cats.length > 0 && (
+          <div className="pro-card__tags">
+            {cats.slice(0, 3).map((slug) => <Badge key={slug}>{categoryName(slug) || slug}</Badge>)}
+          </div>
+        )}
+        <Link className="text-link" to={detailUrl}>
+          {isDemo ? 'View sample profile' : 'View profile'} <Icon name="arrowRight" size={14} />
+        </Link>
+      </div>
+    </article>
+  )
 }
 
 function LiveEventFeed() {
@@ -197,6 +238,16 @@ function HomePage() {
   const [service, setService] = useState('')
   const [place, setPlace] = useState('')
   const activeSlugs = useMemo(() => categoryGroups.find((item) => item.id === group)?.slugs ?? categoryGroups[0].slugs, [group])
+
+  const featuredApiData = useApiData(() => marketplaceApi.listPublicProviders({ featured: true }), [])
+  const liveFeatured = featuredApiData.data ?? []
+
+  const featuredList = useMemo(() => {
+    if (liveFeatured.length > 0) {
+      return liveFeatured
+    }
+    return demoProviders.slice(0, 3)
+  }, [liveFeatured])
 
   function search(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -304,7 +355,11 @@ function HomePage() {
           </div>
           <Link className="section-link" to={routes.providers}>Browse all professionals <Icon name="arrowRight" size={14} /></Link>
         </div>
-        <div className="pro-grid">{demoProviders.slice(0, 3).map((provider, index) => <ProviderPreview key={provider.id} provider={provider} index={index} />)}</div>
+        <div className="pro-grid">
+          {featuredList.map((provider, index) => (
+            <ProviderPreview key={provider.id} provider={provider} index={index} />
+          ))}
+        </div>
       </div>
     </section>
 
