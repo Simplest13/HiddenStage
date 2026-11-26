@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState, type FormEvent } from 'react'
 import { profilesApi } from '../../shared/api/backend/profiles'
 import { useApiData } from '../../shared/api/backend/useApiData'

@@ -8,7 +8,7 @@ export function ThemeToggle() {
   return (
     <button
       type="button"
-      className="theme-toggle-btn"
+      className="theme-toggle-btn account-control-btn"
       onClick={authActions.toggleTheme}
       aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
       title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
@@ -25,6 +25,7 @@ export function ThemeToggle() {
         cursor: 'pointer',
         fontSize: '1.05rem',
         transition: 'all 0.15s ease',
+        padding: 0,
       }}
     >
       <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={18} />

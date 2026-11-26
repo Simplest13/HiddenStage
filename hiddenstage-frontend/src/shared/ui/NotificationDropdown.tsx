@@ -166,8 +166,9 @@ export function NotificationDropdown() {
     <div className="notification-dropdown-wrap" ref={dropdownRef} style={{ position: 'relative' }}>
       <button
         type="button"
-        className="notification-bell-btn"
+        className="notification-bell-btn account-control-btn"
         aria-label={`Notifications, ${unreadCount} unread`}
+        title={unreadCount > 0 ? `Notifications (${unreadCount} unread)` : 'Notifications'}
         onClick={() => {
           const next = !open
           setOpen(next)
@@ -187,6 +188,7 @@ export function NotificationDropdown() {
           cursor: 'pointer',
           fontSize: '1.05rem',
           transition: 'all 0.15s ease',
+          padding: 0,
         }}
       >
         <Icon name="bell" size={18} />

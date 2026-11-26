@@ -313,3 +313,105 @@
   color: var(--color-ink, #0f172a);
   text-decoration: underline;
 }
+
+/* ==========================================================================
+   OBSIDIAN PINK — Admin Workspace Dark Mode Alignments
+   ========================================================================== */
+
+[data-theme="dark"] .admin-card {
+  background: #1C1F27;
+  border: 1px solid #30333E;
+}
+
+[data-theme="dark"] .admin-card .dashboard-stat__label {
+  color: #9699A6;
+}
+
+[data-theme="dark"] .admin-card > strong {
+  color: #FFFFFF;
+}
+
+[data-theme="dark"] .admin-card > p {
+  color: #9699A6;
+}
+
+[data-theme="dark"] .admin-card__title {
+  color: #FFFFFF;
+}
+
+[data-theme="dark"] .admin-filters {
+  background: #1C1F27;
+  border-color: #30333E;
+}
+
+[data-theme="dark"] .admin-filters input[type="search"],
+[data-theme="dark"] .admin-filters input[type="text"],
+[data-theme="dark"] .admin-filters select {
+  background: #252832;
+  border-color: #30333E;
+  color: #FFFFFF;
+}
+
+[data-theme="dark"] .admin-action-btn {
+  background: #252832;
+  border-color: #30333E;
+  color: #FFFFFF;
+}
+
+[data-theme="dark"] .admin-action-btn:hover {
+  background: #2D313E;
+  border-color: #F8B6C1;
+  color: #F8B6C1;
+}
+
+[data-theme="dark"] .admin-tabs {
+  border-bottom-color: #30333E;
+}
+
+[data-theme="dark"] .admin-tab {
+  color: #9699A6;
+}
+
+[data-theme="dark"] .admin-tab.is-active,
+[data-theme="dark"] .admin-tab[aria-selected="true"] {
+  color: #F8B6C1;
+  border-bottom: 2px solid #F8B6C1;
+}
+
+[data-theme="dark"] .admin-table-card {
+  background: #1C1F27;
+  border: 1px solid #30333E;
+}
+
+[data-theme="dark"] .admin-login-card {
+  background: #1C1F27;
+  border: 1px solid #30333E;
+}
+
+[data-theme="dark"] .admin-login-card__footer a {
+  color: #9699A6;
+}
+
+[data-theme="dark"] .admin-login-card__footer a:hover {
+  color: #F8B6C1;
+}
+
+[data-theme="dark"] .data-table {
+  background: #1C1F27;
+  border-color: #30333E;
+}
+
+[data-theme="dark"] .data-table th {
+  background: #252832;
+  color: #9699A6;
+  border-bottom-color: #30333E;
+}
+
+[data-theme="dark"] .data-table td {
+  border-bottom-color: #30333E;
+  color: #FFFFFF;
+}
+
+[data-theme="dark"] .data-table tr:hover td {
+  background: #252832;
+}

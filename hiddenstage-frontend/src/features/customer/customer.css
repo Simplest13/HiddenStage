@@ -347,3 +347,116 @@
   .customer-form__actions .button { width: 100%; }
   .step-progress span { flex: 0 0 auto; }
 }
+
+/* ==========================================================================
+   OBSIDIAN PINK — Customer Workspace Dark Mode Alignments
+   ========================================================================== */
+
+[data-theme="dark"] .dashboard-welcome-hero {
+  background: linear-gradient(135deg, #090A0D 0%, #151822 55%, #1F232F 100%);
+  border: 1px solid #30333E;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+}
+
+[data-theme="dark"] .dashboard-welcome-hero::before {
+  background: radial-gradient(circle, rgba(255, 122, 0, 0.18) 0%, transparent 70%);
+}
+
+[data-theme="dark"] .dashboard-welcome-hero::after {
+  background: radial-gradient(circle, rgba(248, 182, 193, 0.16) 0%, transparent 70%);
+}
+
+[data-theme="dark"] .dashboard-welcome-hero h1 {
+  color: #FFFFFF;
+}
+
+[data-theme="dark"] .dashboard-welcome-hero h1 em {
+  color: #FF7A00;
+}
+
+[data-theme="dark"] .dashboard-welcome-hero p {
+  color: #D5D6DE;
+}
+
+[data-theme="dark"] .dashboard-welcome-hero__tag {
+  background: rgba(248, 182, 193, 0.12);
+  border-color: rgba(248, 182, 193, 0.3);
+  color: #F8B6C1;
+}
+
+[data-theme="dark"] .dashboard-welcome-hero__chips span {
+  background: #1C1F27;
+  border-color: #30333E;
+  color: #D5D6DE;
+}
+
+[data-theme="dark"] .account-summary {
+  background: #1C1F27;
+  border-color: #30333E;
+}
+
+[data-theme="dark"] .account-summary span {
+  color: #9699A6;
+}
+
+[data-theme="dark"] .account-summary strong {
+  color: #FFFFFF;
+}
+
+[data-theme="dark"] .customer-page__heading h1,
+[data-theme="dark"] .customer-page__narrow h1 {
+  color: #FFFFFF;
+}
+
+[data-theme="dark"] .customer-page__heading p,
+[data-theme="dark"] .customer-page__narrow > p {
+  color: #9699A6;
+}
+
+[data-theme="dark"] .customer-event-card {
+  background: #1C1F27;
+  border-color: #30333E;
+}
+
+[data-theme="dark"] .customer-event-card h2 a {
+  color: #FFFFFF;
+}
+
+[data-theme="dark"] .customer-event-card h2 a:hover {
+  color: #F8B6C1;
+}
+
+[data-theme="dark"] .customer-event-card p {
+  color: #9699A6;
+}
+
+[data-theme="dark"] .customer-form {
+  background: #1C1F27;
+  border-color: #30333E;
+}
+
+[data-theme="dark"] .step-progress {
+  border-bottom-color: #30333E;
+}
+
+[data-theme="dark"] .step-progress span {
+  color: #9699A6;
+}
+
+[data-theme="dark"] .step-progress .step-progress__done {
+  color: #FFFFFF;
+  border-color: #454958;
+}
+
+[data-theme="dark"] .step-progress .step-progress__active {
+  color: #F8B6C1;
+  border-color: #F8B6C1;
+}
+
+[data-theme="dark"] .onboarding-topbar {
+  border-bottom-color: #30333E;
+}
+
+[data-theme="dark"] .onboarding-topbar > span {
+  color: #9699A6;
+}

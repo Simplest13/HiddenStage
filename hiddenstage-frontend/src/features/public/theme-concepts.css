@@ -1,0 +1,287 @@
+/* HiddenStage — 5 Dark Mode Visual Concepts
+   Scoped with [data-theme-concept="..."] for non-destructive visual exploration.
+*/
+
+/* ==========================================================================
+   CONCEPT 1: MIDNIGHT ROSE
+   Mood: Premium, elegant, modern and luxurious.
+   Deep charcoal/plum backgrounds, baby pink highlights, soft white typography.
+   ========================================================================== */
+[data-theme-concept="midnight-rose"] {
+  --color-canvas: #120e1a;
+  --color-paper: #1b1526;
+  --color-paper-bright: #241d33;
+  --color-surface: #1b1526;
+  --color-tint: #23192f;
+  --color-tint-strong: #332342;
+  --color-ink: #fbf8fc;
+  --color-text: #fbf8fc;
+  --color-muted: #a393ad;
+  --color-text-muted: #a393ad;
+  --color-primary: #f8b6c1;
+  --color-primary-hover: #fca0b1;
+  --color-primary-fg: #1d0f22;
+  --color-accent: #ff7a00;
+  --color-accent-soft: rgba(255, 122, 0, 0.16);
+  --color-rose: #f8b6c1;
+  --color-rose-soft: rgba(248, 182, 193, 0.16);
+  --color-rose-border: rgba(248, 182, 193, 0.38);
+  --color-orange: #ff7a00;
+  --color-orange-hover: #ff8e24;
+  --color-orange-soft: rgba(255, 122, 0, 0.16);
+  --color-espresso: #d4a993;
+  --color-espresso-dark: #fbf8fc;
+  --color-border: #352949;
+  --color-line: #352949;
+  --color-line-strong: #4d3c67;
+  --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.45), 0 0 1px rgba(248, 182, 193, 0.15);
+  --shadow-lift: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 12px rgba(248, 182, 193, 0.12);
+  --shadow-header: 0 1px 0 rgba(248, 182, 193, 0.12), 0 4px 24px rgba(10, 6, 16, 0.7);
+  --concept-hero-bg: radial-gradient(circle at 82% 18%, rgba(248, 182, 193, 0.24), transparent 50%),
+                     radial-gradient(circle at 16% 82%, rgba(255, 122, 0, 0.18), transparent 45%),
+                     linear-gradient(145deg, #100b17 0%, #1d1428 50%, #0d0914 100%);
+  --concept-hero-headline-accent: #f8b6c1;
+  --concept-nav-active: #f8b6c1;
+  --concept-card-highlight: rgba(248, 182, 193, 0.08);
+}
+
+/* ==========================================================================
+   CONCEPT 2: ESPRESSO & CHAMPAGNE
+   Mood: Rich, warm, sophisticated and high-end.
+   Deep espresso/brown background, warm champagne surfaces, baby pink highlights.
+   ========================================================================== */
+[data-theme-concept="espresso-champagne"] {
+  --color-canvas: #120a07;
+  --color-paper: #1c110c;
+  --color-paper-bright: #271811;
+  --color-surface: #1c110c;
+  --color-tint: #24140d;
+  --color-tint-strong: #331d13;
+  --color-ink: #fdfaf6;
+  --color-text: #fdfaf6;
+  --color-muted: #ab9587;
+  --color-text-muted: #ab9587;
+  --color-primary: #ff7a00;
+  --color-primary-hover: #e86d00;
+  --color-primary-fg: #120a07;
+  --color-accent: #f8b6c1;
+  --color-accent-soft: rgba(248, 182, 193, 0.16);
+  --color-rose: #f8b6c1;
+  --color-rose-soft: rgba(248, 182, 193, 0.14);
+  --color-rose-border: rgba(248, 182, 193, 0.32);
+  --color-orange: #ff7a00;
+  --color-orange-hover: #ff8e24;
+  --color-orange-soft: rgba(255, 122, 0, 0.16);
+  --color-espresso: #d8b29c;
+  --color-espresso-dark: #fdfaf6;
+  --color-border: #382218;
+  --color-line: #382218;
+  --color-line-strong: #503224;
+  --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.45), 0 0 1px rgba(255, 122, 0, 0.12);
+  --shadow-lift: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 12px rgba(255, 122, 0, 0.12);
+  --shadow-header: 0 1px 0 rgba(255, 122, 0, 0.12), 0 4px 24px rgba(8, 4, 2, 0.75);
+  --concept-hero-bg: radial-gradient(circle at 85% 15%, rgba(255, 122, 0, 0.35), transparent 48%),
+                     radial-gradient(circle at 15% 85%, rgba(248, 182, 193, 0.22), transparent 45%),
+                     linear-gradient(135deg, #100805 0%, #24130c 50%, #140b07 100%);
+  --concept-hero-headline-accent: #ff7a00;
+  --concept-nav-active: #f8b6c1;
+  --concept-card-highlight: rgba(252, 232, 213, 0.08);
+}
+
+/* ==========================================================================
+   CONCEPT 3: OBSIDIAN PINK
+   Mood: Bold, modern, energetic and striking.
+   Near-black graphite background, vibrant baby pink primary accent.
+   ========================================================================== */
+[data-theme-concept="obsidian-pink"] {
+  --color-canvas: #0c0d11;
+  --color-paper: #14161c;
+  --color-paper-bright: #1c1f28;
+  --color-surface: #14161c;
+  --color-tint: #1c1f29;
+  --color-tint-strong: #272a38;
+  --color-ink: #ffffff;
+  --color-text: #ffffff;
+  --color-muted: #969eb2;
+  --color-text-muted: #969eb2;
+  --color-primary: #f8b6c1;
+  --color-primary-hover: #fca0b1;
+  --color-primary-fg: #0c0d11;
+  --color-accent: #ff7a00;
+  --color-accent-soft: rgba(255, 122, 0, 0.16);
+  --color-rose: #f8b6c1;
+  --color-rose-soft: rgba(248, 182, 193, 0.18);
+  --color-rose-border: rgba(248, 182, 193, 0.42);
+  --color-orange: #ff7a00;
+  --color-orange-hover: #ff8e24;
+  --color-orange-soft: rgba(255, 122, 0, 0.16);
+  --color-espresso: #d4cfd8;
+  --color-espresso-dark: #ffffff;
+  --color-border: #292d3b;
+  --color-line: #292d3b;
+  --color-line-strong: #3e4459;
+  --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.55), 0 0 1px rgba(248, 182, 193, 0.22);
+  --shadow-lift: 0 8px 32px rgba(0, 0, 0, 0.7), 0 0 14px rgba(248, 182, 193, 0.18);
+  --shadow-header: 0 1px 0 rgba(248, 182, 193, 0.15), 0 4px 24px rgba(0, 0, 0, 0.85);
+  --concept-hero-bg: radial-gradient(circle at 80% 20%, rgba(248, 182, 193, 0.26), transparent 48%),
+                     radial-gradient(circle at 18% 75%, rgba(255, 122, 0, 0.18), transparent 42%),
+                     linear-gradient(145deg, #090a0d 0%, #161822 50%, #0c0d12 100%);
+  --concept-hero-headline-accent: #f8b6c1;
+  --concept-nav-active: #f8b6c1;
+  --concept-card-highlight: rgba(248, 182, 193, 0.1);
+}
+
+/* ==========================================================================
+   CONCEPT 4: BURGUNDY & BLUSH
+   Mood: Luxurious, distinctive, fashionable and premium.
+   Deep burgundy/wine background, muted rose surfaces, baby pink interactive elements.
+   ========================================================================== */
+[data-theme-concept="burgundy-blush"] {
+  --color-canvas: #14070e;
+  --color-paper: #1d0c15;
+  --color-paper-bright: #27121d;
+  --color-surface: #1d0c15;
+  --color-tint: #27101d;
+  --color-tint-strong: #381729;
+  --color-ink: #fff6fa;
+  --color-text: #fff6fa;
+  --color-muted: #ad8c9c;
+  --color-text-muted: #ad8c9c;
+  --color-primary: #f8b6c1;
+  --color-primary-hover: #ffa8b8;
+  --color-primary-fg: #1d0c15;
+  --color-accent: #ff7a00;
+  --color-accent-soft: rgba(255, 122, 0, 0.16);
+  --color-rose: #f8b6c1;
+  --color-rose-soft: rgba(248, 182, 193, 0.18);
+  --color-rose-border: rgba(248, 182, 193, 0.38);
+  --color-orange: #ff7a00;
+  --color-orange-hover: #ff8e24;
+  --color-orange-soft: rgba(255, 122, 0, 0.16);
+  --color-espresso: #dca8b9;
+  --color-espresso-dark: #fff6fa;
+  --color-border: #3b182b;
+  --color-line: #3b182b;
+  --color-line-strong: #55243e;
+  --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 1px rgba(248, 182, 193, 0.18);
+  --shadow-lift: 0 8px 32px rgba(0, 0, 0, 0.65), 0 0 14px rgba(248, 182, 193, 0.15);
+  --shadow-header: 0 1px 0 rgba(248, 182, 193, 0.15), 0 4px 24px rgba(10, 4, 8, 0.8);
+  --concept-hero-bg: radial-gradient(circle at 82% 18%, rgba(248, 182, 193, 0.30), transparent 50%),
+                     radial-gradient(circle at 18% 82%, rgba(255, 122, 0, 0.22), transparent 45%),
+                     linear-gradient(145deg, #10050b 0%, #240d1a 50%, #13060d 100%);
+  --concept-hero-headline-accent: #f8b6c1;
+  --concept-nav-active: #f8b6c1;
+  --concept-card-highlight: rgba(248, 182, 193, 0.1);
+}
+
+/* ==========================================================================
+   CONCEPT 5: SLATE & CORAL
+   Mood: Clean, contemporary, professional and visually refreshing.
+   Dark blue-grey/charcoal background, baby pink and coral-inspired accents.
+   ========================================================================== */
+[data-theme-concept="slate-coral"] {
+  --color-canvas: #0e131b;
+  --color-paper: #161e2b;
+  --color-paper-bright: #1f293b;
+  --color-surface: #161e2b;
+  --color-tint: #1c2636;
+  --color-tint-strong: #27354a;
+  --color-ink: #f7fafc;
+  --color-text: #f7fafc;
+  --color-muted: #8fa1b6;
+  --color-text-muted: #8fa1b6;
+  --color-primary: #ff7a00;
+  --color-primary-hover: #ff8e26;
+  --color-primary-fg: #0e131b;
+  --color-accent: #f8b6c1;
+  --color-accent-soft: rgba(248, 182, 193, 0.16);
+  --color-rose: #f8b6c1;
+  --color-rose-soft: rgba(248, 182, 193, 0.16);
+  --color-rose-border: rgba(248, 182, 193, 0.36);
+  --color-orange: #ff7a00;
+  --color-orange-hover: #ff8e24;
+  --color-orange-soft: rgba(255, 122, 0, 0.18);
+  --color-espresso: #cbd5e1;
+  --color-espresso-dark: #f7fafc;
+  --color-border: #28364b;
+  --color-line: #28364b;
+  --color-line-strong: #3c506e;
+  --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 1px rgba(255, 122, 0, 0.15);
+  --shadow-lift: 0 8px 32px rgba(0, 0, 0, 0.65), 0 0 14px rgba(255, 122, 0, 0.14);
+  --shadow-header: 0 1px 0 rgba(255, 122, 0, 0.14), 0 4px 24px rgba(6, 9, 14, 0.8);
+  --concept-hero-bg: radial-gradient(circle at 80% 20%, rgba(255, 122, 0, 0.28), transparent 48%),
+                     radial-gradient(circle at 18% 75%, rgba(248, 182, 193, 0.22), transparent 42%),
+                     linear-gradient(145deg, #0b0f16 0%, #182230 50%, #0d121a 100%);
+  --concept-hero-headline-accent: #ff7a00;
+  --concept-nav-active: #f8b6c1;
+  --concept-card-highlight: rgba(248, 182, 193, 0.08);
+}
+
+/* ==========================================================================
+   Showcase and Lab Specific Styles
+   ========================================================================== */
+.theme-lab {
+  min-height: 100vh;
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  transition: background-color 220ms ease, color 220ms ease;
+  font-family: var(--font-ui);
+}
+
+.theme-lab-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  padding: 0.75rem 1.25rem;
+  background: rgba(18, 14, 26, 0.88);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(248, 182, 193, 0.2);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.theme-lab-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.theme-lab-pill {
+  padding: 0.45rem 0.95rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid var(--color-line-strong);
+  background: var(--color-paper);
+  color: var(--color-muted);
+  transition: all 180ms ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.theme-lab-pill:hover {
+  color: var(--color-ink);
+  border-color: var(--color-primary);
+  transform: translateY(-1px);
+}
+
+.theme-lab-pill.is-active {
+  background: var(--color-primary);
+  color: var(--color-primary-fg, #111);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 16px rgba(248, 182, 193, 0.4);
+}
+
+.theme-lab-swatch-dot {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  display: inline-block;
+}

@@ -761,18 +761,18 @@ function SettingsPage() {
                 style={{
                   padding: '0.85rem 0.6rem',
                   borderRadius: 'var(--radius-md)',
-                  border: currentTheme === 'dark' ? '2px solid var(--color-orange)' : '1px solid var(--color-line)',
-                  background: '#111019',
-                  color: '#F4F0F8',
+                  border: currentTheme === 'dark' ? '2px solid var(--color-primary, #f8b6c1)' : '1px solid var(--color-line)',
+                  background: '#0B0C10',
+                  color: '#FFFFFF',
                   cursor: 'pointer',
                   textAlign: 'center',
-                  boxShadow: currentTheme === 'dark' ? '0 4px 14px rgba(255, 122, 0, 0.3)' : 'none',
+                  boxShadow: currentTheme === 'dark' ? '0 4px 14px rgba(248, 182, 193, 0.25)' : 'none',
                   transition: 'all 0.15s ease',
                 }}
               >
-                <div style={{ marginBottom: '0.35rem' }}><Icon name="moon" size={22} /></div>
-                <strong style={{ display: 'block', fontSize: '0.85rem' }}>Dark Mode</strong>
-                <span style={{ fontSize: '0.7rem', color: '#A8A0B8' }}>#111019 Canvas</span>
+                <div style={{ marginBottom: '0.35rem' }}><Icon name="moon" size={22} color="#f8b6c1" /></div>
+                <strong style={{ display: 'block', fontSize: '0.85rem' }}>Obsidian Pink</strong>
+                <span style={{ fontSize: '0.7rem', color: '#9699A6' }}>#0B0C10 Canvas</span>
               </button>
             </div>
           </Card>

@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { Link, NavLink, Outlet } from 'react-router-dom'
 import { routes } from '../app/routes/routePaths'
-import { Avatar, ButtonLink } from '../shared/ui/primitives'
+import { ButtonLink } from '../shared/ui/primitives'
 import { ThemeToggle } from '../shared/ui/ThemeToggle'
+import { AccountControls } from '../shared/ui/AccountControls'
 import { Icon } from '../shared/ui/Icon'
-import { useAuth, useAuthActions, useTheme } from '../app/auth/useAuth'
+import { useAuth, useTheme } from '../app/auth/useAuth'
 import './layouts.css'
 
 const COPYRIGHT_YEAR = new Date().getFullYear()
@@ -29,7 +30,6 @@ export function Brand({ inverse = false, to }: { inverse?: boolean; to?: string 
 export function PublicLayout() {
   const [menuOpen, setMenuOpen] = useState(false)
   const auth = useAuth()
-  const authActions = useAuthActions()
   const isLoading = auth.status === 'loading'
   const isAuthenticated = auth.status === 'authenticated'
   const workspacePath = isAuthenticated
@@ -66,36 +66,11 @@ export function PublicLayout() {
           <NavLink to={routes.howItWorks} onClick={() => setMenuOpen(false)}>How it works</NavLink>
           <NavLink to={routes.forProfessionals} onClick={() => setMenuOpen(false)}>For professionals</NavLink>
           <div className="site-nav__actions">
-            <ThemeToggle />
             {isLoading ? null : isAuthenticated ? (
-              <div className="site-nav__auth-group" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.85rem' }}>
-                <Link
-                  to={workspacePath}
-                  className="account-pfp-link site-nav__pfp"
-                  aria-label={`Go to workspace (${auth.user.fullName})`}
-                  title={`Signed in as ${auth.user.fullName} — Go to workspace`}
-                >
-                  {auth.user.avatarUrl ? (
-                    <img
-                      src={auth.user.avatarUrl}
-                      alt={auth.user.fullName}
-                      style={{ width: '1.85rem', height: '1.85rem', borderRadius: '50%', objectFit: 'cover' }}
-                    />
-                  ) : (
-                    <Avatar name={auth.user.fullName} size="sm" />
-                  )}
-                </Link>
-                <button
-                  type="button"
-                  className="site-nav__login"
-                  style={{ background: 'none', border: 'none', cursor: 'pointer' }}
-                  onClick={() => void authActions.logout()}
-                >
-                  Sign out
-                </button>
-              </div>
+              <AccountControls variant="public" />
             ) : (
               <>
+                <ThemeToggle />
                 <Link className="site-nav__login" to={routes.auth.login}>Log in</Link>
                 <ButtonLink to={routes.auth.register} variant="secondary" size="sm">List your business</ButtonLink>
                 <ButtonLink to={routes.customer.newRequest} size="sm">Get quotes</ButtonLink>

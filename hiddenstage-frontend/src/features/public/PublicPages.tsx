@@ -179,7 +179,7 @@ function LiveEventFeed() {
                 <span style={{ fontSize: '0.8rem', color: 'var(--color-fg-muted)' }}>
                   <Icon name="user" size={14} /> {item.anonymized_host || `Host in ${item.city || 'India'}`}
                 </span>
-                <ButtonLink to={routes.forProfessionals} size="sm" variant="secondary">
+                <ButtonLink to={routes.forProfessionals} size="sm" variant="primary" className="quote-event-btn">
                   Quote for Event <Icon name="arrowRight" size={14} />
                 </ButtonLink>
               </div>

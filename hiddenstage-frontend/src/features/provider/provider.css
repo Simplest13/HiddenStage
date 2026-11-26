@@ -170,3 +170,120 @@
   .provider-invite-editor .field:first-child { grid-row: auto; }
   .provider-invitation__head { flex-direction: column; }
 }
+
+/* ==========================================================================
+   OBSIDIAN PINK — Provider Workspace Dark Mode Alignments
+   ========================================================================== */
+
+[data-theme="dark"] .provider-metric {
+  background: #1C1F27;
+  border-color: #30333E;
+}
+
+[data-theme="dark"] .provider-metric:hover {
+  border-color: #F8B6C1;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+}
+
+[data-theme="dark"] .provider-metric > span:first-child {
+  color: #9699A6;
+}
+
+[data-theme="dark"] .provider-metric strong {
+  color: #FFFFFF;
+}
+
+[data-theme="dark"] .provider-metric__link {
+  color: #F8B6C1 !important;
+}
+
+[data-theme="dark"] .provider-welcome {
+  background: linear-gradient(135deg, #1C1F27 0%, #252832 100%);
+  border-color: #30333E;
+}
+
+[data-theme="dark"] .provider-welcome h2 {
+  color: #FFFFFF;
+}
+
+[data-theme="dark"] .provider-welcome p {
+  color: #9699A6;
+}
+
+[data-theme="dark"] .provider-quicklinks a {
+  background: #1C1F27;
+  border-color: #30333E;
+  color: #FFFFFF;
+}
+
+[data-theme="dark"] .provider-quicklinks a:hover {
+  border-color: #F8B6C1;
+  color: #F8B6C1;
+}
+
+[data-theme="dark"] .provider-form {
+  background: #1C1F27;
+  border-color: #30333E;
+}
+
+[data-theme="dark"] .provider-list-card,
+[data-theme="dark"] .provider-invitation,
+[data-theme="dark"] .provider-match,
+[data-theme="dark"] .provider-quote-card {
+  background: #1C1F27;
+  border-color: #30333E;
+}
+
+[data-theme="dark"] .provider-list-card h2,
+[data-theme="dark"] .provider-invitation h2,
+[data-theme="dark"] .provider-match h2,
+[data-theme="dark"] .provider-quote-card h2 {
+  color: #FFFFFF;
+}
+
+[data-theme="dark"] .provider-list-card p,
+[data-theme="dark"] .provider-invitation p,
+[data-theme="dark"] .provider-match p,
+[data-theme="dark"] .provider-quote-card p {
+  color: #9699A6;
+}
+
+[data-theme="dark"] .provider-toolbar {
+  background: #1C1F27;
+  border-color: #30333E;
+  color: #FFFFFF;
+}
+
+[data-theme="dark"] .opportunity-card {
+  background: #1C1F27;
+  border-color: #30333E;
+}
+
+[data-theme="dark"] .opportunity-card__requirements strong {
+  color: #FFFFFF;
+}
+
+[data-theme="dark"] .opportunity-card__requirements span,
+[data-theme="dark"] .opportunity-card__requirements p {
+  color: #9699A6;
+}
+
+[data-theme="dark"] .network-dashboard__metrics {
+  background: #30333E;
+}
+
+[data-theme="dark"] .network-dashboard__metrics > div {
+  background: #1C1F27;
+}
+
+[data-theme="dark"] .network-dashboard__metrics span {
+  color: #9699A6;
+}
+
+[data-theme="dark"] .network-dashboard__metrics strong {
+  color: #FFFFFF;
+}
+
+[data-theme="dark"] .network-dashboard__links a {
+  color: #F8B6C1;
+}

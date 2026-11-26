@@ -1,11 +1,9 @@
 import { useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { routes } from '../app/routes/routePaths'
-import { Avatar } from '../shared/ui/primitives'
 import { Breadcrumb } from '../shared/ui/navigation'
 import { Button } from '../shared/ui/primitives'
-import { NotificationDropdown } from '../shared/ui/NotificationDropdown'
-import { ThemeToggle } from '../shared/ui/ThemeToggle'
+import { AccountControls } from '../shared/ui/AccountControls'
 import { Icon } from '../shared/ui/Icon'
 import { profilesApi } from '../shared/api/backend/profiles'
 import { useApiData } from '../shared/api/backend/useApiData'
@@ -54,6 +52,13 @@ export function WorkspaceLayout({ audience }: { audience: WorkspaceAudience }) {
           </Link>
         )}
         <span className="workspace-sidebar__note">HiddenStage</span>
+        <button
+          type="button"
+          className="workspace-sidebar__signout"
+          onClick={() => void authActions.logout().then(() => navigate(routes.home))}
+        >
+          <Icon name="logOut" size={16} /> Sign out
+        </button>
         <Link to={routes.home}><Icon name="arrowLeft" size={16} /> Return to HiddenStage</Link>
       </div>
     </aside>
@@ -62,41 +67,7 @@ export function WorkspaceLayout({ audience }: { audience: WorkspaceAudience }) {
         <Button variant="quiet" className="sidebar-toggle" aria-label="Open navigation" onClick={() => setSidebarOpen(true)}><Icon name="menu" /></Button>
         <div className="workspace-topbar__context"><strong>{pageTitle}</strong></div>
         <div className="workspace-topbar__actions">
-          <ThemeToggle />
-          <NotificationDropdown />
-          <button
-            className="account-menu"
-            type="button"
-            aria-label={`Account menu: ${auth.status === 'authenticated' ? auth.user?.fullName ?? '' : ''}`}
-            onClick={() => navigate(audience === 'provider' ? routes.provider.settings : routes.app.settings)}
-          >
-            {auth.status === 'authenticated' && auth.user?.avatarUrl ? (
-              <img
-                src={auth.user.avatarUrl}
-                alt={auth.user.fullName}
-                style={{ width: '1.85rem', height: '1.85rem', borderRadius: '50%', objectFit: 'cover' }}
-              />
-            ) : (
-              <Avatar
-                name={auth.status === 'authenticated' ? auth.user?.fullName ?? 'Account' : 'Account'}
-                size="sm"
-              />
-            )}
-            <span className="account-menu__label">
-              {auth.status === 'authenticated'
-                ? auth.user?.username
-                  ? `@${auth.user.username}`
-                  : auth.user?.fullName ?? 'Account'
-                : 'Account'}
-            </span>
-          </button>
-          <Button
-            variant="quiet"
-            size="sm"
-            onClick={() => void authActions.logout().then(() => navigate(routes.home))}
-          >
-            Sign out
-          </Button>
+          <AccountControls variant="workspace" audience={audience} />
         </div>
       </header>
       <main className="workspace-content" id="workspace-content">

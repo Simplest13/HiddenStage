@@ -16,6 +16,7 @@ export const routes = {
   help: '/help',
   privacy: '/privacy',
   terms: '/terms',
+  themePreview: '/theme-preview',
   auth: {
     login: '/auth/login',
     register: '/auth/register',

@@ -702,3 +702,131 @@
   .profile-services, .portfolio-grid { grid-template-columns: 1fr; }
   .results-head { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
 }
+
+/* ==========================================================================
+   OBSIDIAN PINK — Discovery & Profile Dark Mode Alignments
+   ========================================================================== */
+
+[data-theme="dark"] .listing-hero {
+  background: #14161C;
+  border-bottom-color: #30333E;
+}
+
+[data-theme="dark"] .listing-hero h1 {
+  color: #FFFFFF;
+}
+
+[data-theme="dark"] .listing-hero > .wrap > p {
+  color: #9699A6;
+}
+
+[data-theme="dark"] .listing-search {
+  background: #1C1F27;
+  border-bottom-color: #30333E;
+}
+
+[data-theme="dark"] .filter-panel {
+  background: #1C1F27;
+  border-color: #30333E;
+}
+
+[data-theme="dark"] .filter-panel__head {
+  border-bottom-color: #30333E;
+}
+
+[data-theme="dark"] .filter-panel__head h2 {
+  color: #FFFFFF;
+}
+
+[data-theme="dark"] .filter-clear {
+  color: #F8B6C1;
+}
+
+[data-theme="dark"] .filter-group {
+  border-bottom-color: #30333E;
+}
+
+[data-theme="dark"] .filter-group legend {
+  color: #FFFFFF;
+}
+
+[data-theme="dark"] .filter-radio {
+  color: #D5D6DE;
+}
+
+[data-theme="dark"] .filter-radio input {
+  accent-color: #F8B6C1;
+}
+
+[data-theme="dark"] .filter-radio:has(input:checked) span {
+  color: #F8B6C1;
+}
+
+[data-theme="dark"] .directory-card {
+  background: #1C1F27;
+  border-color: #30333E;
+}
+
+[data-theme="dark"] .directory-card:hover {
+  border-color: #F8B6C1;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), 0 0 16px rgba(248, 182, 193, 0.15);
+}
+
+[data-theme="dark"] .directory-card__top h2 a {
+  color: #FFFFFF;
+}
+
+[data-theme="dark"] .directory-card__top h2 a:hover {
+  color: #F8B6C1;
+}
+
+[data-theme="dark"] .directory-card__location {
+  color: #9699A6;
+}
+
+[data-theme="dark"] .directory-card__description {
+  color: #9699A6;
+}
+
+[data-theme="dark"] .directory-card__footer {
+  border-top-color: #30333E;
+}
+
+[data-theme="dark"] .service-tile {
+  background: #1C1F27;
+  border-color: #30333E;
+}
+
+[data-theme="dark"] .service-tile:hover {
+  border-color: #F8B6C1;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+[data-theme="dark"] .service-tile__body h2 {
+  color: #FFFFFF;
+}
+
+[data-theme="dark"] .service-tile__body p {
+  color: #9699A6;
+}
+
+[data-theme="dark"] .profile-hero {
+  background: #14161C;
+  border-bottom-color: #30333E;
+}
+
+[data-theme="dark"] .profile-hero h1 {
+  color: #FFFFFF;
+}
+
+[data-theme="dark"] .profile-hero__location {
+  color: #9699A6;
+}
+
+[data-theme="dark"] .profile-section {
+  border-bottom-color: #30333E;
+}
+
+[data-theme="dark"] .profile-section h2 {
+  color: #FFFFFF;
+}

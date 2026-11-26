@@ -27,6 +27,7 @@ const SystemPages = lazy(() => import('../../features/system/SystemPages'))
 const AdminPages = lazy(() => import('../../features/admin/AdminPages'))
 const AdminLoginPage = lazy(() => import('../../features/admin/AdminLoginPage'))
 const LegacyEventRedirect = lazy(() => import('../../features/events/LegacyEventRedirect'))
+const ThemePreviewPage = lazy(() => import('../../features/public/ThemePreviewPage'))
 const relativePath = (parentPath: string, fullPath: string) => fullPath.slice(parentPath.length).replace(/^\/+/, '')
 
 function lazyPage(Component: LazyExoticComponent<ComponentType>) {
@@ -51,6 +52,7 @@ const publicChildren: RouteObject[] = [
   { path: routes.help, element: lazyPage(PublicPages), handle: { page: 'help' } },
   { path: routes.privacy, element: lazyPage(PublicPages), handle: { page: 'privacy' } },
   { path: routes.terms, element: lazyPage(PublicPages), handle: { page: 'terms' } },
+  { path: routes.themePreview, element: lazyPage(ThemePreviewPage), handle: { page: 'themePreview' } },
 ]
 
 const authChildren: RouteObject[] = [
