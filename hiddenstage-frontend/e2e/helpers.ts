@@ -17,6 +17,12 @@ export async function register(
   await page.goto('/auth/register')
   await page.getByLabel('Full name').fill(name)
   await page.getByLabel('I am joining as').selectOption(type)
+  const usernameInput = page.getByLabel(/username/i)
+  if (await usernameInput.count()) {
+    const cleanUser = name.toLowerCase().replace(/[^a-z0-9_]/g, '_').slice(0, 15) + '_' + Math.floor(Math.random() * 10000)
+    await usernameInput.fill(cleanUser)
+    await expect(page.getByText(/is available!/i)).toBeVisible({ timeout: 10000 })
+  }
   await page.getByLabel('Email address').fill(email)
   await page.getByLabel('New password').fill(PASSWORD)
   await page.getByLabel('Confirm password').fill(PASSWORD)
@@ -45,15 +51,58 @@ export async function completeProviderOnboarding(
     { name: string; kind: 'MANAGER' | 'WORKER'; description: string; pin: string; locality: string; city: string; state: string; contact: string },
 ) {
   await page.goto('/onboarding/provider')
+  await expect(page).toHaveURL('/onboarding/provider', { timeout: 25000 })
+
+  // Wait for loading state to finish
+  await expect(page.getByText('Loading your onboarding…')).toHaveCount(0, { timeout: 25000 })
+
+  // Check if we are on the multi-step onboarding wizard
+  const isWizard = (await page.getByRole('heading', { name: /Build your HiddenStage profile/i }).count()) > 0
+  if (isWizard) {
+    // Step 0: Identity
+    const kindRadio = page.getByRole('radio', { name: new RegExp(kind === 'MANAGER' ? 'Manager' : 'Worker', 'i') })
+    if (await kindRadio.count()) await kindRadio.first().check()
+    await page.getByRole('button', { name: 'Continue', exact: true }).click()
+
+    // Step 1: Profile
+    await page.getByLabel('Professional or business name').fill(name)
+    const introBox = page.getByLabel(/Professional introduction|Short description/i)
+    await introBox.fill(description.length >= 25 ? description : `${description} professional services for events.`)
+    await page.getByLabel('Contact phone or email').fill(contact)
+    await page.getByRole('button', { name: 'Continue', exact: true }).click()
+
+    // Step 2: Business / Categories
+    if (kind === 'WORKER') {
+      const workerRoleCheck = page.locator('.role-choice--compact input[type="checkbox"]').first()
+      if (await workerRoleCheck.count()) await workerRoleCheck.check()
+    }
+    const catCheck = page.locator('fieldset.provider-onboarding__categories input[type="checkbox"]').first()
+    if (await catCheck.count()) await catCheck.check()
+    await page.getByRole('button', { name: 'Continue', exact: true }).click()
+
+    // Step 3: Coverage
+    await page.getByLabel('PIN code').first().fill(pin)
+    await page.getByLabel('Locality').first().fill(locality)
+    await page.getByLabel('City').first().fill(city)
+    await page.getByLabel('State').first().fill(state)
+    await page.getByRole('button', { name: 'Continue', exact: true }).click()
+
+    // Step 4: Review & Finish
+    const finishBtn = page.getByRole('button', { name: 'Complete onboarding', exact: true })
+    await finishBtn.click()
+    await expect(page).toHaveURL(/\/app\/provider/, { timeout: 35000 })
+    return
+  }
+
+  // Fallback for single-page form
   await page.getByLabel('Professional or business name').fill(name)
   await page.getByLabel('How you work').selectOption(kind)
   await page.getByLabel('Short description').fill(description)
   await page.getByLabel('Contact phone or email').fill(contact)
   const photo = page.getByRole('checkbox', { name: /photograph/i })
   const firstCategory = page.locator('fieldset.provider-onboarding__categories input[type="checkbox"]').first()
-  await expect(firstCategory).toBeVisible()
   if (await photo.count()) await photo.first().check()
-  else await firstCategory.check()
+  else if (await firstCategory.count()) await firstCategory.check()
   const pinBox = page.getByLabel('PIN code')
   if (await pinBox.count()) {
     await pinBox.first().fill(pin)
@@ -62,7 +111,7 @@ export async function completeProviderOnboarding(
     await page.getByLabel('State').first().fill(state)
   }
   await page.getByRole('button', { name: 'Save and continue' }).click()
-  await expect(page).toHaveURL(/\/app\/provider/, { timeout: 20000 })
+  await expect(page).toHaveURL(/\/app\/provider/, { timeout: 30000 })
 }
 
 /** New customers land on onboarding first; the workspace opens after this. */

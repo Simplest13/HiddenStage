@@ -39,6 +39,14 @@ export function PortfolioManager({ audience, title, intro }: Props) {
   async function add(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!event.currentTarget.reportValidity()) return
+    if (file) {
+      const ext = file.name.split('.').pop()?.toLowerCase() || ''
+      const allowed = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'mp4', 'mov', 'webm', 'mkv', 'pdf', 'docx']
+      if (!allowed.includes(ext)) {
+        setError(`Unsupported file extension '.${ext}'. Only images (jpg, png, webp, gif), videos (mp4, mov, webm, mkv), and documents (pdf, docx) are allowed.`)
+        return
+      }
+    }
     setSaving(true); setError('')
     try {
       const payload: PortfolioItemPayload = {
@@ -174,8 +182,26 @@ export function PortfolioManager({ audience, title, intro }: Props) {
         <div className="event-form-grid">
           <label className="field">
             <span className="field__label">Media file (optional)</span>
-            <input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" onChange={(event) => setFile(event.target.files?.[0] ?? null)} />
-            <small className="field__hint">JPEG, PNG, WebP or PDF up to 8 MB.</small>
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/quicktime,video/webm,application/pdf,.docx"
+              onChange={(event) => {
+                const picked = event.target.files?.[0] ?? null
+                if (picked) {
+                  const ext = picked.name.split('.').pop()?.toLowerCase() || ''
+                  const allowed = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'mp4', 'mov', 'webm', 'mkv', 'pdf', 'docx']
+                  if (!allowed.includes(ext)) {
+                    setError(`Unsupported file extension '.${ext}'. Only images, videos, PDF, and DOCX are allowed.`)
+                    event.target.value = ''
+                    setFile(null)
+                    return
+                  }
+                  setError('')
+                }
+                setFile(picked)
+              }}
+            />
+            <small className="field__hint">JPEG, PNG, WebP, GIF, MP4, MOV, WebM, PDF or DOCX.</small>
           </label>
           <Select label="Visibility" name="portfolioVisibility" value={visibility} onChange={(event) => setVisibility(event.target.value as 'PUBLIC' | 'PRIVATE')} hint={audience === 'customer' ? 'Private items are never publicly accessible.' : 'Public items appear on your profile.'}>
             <option value="PRIVATE">Private — only you</option>

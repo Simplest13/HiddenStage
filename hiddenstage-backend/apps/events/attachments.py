@@ -19,6 +19,7 @@ MAGIC_PREFIXES = {
     b"\x89PNG\r\n\x1a\n": "image/png",
     b"RIFF": "image/webp",
     b"%PDF-": "application/pdf",
+    b"PK\x03\x04": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 }
 
 
@@ -33,8 +34,11 @@ def detect_content_type(head: bytes) -> str | None:
 
 
 def validate_attachment_upload(*, upload, declared_type: str | None, existing_count: int):
+    import os
+
     max_bytes = settings.ATTACHMENT_MAX_BYTES
     allowed = settings.ATTACHMENT_ALLOWED_CONTENT_TYPES
+    allowed_exts = {".jpg", ".jpeg", ".png", ".webp", ".pdf", ".docx"}
 
     if existing_count >= settings.ATTACHMENT_MAX_PER_EVENT:
         raise ValidationError(
@@ -47,13 +51,19 @@ def validate_attachment_upload(*, upload, declared_type: str | None, existing_co
             {"file": f"Files must be {max_bytes // (1024 * 1024)} MB or smaller."}
         )
 
+    ext = os.path.splitext(upload.name or "")[1].lower()
+    if ext not in allowed_exts:
+        raise ValidationError(
+            {"file": f"File type '{ext}' not allowed. Only images (JPG, PNG, WebP) and documents (PDF, DOCX) are accepted."}
+        )
+
     upload.seek(0)
     head = upload.read(16)
     upload.seek(0)
     detected = detect_content_type(head)
     if detected is None or detected not in allowed:
         raise ValidationError(
-            {"file": "Only JPEG, PNG, WebP images and PDF documents are accepted."}
+            {"file": "Only JPEG, PNG, WebP images and PDF/DOCX documents are accepted."}
         )
     if declared_type and declared_type != detected:
         raise ValidationError({"file": "The file content does not match its declared type."})

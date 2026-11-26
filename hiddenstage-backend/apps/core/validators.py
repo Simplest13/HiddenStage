@@ -78,11 +78,13 @@ MAX_CHAT_ATTACHMENT_BYTES = 15 * 1024 * 1024  # 15MB
 
 ALLOWED_IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
 ALLOWED_VIDEO_EXTS = {".mp4", ".mov", ".webm", ".mkv"}
-ALLOWED_DOC_EXTS = {".pdf", ".docx", ".txt"}
+ALLOWED_DOC_EXTS = {".pdf", ".docx"}
+ALLOWED_ALL_EXTS = ALLOWED_IMAGE_EXTS | ALLOWED_VIDEO_EXTS | ALLOWED_DOC_EXTS
 
 DANGEROUS_EXTENSIONS = {
     ".exe", ".bat", ".cmd", ".sh", ".bash", ".bin", ".py", ".rb", ".php",
-    ".pl", ".js", ".vbs", ".msi", ".jar", ".ps1", ".scr", ".com", ".pif"
+    ".pl", ".js", ".vbs", ".msi", ".jar", ".ps1", ".scr", ".com", ".pif",
+    ".dll", ".so", ".dmg", ".app", ".iso", ".apk"
 }
 
 
@@ -90,6 +92,8 @@ def validate_portfolio_upload(upload) -> str:
     """Validate uploaded portfolio media size and format.
 
     Returns the media_kind ('IMAGE', 'VIDEO', 'DOCUMENT').
+    Only images (jpg, png, webp, gif), videos (mp4, mov, webm, mkv),
+    and documents (pdf, docx) are accepted.
     """
     import os
     from rest_framework.exceptions import ValidationError as DRFValidationError
@@ -98,8 +102,16 @@ def validate_portfolio_upload(upload) -> str:
         raise DRFValidationError({"media": "Uploaded file is empty."})
 
     ext = os.path.splitext(upload.name or "")[1].lower()
+    if not ext:
+        raise DRFValidationError({"media": "Uploaded file has no extension."})
+
     if ext in DANGEROUS_EXTENSIONS:
         raise DRFValidationError({"media": "Executable or script files are strictly prohibited."})
+
+    if ext not in ALLOWED_ALL_EXTS:
+        raise DRFValidationError(
+            {"media": f"Unsupported file extension '{ext}'. Only images (jpg, png, webp, gif), videos (mp4, mov, webm, mkv), and documents (pdf, docx) are allowed."}
+        )
 
     if ext in ALLOWED_IMAGE_EXTS:
         if upload.size > MAX_PORTFOLIO_IMAGE_BYTES:
@@ -122,14 +134,15 @@ def validate_portfolio_upload(upload) -> str:
             )
         return "DOCUMENT"
 
-    allowed_all = ", ".join(sorted(ALLOWED_IMAGE_EXTS | ALLOWED_VIDEO_EXTS | ALLOWED_DOC_EXTS))
-    raise DRFValidationError(
-        {"media": f"Unsupported file type '{ext}'. Allowed extensions: {allowed_all}."}
-    )
+    raise DRFValidationError({"media": f"Unsupported file extension '{ext}'."})
 
 
 def validate_chat_attachment(upload) -> None:
-    """Validate chat message attachment size and format."""
+    """Validate chat message attachment size and format.
+
+    Only images (jpg, png, webp, gif), videos (mp4, mov, webm, mkv),
+    and documents (pdf, docx) are allowed.
+    """
     import os
     from rest_framework.exceptions import ValidationError as DRFValidationError
 
@@ -137,13 +150,15 @@ def validate_chat_attachment(upload) -> None:
         raise DRFValidationError({"attachment": "Uploaded attachment is empty."})
 
     ext = os.path.splitext(upload.name or "")[1].lower()
+    if not ext:
+        raise DRFValidationError({"attachment": "Uploaded attachment has no extension."})
+
     if ext in DANGEROUS_EXTENSIONS:
         raise DRFValidationError({"attachment": "Executable or script attachments are prohibited."})
 
-    allowed = ALLOWED_IMAGE_EXTS | ALLOWED_VIDEO_EXTS | ALLOWED_DOC_EXTS
-    if ext not in allowed:
+    if ext not in ALLOWED_ALL_EXTS:
         raise DRFValidationError(
-            {"attachment": f"File type '{ext}' not allowed. Allowed: {', '.join(sorted(allowed))}."}
+            {"attachment": f"File extension '{ext}' not allowed. Only images (jpg, png, webp, gif), videos (mp4, mov, webm, mkv), and documents (pdf, docx) are allowed."}
         )
 
     if upload.size > MAX_CHAT_ATTACHMENT_BYTES:

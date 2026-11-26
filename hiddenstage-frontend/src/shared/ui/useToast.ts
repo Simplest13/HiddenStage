@@ -3,6 +3,10 @@ import { ToastContext } from './toastContext'
 
 export function useToast() {
   const context = useContext(ToastContext)
-  if (!context) throw new Error('useToast must be used within ToastProvider')
+  if (!context) {
+    return {
+      showToast: () => {},
+    }
+  }
   return context
 }

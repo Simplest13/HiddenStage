@@ -129,7 +129,13 @@ class MeView(APIView):
                 {"detail": "Authentication credentials were not provided."},
                 status=status.HTTP_401_UNAUTHORIZED,
             )
-        return Response(UserSerializer(request.user).data)
+        user = (
+            User.objects.select_related("customer_profile", "provider_profile")
+            .filter(pk=request.user.pk)
+            .first()
+            or request.user
+        )
+        return Response(UserSerializer(user).data)
 
 
 class EmailVerifyView(APIView):
@@ -322,9 +328,9 @@ class AvatarUploadView(APIView):
             )
 
         name_lower = file_obj.name.lower()
-        if not any(name_lower.endswith(ext) for ext in [".jpg", ".jpeg", ".png", ".webp"]):
+        if not any(name_lower.endswith(ext) for ext in [".jpg", ".jpeg", ".png", ".webp", ".gif"]):
             return Response(
-                {"detail": "Only JPG, PNG, and WebP images are supported."},
+                {"detail": "Only JPG, PNG, WebP, and GIF images are supported."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 

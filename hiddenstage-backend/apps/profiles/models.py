@@ -163,6 +163,9 @@ class CustomerProfile(UUIDModel):
         if self.is_complete() and self.completed_at is None:
             self.completed_at = timezone.now()
         super().save(*args, **kwargs)
+        from django.core.cache import cache
+        if self.user_id:
+            cache.delete(f"auth_user:{self.user_id}")
 
     def is_complete(self) -> bool:
         return all([self.pin_code, self.locality, self.city, self.state])
@@ -246,6 +249,9 @@ class ProviderProfile(UUIDModel):
         if not self.username and self.user and self.user.username:
             self.username = self.user.username
         super().save(*args, **kwargs)
+        from django.core.cache import cache
+        if self.user_id:
+            cache.delete(f"auth_user:{self.user_id}")
 
     def __str__(self):
         return self.display_name

@@ -426,7 +426,7 @@ class AvatarTests(TestCase):
         txt_file = SimpleUploadedFile("bad.txt", b"not-an-image", content_type="text/plain")
         resp = self.client.post("/api/v1/auth/avatar/", {"avatar": txt_file}, format="multipart")
         self.assertEqual(resp.status_code, 400)
-        self.assertIn("Only JPG, PNG, and WebP", resp.data["detail"])
+        self.assertIn("Only JPG, PNG, WebP, and GIF", resp.data["detail"])
 
         # Nonexistent avatar returns 404
         serve_404 = APIClient().get("/api/v1/auth/avatars/nonexistent_avatar.png")

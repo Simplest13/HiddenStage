@@ -1318,8 +1318,22 @@ function PortfolioManager({
   }
 
   function handleFileChange(selectedFile: File | null) {
+    if (!selectedFile) {
+      setFile(null)
+      setFilePreview(null)
+      return
+    }
+    const ext = selectedFile.name.split('.').pop()?.toLowerCase() || ''
+    const allowed = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'mp4', 'mov', 'webm', 'mkv', 'pdf', 'docx']
+    if (!allowed.includes(ext)) {
+      setError(`Unsupported file extension '.${ext}'. Only images (jpg, png, webp, gif), videos (mp4, mov, webm, mkv), and documents (pdf, docx) are allowed.`)
+      setFile(null)
+      setFilePreview(null)
+      return
+    }
+    setError('')
     setFile(selectedFile)
-    if (selectedFile && selectedFile.type.startsWith('image/')) {
+    if (selectedFile.type.startsWith('image/')) {
       const previewUrl = URL.createObjectURL(selectedFile)
       setFilePreview(previewUrl)
     } else {
@@ -1518,7 +1532,11 @@ function PortfolioManager({
                 <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
                   <input
                     type="file"
-                    accept={mediaKind === 'IMAGE' ? 'image/*' : '.pdf,.doc,.docx'}
+                    accept={
+                      mediaKind === 'IMAGE'
+                        ? 'image/jpeg,image/png,image/webp,image/gif'
+                        : '.pdf,.docx'
+                    }
                     onChange={(e) => handleFileChange(e.target.files?.[0] || null)}
                   />
                   {filePreview && (

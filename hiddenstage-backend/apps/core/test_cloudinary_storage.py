@@ -70,10 +70,15 @@ class CloudinaryStorageAndLimitsTests(TestCase):
         self.assertIn("must not exceed 50MB", str(ctx.exception))
 
     def test_portfolio_doc_upload_limits(self):
-        # Valid document
+        # Valid PDF document
         f = SimpleUploadedFile("proposal.pdf", b"fake-pdf-content", content_type="application/pdf")
         kind = validate_portfolio_upload(f)
         self.assertEqual(kind, "DOCUMENT")
+
+        # Valid DOCX document
+        docx_file = SimpleUploadedFile("contract.docx", b"fake-docx-content", content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+        docx_kind = validate_portfolio_upload(docx_file)
+        self.assertEqual(docx_kind, "DOCUMENT")
 
         # Oversized doc (>15MB)
         huge = SimpleUploadedFile("huge.pdf", b"x" * (MAX_PORTFOLIO_DOC_BYTES + 1), content_type="application/pdf")
@@ -81,7 +86,8 @@ class CloudinaryStorageAndLimitsTests(TestCase):
             validate_portfolio_upload(huge)
         self.assertIn("must not exceed 15MB", str(ctx.exception))
 
-    def test_prohibited_dangerous_files(self):
+    def test_prohibited_dangerous_and_unsupported_files(self):
+        # Dangerous executables
         dangerous = SimpleUploadedFile("script.exe", b"binary", content_type="application/octet-stream")
         with self.assertRaises(DRFValidationError) as ctx:
             validate_portfolio_upload(dangerous)
@@ -90,6 +96,19 @@ class CloudinaryStorageAndLimitsTests(TestCase):
         with self.assertRaises(DRFValidationError) as ctx:
             validate_chat_attachment(dangerous)
         self.assertIn("prohibited", str(ctx.exception))
+
+        # Disallowed file extensions (txt, zip, html, csv, noextension)
+        for bad_name in ["notes.txt", "archive.zip", "page.html", "data.csv", "noextension"]:
+            bad_file = SimpleUploadedFile(bad_name, b"some content", content_type="application/octet-stream")
+            with self.assertRaises(DRFValidationError) as ctx:
+                validate_portfolio_upload(bad_file)
+            err_str = str(ctx.exception).lower()
+            self.assertTrue(any(w in err_str for w in ["allowed", "prohibited", "no extension"]))
+
+            with self.assertRaises(DRFValidationError) as ctx:
+                validate_chat_attachment(bad_file)
+            err_str = str(ctx.exception).lower()
+            self.assertTrue(any(w in err_str for w in ["allowed", "prohibited", "no extension"]))
 
     def test_chat_attachment_limits(self):
         # Valid attachment

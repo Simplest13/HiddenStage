@@ -4,7 +4,7 @@ import { providerDetailPath } from '../../app/routes/routePaths'
 import { networkApi } from '../../shared/api/backend/ecosystem'
 import { subscribeToRealtime } from '../../shared/api/realtime'
 import type { ApiChatMessage, ApiConversation, ApiCustomerConnection } from '../../shared/api/backend/types'
-import { Avatar, Button, ButtonLink, Card, Spinner } from '../../shared/ui'
+import { Avatar, Button, ButtonLink, Card, Spinner, useToast } from '../../shared/ui'
 import { Icon } from '../../shared/ui/Icon'
 import { useAuth } from '../../app/auth/useAuth'
 import '../network/network.css'
@@ -48,6 +48,7 @@ function findConversationForPartner(
 
 export function CustomerNetworkPage() {
   const auth = useAuth()
+  const { showToast } = useToast()
   const isProvider = auth.status === 'authenticated' && auth.roles.includes('PROVIDER') && !auth.roles.includes('CUSTOMER')
   const currentUserId = (auth as any).user?.id
   const [searchParams] = useSearchParams()
@@ -212,6 +213,14 @@ export function CustomerNetworkPage() {
   async function handleSendMessage(e: FormEvent) {
     e.preventDefault()
     if (!activeConvId || (!messageText.trim() && !attachmentFile)) return
+    if (attachmentFile) {
+      const ext = attachmentFile.name.split('.').pop()?.toLowerCase() || ''
+      const allowed = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'mp4', 'mov', 'webm', 'mkv', 'pdf', 'docx']
+      if (!allowed.includes(ext)) {
+        showToast(`File extension '.${ext}' is not allowed. Only images, videos, PDF, and DOCX are allowed.`, 'error')
+        return
+      }
+    }
     const textToSend = messageText.trim()
     const fileToSend = attachmentFile
 
@@ -1011,8 +1020,21 @@ export function CustomerNetworkPage() {
                 <input
                   type="file"
                   ref={fileInputRef}
+                  accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/quicktime,video/webm,application/pdf,.docx"
                   style={{ display: 'none' }}
-                  onChange={(e) => setAttachmentFile(e.target.files?.[0] || null)}
+                  onChange={(e) => {
+                    const picked = e.target.files?.[0]
+                    if (!picked) return
+                    const ext = picked.name.split('.').pop()?.toLowerCase() || ''
+                    const allowed = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'mp4', 'mov', 'webm', 'mkv', 'pdf', 'docx']
+                    if (!allowed.includes(ext)) {
+                      showToast(`File extension '.${ext}' not allowed. Only images, videos, PDF, and DOCX are allowed.`, 'error')
+                      e.target.value = ''
+                      setAttachmentFile(null)
+                      return
+                    }
+                    setAttachmentFile(picked)
+                  }}
                 />
                 <button
                   type="button"

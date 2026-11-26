@@ -46,7 +46,7 @@ type PickedFile = { id: string; file: File }
 
 const eventTypes = ['Wedding', 'Birthday', 'Anniversary', 'Corporate event', 'Engagement', 'Housewarming', 'Festival', 'Other']
 const stepLabels = ['Basic details', 'Location', 'Services', 'Attachments', 'Review']
-const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf']
+const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', '.docx']
 const maxFileSize = 5 * 1024 * 1024
 const today = () => new Date().toISOString().slice(0, 10)
 const blankValues = (): EventValues => ({
@@ -195,7 +195,9 @@ export default function EventPages() {
     if (!picked) return
     const next: PickedFile[] = []
     for (const file of Array.from(picked)) {
-      if (!allowedTypes.includes(file.type)) { setFileError(`${file.name} is not a JPG, PNG, WebP or PDF file.`); continue }
+      const ext = file.name.split('.').pop()?.toLowerCase() || ''
+      const allowedExts = ['jpg', 'jpeg', 'png', 'webp', 'pdf', 'docx']
+      if (!allowedTypes.includes(file.type) && !allowedExts.includes(ext)) { setFileError(`${file.name} is not a valid JPG, PNG, WebP, PDF or DOCX file.`); continue }
       if (file.size > maxFileSize) { setFileError(`${file.name} is larger than 5 MB.`); continue }
       next.push({ id: cryptoKey(), file })
     }
@@ -644,7 +646,7 @@ function Attachments({ existing, files, error, onPick, onRemoveFile, onRemoveExi
   }
 
   return <>
-    <FormHeading number="04" title="Reference files (optional)" intro="Share a mood board, floor plan or brief. JPG, PNG, WebP or PDF, up to 5 MB each." />
+    <FormHeading number="04" title="Reference files (optional)" intro="Share a mood board, floor plan or brief. JPG, PNG, WebP, PDF or DOCX, up to 5 MB each." />
     <div className="attachment-upload">
       <label className="attachment-drop">
         <input type="file" multiple accept={allowedTypes.join(',')} onChange={(event) => { onPick(event.target.files); event.target.value = '' }} />

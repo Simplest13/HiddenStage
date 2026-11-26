@@ -369,6 +369,7 @@ ATTACHMENT_ALLOWED_CONTENT_TYPES = [
     "image/png",
     "image/webp",
     "application/pdf",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 ]
 ATTACHMENT_MAX_BYTES = env_int("ATTACHMENT_MAX_BYTES", 5 * 1024 * 1024)
 ATTACHMENT_MAX_PER_EVENT = env_int("ATTACHMENT_MAX_PER_EVENT", 5)

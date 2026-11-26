@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { register, registerCustomer, unique } from './helpers'
+import { register, registerCustomer, completeProviderOnboarding, unique } from './helpers'
 
 test.describe('WedMeGood Professional Profile & Portfolio Suite', () => {
   test('Complete Profile Management, WedMeGood Public Profile, Media Showcase & Direct Enquiry', async ({ page }) => {
@@ -9,22 +9,16 @@ test.describe('WedMeGood Professional Profile & Portfolio Suite', () => {
 
     // 1. Register & Onboard Manager
     await register(page, { email: managerEmail, name: 'Ananya Grand Events', type: 'PROVIDER' })
-    await page.goto('/onboarding/provider')
-    await expect(page).toHaveURL('/onboarding/provider', { timeout: 25000 })
-
-    await page.getByLabel('Professional or business name').fill('Ananya Grand Productions')
-    await page.getByLabel('How you work').selectOption('MANAGER')
-    await page.getByLabel('Short description').fill('Premier bespoke destination wedding and luxury event production agency based in Bangalore.')
-    await page.getByLabel('Contact phone or email').fill('+91 98450 12345')
-
-    // Select category and coverage
-    await page.locator('fieldset.provider-onboarding__categories input[type="checkbox"]').first().check()
-    await page.getByLabel('PIN code').fill('560001')
-    await page.getByLabel('Locality').fill('MG Road')
-    await page.getByLabel('City').fill('Bengaluru')
-    await page.getByLabel('State').fill('Karnataka')
-    await page.getByRole('button', { name: 'Save and continue' }).click()
-    await expect(page).toHaveURL(/\/app\/provider/, { timeout: 35000 })
+    await completeProviderOnboarding(page, {
+      name: 'Ananya Grand Productions',
+      kind: 'MANAGER',
+      description: 'Premier bespoke destination wedding and luxury event production agency based in Bangalore.',
+      contact: '+91 98450 12345',
+      pin: '560001',
+      locality: 'MG Road',
+      city: 'Bengaluru',
+      state: 'Karnataka',
+    })
 
     // 2. Open Profile Management & Verify Strength Meter
     await page.goto('/app/provider/profile')
