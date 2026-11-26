@@ -356,12 +356,15 @@ class AvatarMediaView(APIView):
             raise Http404("Invalid avatar filename.")
 
         path = f"avatars/{safe_name}"
+        try:
+            url = default_storage.url(path)
+            if url and (url.startswith("http://") or url.startswith("https://")):
+                return HttpResponseRedirect(url)
+        except Exception:
+            pass
+
         if not default_storage.exists(path):
             raise Http404("Avatar not found.")
-
-        url = default_storage.url(path)
-        if url and (url.startswith("http://") or url.startswith("https://")):
-            return HttpResponseRedirect(url)
 
         file_handle = default_storage.open(path, "rb")
         response = FileResponse(file_handle)

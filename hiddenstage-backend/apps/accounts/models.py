@@ -124,6 +124,12 @@ class User(AbstractBaseUser, PermissionsMixin, UUIDModel):
     @property
     def avatar_url(self) -> str | None:
         if self.avatar and hasattr(self.avatar, "name") and self.avatar.name:
+            try:
+                url = self.avatar.url
+                if url and (url.startswith("http://") or url.startswith("https://")):
+                    return url
+            except Exception:
+                pass
             import os
             filename = os.path.basename(self.avatar.name)
             return f"/api/v1/auth/avatars/{filename}"

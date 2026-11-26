@@ -101,10 +101,12 @@ class CustomCategoryCreateView(APIView):
 
 
 class CustomerProfileView(APIView):
-    permission_classes = [IsCustomer]
+    permission_classes = [IsAuthenticated]
 
     @extend_schema(responses={200: CustomerProfileSerializer})
     def get(self, request):
+        if not getattr(request.user, "is_customer", False):
+            return Response(None)
         profile = CustomerProfile.objects.filter(user=request.user).first()
         if profile is None:
             return Response(None)
@@ -119,6 +121,11 @@ class CustomerProfileView(APIView):
         return self._upsert(request, partial=True)
 
     def _upsert(self, request, partial: bool):
+        if not getattr(request.user, "is_customer", False):
+            return Response(
+                {"detail": "This action is only available to customer accounts."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
         profile = CustomerProfile.objects.filter(user=request.user).first()
         serializer = CustomerProfileSerializer(
             instance=profile, data=request.data, partial=partial

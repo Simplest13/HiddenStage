@@ -285,7 +285,11 @@ function SettingsPage() {
   const authActions = useAuthActions()
   const currentTheme = useTheme()
   const user = auth.status === 'authenticated' ? auth.user : undefined
-  const profile = useApiData(() => profilesApi.getCustomerProfile(), [])
+  const isCustomer = user?.accountType === 'CUSTOMER'
+  const profile = useApiData(
+    () => (isCustomer ? profilesApi.getCustomerProfile() : Promise.resolve(null)),
+    [isCustomer]
+  )
 
   // Identity Form State
   const [fullName, setFullName] = useState(user?.fullName || '')
@@ -667,66 +671,68 @@ function SettingsPage() {
           </Card>
 
           {/* Customer Profile & Default Location */}
-          <Card className="detail-card">
-            <h2>Default Location &amp; Bio</h2>
-            <p className="detail-card__hint">Pre-fills location information when submitting new service requests.</p>
-            {profile.loading ? (
-              <Spinner label="Loading your profile" />
-            ) : (
-              <form className="customer-form" onSubmit={handleSaveLocation} style={{ marginTop: '1rem' }}>
-                <Input
-                  label="Short Bio"
-                  name="bio"
-                  placeholder="Tell specialists about your preferred event styles or requirements…"
-                  value={values.bio}
-                  onChange={(e) => setValues((v) => ({ ...v, bio: e.target.value }))}
-                />
-                <Input
-                  label="PIN Code"
-                  name="pinCode"
-                  inputMode="numeric"
-                  pattern="[0-9]{6}"
-                  maxLength={6}
-                  required
-                  value={values.pinCode}
-                  onChange={(e) => setValues((v) => ({ ...v, pinCode: e.target.value.replace(/\D/g, '') }))}
-                />
-                <Input
-                  label="Locality"
-                  name="locality"
-                  required
-                  minLength={2}
-                  value={values.locality}
-                  onChange={(e) => setValues((v) => ({ ...v, locality: e.target.value }))}
-                />
-                <div className="event-form-grid">
+          {isCustomer && (
+            <Card className="detail-card">
+              <h2>Default Location &amp; Bio</h2>
+              <p className="detail-card__hint">Pre-fills location information when submitting new service requests.</p>
+              {profile.loading ? (
+                <Spinner label="Loading your profile" />
+              ) : (
+                <form className="customer-form" onSubmit={handleSaveLocation} style={{ marginTop: '1rem' }}>
                   <Input
-                    label="City"
-                    name="city"
-                    required
-                    minLength={2}
-                    value={values.city}
-                    onChange={(e) => setValues((v) => ({ ...v, city: e.target.value }))}
+                    label="Short Bio"
+                    name="bio"
+                    placeholder="Tell specialists about your preferred event styles or requirements…"
+                    value={values.bio}
+                    onChange={(e) => setValues((v) => ({ ...v, bio: e.target.value }))}
                   />
                   <Input
-                    label="State"
-                    name="state"
+                    label="PIN Code"
+                    name="pinCode"
+                    inputMode="numeric"
+                    pattern="[0-9]{6}"
+                    maxLength={6}
+                    required
+                    value={values.pinCode}
+                    onChange={(e) => setValues((v) => ({ ...v, pinCode: e.target.value.replace(/\D/g, '') }))}
+                  />
+                  <Input
+                    label="Locality"
+                    name="locality"
                     required
                     minLength={2}
-                    value={values.state}
-                    onChange={(e) => setValues((v) => ({ ...v, state: e.target.value }))}
+                    value={values.locality}
+                    onChange={(e) => setValues((v) => ({ ...v, locality: e.target.value }))}
                   />
-                </div>
-                {locationError && <p className="customer-error" role="alert">{locationError}</p>}
-                {locationNotice && <p className="form-success" role="status">{locationNotice}</p>}
-                <div className="customer-form__actions">
-                  <Button type="submit" disabled={savingLocation}>
-                    {savingLocation ? 'Saving…' : 'Save Default Location'}
-                  </Button>
-                </div>
-              </form>
-            )}
-          </Card>
+                  <div className="event-form-grid">
+                    <Input
+                      label="City"
+                      name="city"
+                      required
+                      minLength={2}
+                      value={values.city}
+                      onChange={(e) => setValues((v) => ({ ...v, city: e.target.value }))}
+                    />
+                    <Input
+                      label="State"
+                      name="state"
+                      required
+                      minLength={2}
+                      value={values.state}
+                      onChange={(e) => setValues((v) => ({ ...v, state: e.target.value }))}
+                    />
+                  </div>
+                  {locationError && <p className="customer-error" role="alert">{locationError}</p>}
+                  {locationNotice && <p className="form-success" role="status">{locationNotice}</p>}
+                  <div className="customer-form__actions">
+                    <Button type="submit" disabled={savingLocation}>
+                      {savingLocation ? 'Saving…' : 'Save Default Location'}
+                    </Button>
+                  </div>
+                </form>
+              )}
+            </Card>
+          )}
         </div>
 
         <aside className="settings-side" style={{ display: 'grid', gap: '1.5rem' }}>
