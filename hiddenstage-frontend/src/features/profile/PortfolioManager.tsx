@@ -1,16 +1,15 @@
-// @ts-nocheck
 import { useState, type FormEvent } from 'react'
 import { profilesApi } from '../../shared/api/backend/profiles'
 import { useApiData } from '../../shared/api/backend/useApiData'
 import { apiUrl } from '../../shared/api/client'
 import type { ApiPortfolioItem } from '../../shared/api/backend/types'
+import type { PortfolioItemPayload } from '../../shared/api/backend/profiles'
 import { Badge, Button, Card, Input, Modal, Select, Spinner, Textarea, useToast } from '../../shared/ui'
 import { formatShortDate } from '../../shared/api/backend/format'
 import { Icon } from '../../shared/ui/Icon'
 import '../customer/customer.css'
 
 type Props = {
-  profileId?: string
   /** Professional portfolios default to public; customer galleries stay private. */
   audience: 'professional' | 'customer'
   title?: string
@@ -24,9 +23,9 @@ const emptyDraft = { title: '', description: '', category: '', eventDate: '', ex
  * as multipart form data, previews go through the authorised API route, and item
  * changes are persisted immediately — nothing here is local-only.
  */
-export function PortfolioManager({ profileId, audience, title, intro }: Props) {
+export function PortfolioManager({ audience, title, intro }: Props) {
   const { showToast } = useToast()
-  const data = useApiData(() => profilesApi.listPortfolio(profileId), [profileId, audience])
+  const data = useApiData(() => profilesApi.listPortfolioItems(), [])
   const items = data.data ?? []
   const [draft, setDraft] = useState(emptyDraft)
   const [file, setFile] = useState<File | null>(null)
@@ -42,7 +41,7 @@ export function PortfolioManager({ profileId, audience, title, intro }: Props) {
     if (!event.currentTarget.reportValidity()) return
     setSaving(true); setError('')
     try {
-      await profilesApi.createPortfolioItem({
+      const payload: PortfolioItemPayload = {
         title: draft.title.trim(),
         description: draft.description.trim(),
         category: draft.category.trim(),
@@ -50,8 +49,22 @@ export function PortfolioManager({ profileId, audience, title, intro }: Props) {
         external_url: draft.externalUrl.trim(),
         media_kind: file ? (file.type === 'application/pdf' ? 'DOCUMENT' : draft.kind === 'VIDEO' ? 'VIDEO' : 'IMAGE') : 'LINK',
         visibility,
-        media: file,
-      }, profileId)
+      }
+
+      if (file) {
+        const formData = new FormData()
+        formData.append('title', payload.title)
+        formData.append('description', payload.description ?? '')
+        formData.append('category', payload.category ?? '')
+        if (payload.event_date) formData.append('event_date', payload.event_date)
+        formData.append('external_url', payload.external_url ?? '')
+        formData.append('media_kind', payload.media_kind ?? 'IMAGE')
+        formData.append('visibility', payload.visibility ?? 'PRIVATE')
+        formData.append('media', file)
+        await profilesApi.createPortfolioItem(formData)
+      } else {
+        await profilesApi.createPortfolioItem(payload)
+      }
       setDraft(emptyDraft); setFile(null)
       showToast(audience === 'professional' ? 'Portfolio item added.' : 'Gallery item added.', 'success')
       data.reload()
@@ -64,12 +77,15 @@ export function PortfolioManager({ profileId, audience, title, intro }: Props) {
     const index = items.findIndex((entry) => entry.id === item.id)
     const target = index + direction
     if (target < 0 || target >= items.length) return
-    const order = items.map((entry) => entry.id)
-    const [moved] = order.splice(index, 1)
-    order.splice(target, 0, moved)
+    const reorderedItems = [...items]
+    const [moved] = reorderedItems.splice(index, 1)
+    if (!moved) return
+    reorderedItems.splice(target, 0, moved)
     setBusy(item.id)
     try {
-      await profilesApi.reorderPortfolio(order, profileId)
+      await Promise.all(reorderedItems.map((entry, position) =>
+        profilesApi.updatePortfolioItem(entry.id, { position })
+      ))
       data.reload()
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Could not reorder the gallery.')
@@ -79,7 +95,7 @@ export function PortfolioManager({ profileId, audience, title, intro }: Props) {
   async function toggleVisibility(item: ApiPortfolioItem) {
     setBusy(item.id)
     try {
-      await profilesApi.updatePortfolioItem(item.id, { visibility: item.visibility === 'PUBLIC' ? 'PRIVATE' : 'PUBLIC' }, profileId)
+      await profilesApi.updatePortfolioItem(item.id, { visibility: item.visibility === 'PUBLIC' ? 'PRIVATE' : 'PUBLIC' })
       data.reload()
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Could not change visibility.')
@@ -89,7 +105,7 @@ export function PortfolioManager({ profileId, audience, title, intro }: Props) {
   async function remove(item: ApiPortfolioItem) {
     setBusy(item.id)
     try {
-      await profilesApi.deletePortfolioItem(item.id, profileId)
+      await profilesApi.deletePortfolioItem(item.id)
       showToast('Item deleted.', 'success')
       data.reload()
     } catch (caught) {
@@ -116,8 +132,8 @@ export function PortfolioManager({ profileId, audience, title, intro }: Props) {
     {items.length > 0 && <div className="portfolio-grid">
       {items.map((item) => <Card className="portfolio-card" key={item.id}>
         <div className="portfolio-card__media">
-          {item.media_kind === 'IMAGE' && item.media_url
-            ? <button type="button" className="portfolio-thumb" onClick={() => setPreview(item)}><img src={apiUrl(item.media_url)} alt={item.title} loading="lazy" /></button>
+          {item.media_kind === 'IMAGE' && item.media
+            ? <button type="button" className="portfolio-thumb" onClick={() => setPreview(item)}><img src={apiUrl(item.media)} alt={item.title} loading="lazy" /></button>
             : <span className="portfolio-card__placeholder" aria-hidden="true"><Icon name={item.media_kind === 'VIDEO' ? 'play' : item.media_kind === 'DOCUMENT' ? 'fileText' : 'externalLink'} size={24} /></span>}
         </div>
         <div className="portfolio-card__body">
@@ -174,17 +190,17 @@ export function PortfolioManager({ profileId, audience, title, intro }: Props) {
 
     {preview && <Modal open title={preview.title} onClose={() => setPreview(null)}>
       <div className="attachment-preview-modal">
-        {preview.media_url && <img src={apiUrl(preview.media_url)} alt={preview.title} />}
+        {preview.media && <img src={apiUrl(preview.media)} alt={preview.title} />}
         {preview.description && <p>{preview.description}</p>}
         <div className="modal-actions"><Button type="button" variant="secondary" onClick={() => setPreview(null)}>Close</Button></div>
       </div>
     </Modal>}
 
-    {editing && <EditPortfolioItem item={editing} profileId={profileId} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); data.reload() }} />}
+    {editing && <EditPortfolioItem item={editing} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); data.reload() }} />}
   </section>
 }
 
-function EditPortfolioItem({ item, profileId, onClose, onSaved }: { item: ApiPortfolioItem; profileId?: string; onClose: () => void; onSaved: () => void }) {
+function EditPortfolioItem({ item, onClose, onSaved }: { item: ApiPortfolioItem; onClose: () => void; onSaved: () => void }) {
   const [title, setTitle] = useState(item.title)
   const [description, setDescription] = useState(item.description)
   const [category, setCategory] = useState(item.category)
@@ -213,7 +229,7 @@ function EditPortfolioItem({ item, profileId, onClose, onSaved }: { item: ApiPor
             await profilesApi.updatePortfolioItem(item.id, {
               title: title.trim(), description: description.trim(), category: category.trim(),
               external_url: externalUrl.trim(), visibility,
-            }, profileId)
+            })
             onSaved()
           } catch (caught) { setError(caught instanceof Error ? caught.message : 'Could not save this item.') } finally { setSaving(false) }
         }}>{saving ? 'Saving…' : 'Save changes'}</Button>

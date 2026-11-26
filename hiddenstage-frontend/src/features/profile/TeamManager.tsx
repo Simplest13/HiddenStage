@@ -1,11 +1,11 @@
-// @ts-nocheck
 import { useState, type FormEvent } from 'react'
 import { profilesApi } from '../../shared/api/backend/profiles'
 import { useApiData } from '../../shared/api/backend/useApiData'
+import type { ProfileTeamPermission } from '../../shared/api/backend/types'
 import { Badge, Button, Card, Input, Spinner, useToast } from '../../shared/ui'
 import '../customer/customer.css'
 
-const permissionOptions = [
+const permissionOptions: Array<{ value: ProfileTeamPermission; label: string }> = [
   { value: 'MANAGE_BUSINESS_PROFILE', label: 'Manage business profile' },
   { value: 'MANAGE_PORTFOLIO', label: 'Manage portfolio' },
   { value: 'MANAGE_SERVICES', label: 'Manage services' },
@@ -21,10 +21,10 @@ const permissionOptions = [
  */
 export function TeamManager() {
   const { showToast } = useToast()
-  const data = useApiData(() => profilesApi.listTeam(), [])
+  const data = useApiData(() => profilesApi.listTeamMembers(), [])
   const members = data.data ?? []
   const [email, setEmail] = useState('')
-  const [permissions, setPermissions] = useState<string[]>(['MANAGE_BUSINESS_PROFILE', 'MANAGE_PORTFOLIO'])
+  const [permissions, setPermissions] = useState<ProfileTeamPermission[]>(['MANAGE_BUSINESS_PROFILE', 'MANAGE_PORTFOLIO'])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
@@ -34,7 +34,7 @@ export function TeamManager() {
     if (!permissions.length) { setError('Choose at least one permission.'); return }
     setSaving(true); setError('')
     try {
-      await profilesApi.addTeamMemberByEmail(email.trim(), permissions)
+      await profilesApi.createTeamMember({ email: email.trim(), permissions })
       setEmail('')
       showToast('Team member added with the selected permissions.', 'success')
       data.reload()
@@ -43,7 +43,7 @@ export function TeamManager() {
     } finally { setSaving(false) }
   }
 
-  async function updatePermissions(memberId: string, next: string[]) {
+  async function updatePermissions(memberId: string, next: ProfileTeamPermission[]) {
     setError('')
     try {
       await profilesApi.updateTeamMember(memberId, { permissions: next })
@@ -56,7 +56,7 @@ export function TeamManager() {
   async function revoke(memberId: string) {
     setError('')
     try {
-      await profilesApi.removeTeamMember(memberId)
+      await profilesApi.deleteTeamMember(memberId)
       showToast('Access revoked. The account and its own profile are untouched.', 'success')
       data.reload()
     } catch (caught) {
