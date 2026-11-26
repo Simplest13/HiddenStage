@@ -210,6 +210,7 @@ class ProviderProfile(UUIDModel):
     onboarding_completed_at = models.DateTimeField(null=True, blank=True)
     role_data = models.JSONField(default=dict, blank=True)
     is_public = models.BooleanField(default=True, null=True, blank=True)
+    is_featured = models.BooleanField(default=False, db_index=True)
     description = models.TextField(blank=True)
     contact = models.CharField(max_length=120)
     verification_status = models.CharField(

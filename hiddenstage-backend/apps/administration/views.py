@@ -19,6 +19,7 @@ from apps.administration.serializers import (
     AdminReasonSerializer,
     AdminUserSerializer,
     AdminUserUpdateSerializer,
+    ProviderFeaturedActionSerializer,
     ProviderVerificationActionSerializer,
     UnifiedAuditEntrySerializer,
 )
@@ -27,6 +28,7 @@ from apps.administration.services import (
     get_overview_metrics,
     list_unified_audit_entries,
     release_commitment_as_admin,
+    set_provider_featured,
     set_provider_verification,
     update_business_admin,
     update_category_as_admin,
@@ -125,6 +127,11 @@ class AdminProviderListView(APIView):
         ver = (request.query_params.get("verification_status") or "").strip().upper()
         if ver:
             qs = qs.filter(verification_status=ver)
+        feat = (request.query_params.get("featured") or "").strip().lower()
+        if feat in ("true", "1"):
+            qs = qs.filter(is_featured=True)
+        elif feat in ("false", "0"):
+            qs = qs.filter(is_featured=False)
         kind = (request.query_params.get("kind") or "").strip().upper()
         if kind:
             qs = qs.filter(kind=kind)
@@ -154,6 +161,31 @@ class AdminProviderVerificationView(APIView):
             actor=request.user,
             provider_id=pk,
             verification_status=payload.validated_data["verification_status"],
+            note=payload.validated_data.get("note", ""),
+        )
+        profile = (
+            ProviderProfile.objects.select_related("user", "business")
+            .prefetch_related("services__category", "coverage")
+            .get(pk=profile.pk)
+        )
+        return Response(AdminProviderSerializer(profile).data)
+
+
+class AdminProviderFeaturedView(APIView):
+    permission_classes = [IsStaffUser]
+
+    @extend_schema(
+        request=ProviderFeaturedActionSerializer,
+        responses={200: AdminProviderSerializer},
+        operation_id="admin_provider_set_featured",
+    )
+    def post(self, request, pk):
+        payload = ProviderFeaturedActionSerializer(data=request.data)
+        payload.is_valid(raise_exception=True)
+        profile = set_provider_featured(
+            actor=request.user,
+            provider_id=pk,
+            is_featured=payload.validated_data["is_featured"],
             note=payload.validated_data.get("note", ""),
         )
         profile = (

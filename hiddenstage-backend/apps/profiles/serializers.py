@@ -63,7 +63,7 @@ class CustomerProfileSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["id", "completed_at", "created_at", "updated_at"]
+        read_only_fields = ["id", "is_featured", "completed_at", "created_at", "updated_at"]
 
     def validate_pin_code(self, value):
         try:
@@ -157,6 +157,7 @@ class ProviderProfileSerializer(serializers.ModelSerializer):
             "logo",
             "cover_image",
             "is_public",
+            "is_featured",
             "onboarding_step",
             "onboarding_completed_at",
             "role_data",
@@ -170,7 +171,7 @@ class ProviderProfileSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["id", "completed_at", "created_at", "updated_at"]
+        read_only_fields = ["id", "is_featured", "completed_at", "created_at", "updated_at"]
 
     def to_representation(self, instance):
         data = super().to_representation(instance)

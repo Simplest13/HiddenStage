@@ -581,7 +581,7 @@ function Services({ requirements, categories, draft, editing, error, onDraftChan
         <Input label="Short title" name="requirementTitle" required minLength={3} maxLength={120} value={draft.title} onChange={(event) => onDraftChange('title', event.target.value)} hint="For example “Vegetarian dinner for 80”." />
       </div>
       {draft.category === 'other' && (
-        <div className="custom-service-fields" style={{ background: 'var(--color-surface-subtle, #f8f9fa)', padding: '1rem', borderRadius: '8px', marginBottom: '1rem', border: '1px solid var(--color-border)' }}>
+        <div className="custom-service-fields">
           <Input
             label="Custom service name"
             name="customServiceName"

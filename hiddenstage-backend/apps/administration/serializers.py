@@ -81,6 +81,7 @@ class AdminProviderSerializer(serializers.ModelSerializer):
             "description",
             "business_name",
             "verification_status",
+            "is_featured",
             "completed_at",
             "services",
             "coverage",
@@ -92,6 +93,11 @@ class AdminProviderSerializer(serializers.ModelSerializer):
 
 class ProviderVerificationActionSerializer(serializers.Serializer):
     verification_status = serializers.ChoiceField(choices=VerificationStatus.choices)
+    note = serializers.CharField(required=False, allow_blank=True, max_length=1000, default="")
+
+
+class ProviderFeaturedActionSerializer(serializers.Serializer):
+    is_featured = serializers.BooleanField()
     note = serializers.CharField(required=False, allow_blank=True, max_length=1000, default="")
 
 

@@ -14,6 +14,11 @@ urlpatterns = [
         views.AdminProviderVerificationView.as_view(),
         name="provider-verification",
     ),
+    path(
+        "providers/<uuid:pk>/featured/",
+        views.AdminProviderFeaturedView.as_view(),
+        name="provider-featured",
+    ),
     path("businesses/", views.AdminBusinessListView.as_view(), name="businesses"),
     path("businesses/<uuid:pk>/", views.AdminBusinessDetailView.as_view(), name="business-detail"),
     path("events/", views.AdminEventListView.as_view(), name="events"),

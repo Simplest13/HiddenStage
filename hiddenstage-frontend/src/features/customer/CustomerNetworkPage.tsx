@@ -104,10 +104,10 @@ export function CustomerNetworkPage() {
     void loadData()
   }, [])
 
-  // Deep-linking: auto-select chat based on URL search query (?user= or ?convId= or ?provider=)
+  // Deep-linking: auto-select chat based on URL search query (?user= or ?convId= or ?provider= or ?conv=)
   useEffect(() => {
     const targetUserId = searchParams.get('userId') || searchParams.get('providerId') || searchParams.get('user')
-    const targetConvId = searchParams.get('convId') || searchParams.get('conversation')
+    const targetConvId = searchParams.get('convId') || searchParams.get('conversation') || searchParams.get('conv')
     if (targetConvId) {
       setActiveConvId(targetConvId)
     } else if (targetUserId && conversations.length > 0) {

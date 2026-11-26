@@ -75,6 +75,7 @@ class PublicDirectoryProviderSerializer(serializers.Serializer):
     coverage_areas = serializers.ListField(child=serializers.DictField(), required=False, default=list)
     rating = serializers.FloatField(allow_null=True, required=False)
     review_count = serializers.IntegerField(default=0)
+    is_featured = serializers.BooleanField(default=False)
 
 
 class OpportunityRequirementSerializer(serializers.Serializer):

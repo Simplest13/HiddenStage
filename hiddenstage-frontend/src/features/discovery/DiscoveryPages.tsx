@@ -629,15 +629,41 @@ function resolveServiceBackground(
 export function ProviderProfilePage() {
   const { providerId } = useParams()
   const auth = useAuth()
+  const user = auth.status === 'authenticated' ? auth.user : null
+  const { showToast } = useToast()
+  const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<'overview' | 'about' | 'services' | 'projects' | 'photos' | 'videos' | 'team' | 'coverage' | 'reviews'>('overview')
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
   const [showContactModal, setShowContactModal] = useState(false)
+  const [connectingNetwork, setConnectingNetwork] = useState(false)
+  const [inNetwork, setInNetwork] = useState(false)
+  const [messagingLoading, setMessagingLoading] = useState(false)
 
   const liveData = useApiData(
     () => marketplaceApi.providerDetail(providerId ?? ''),
     [providerId]
   )
   const liveProvider = liveData.data
+
+  const connectionsData = useApiData(
+    () => (user ? networkApi.listConnections().catch(() => []) : Promise.resolve([])),
+    [user]
+  )
+
+  useEffect(() => {
+    if (!liveProvider || !connectionsData.data) return
+    const isConn = connectionsData.data.some((c) => {
+      const pId = liveProvider.id
+      const pUser = (liveProvider as any).user_id
+      const pUsername = (liveProvider.username || '').toLowerCase()
+      return (
+        c.provider === pId ||
+        (pUser && c.provider === pUser) ||
+        (c.provider_username && c.provider_username.toLowerCase() === pUsername)
+      )
+    })
+    setInNetwork(isConn)
+  }, [liveProvider, connectionsData.data])
 
   const demoProvider = useMemo(() => {
     return demoProviders.find((item) => item.id === providerId)
@@ -780,6 +806,78 @@ export function ProviderProfilePage() {
 
   const quoteRequestUrl = `${routes.customer.newRequest}?provider=${encodeURIComponent(p.id)}&category=${encodeURIComponent(p.primary_category || p.categories[0] || '')}&providerName=${encodeURIComponent(p.display_name)}`
 
+  async function handleAddToNetwork() {
+    if (!user) {
+      navigate(`${routes.auth.login}?next=${encodeURIComponent(window.location.pathname)}`)
+      return
+    }
+    if (user.id === p.id || user.id === (p as any).user_id || (user.username && user.username === p.username)) {
+      showToast('This is your own profile.', 'info')
+      return
+    }
+    if (inNetwork) {
+      showToast(`${p.display_name} is already in your network.`, 'info')
+      return
+    }
+    setConnectingNetwork(true)
+    try {
+      await networkApi.connect(p.id, p.username || undefined, 'Connected from Provider Profile')
+      setInNetwork(true)
+      showToast(`Added ${p.display_name} to your network!`, 'success')
+    } catch (err: any) {
+      const msg = err instanceof Error ? err.message : 'Could not add to network.'
+      showToast(msg, 'error')
+    } finally {
+      setConnectingNetwork(false)
+    }
+  }
+
+  async function handleMessagePrivately() {
+    if (!user) {
+      navigate(`${routes.auth.login}?next=${encodeURIComponent(window.location.pathname)}`)
+      return
+    }
+    if (user.id === p.id || user.id === (p as any).user_id || (user.username && user.username === p.username)) {
+      showToast('This is your own profile.', 'info')
+      return
+    }
+    setMessagingLoading(true)
+    const isProviderOnly = auth.status === 'authenticated' && auth.roles.includes('PROVIDER') && !auth.roles.includes('CUSTOMER')
+    const targetRoute = isProviderOnly ? routes.provider.customerNetwork : routes.customer.network
+    try {
+      const conv = await networkApi.startConversation(p.id)
+      navigate(`${targetRoute}?convId=${conv.id}&userId=${p.id}`)
+    } catch {
+      // If start failed (e.g. offline/network), navigate anyway with query params so destination loads/initiates it
+      navigate(`${targetRoute}?userId=${p.id}`)
+    } finally {
+      setMessagingLoading(false)
+    }
+  }
+
+  async function handleShare() {
+    const shareUrl = window.location.href
+    const shareData = {
+      title: `${p.display_name} | HiddenStage`,
+      text: p.headline || `Check out ${p.display_name} on HiddenStage event marketplace`,
+      url: shareUrl,
+    }
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData)
+        return
+      } catch (err: any) {
+        if (err?.name === 'AbortError') return
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(shareUrl)
+      showToast('Profile link copied to clipboard!', 'success')
+    } catch {
+      showToast('Could not copy link to clipboard.', 'error')
+    }
+  }
+
   return (
     <div className="wmg-page">
       {/* Hero Cover Banner */}
@@ -833,6 +931,38 @@ export function ProviderProfilePage() {
                   </span>
                 )}
               </div>
+            </div>
+
+            <div className="wmg-hero-actions">
+              <button
+                type="button"
+                className={`wmg-action-btn ${inNetwork ? 'wmg-action-btn--connected' : 'wmg-action-btn--primary'}`}
+                onClick={handleAddToNetwork}
+                disabled={connectingNetwork}
+              >
+                <Icon name={inNetwork ? 'circleCheck' : 'network'} size={15} />
+                {inNetwork ? 'In Network' : connectingNetwork ? 'Adding...' : 'Add to Network'}
+              </button>
+
+              <button
+                type="button"
+                className="wmg-action-btn wmg-action-btn--secondary"
+                onClick={handleMessagePrivately}
+                disabled={messagingLoading}
+              >
+                <Icon name="message" size={15} />
+                {messagingLoading ? 'Opening...' : 'Message Privately'}
+              </button>
+
+              <button
+                type="button"
+                className="wmg-action-btn wmg-action-btn--secondary"
+                onClick={handleShare}
+                title="Share profile link"
+              >
+                <Icon name="externalLink" size={15} />
+                Share
+              </button>
             </div>
           </div>
 

@@ -1,5 +1,6 @@
 """Administrative verification, moderation, configuration and audit use cases."""
 
+from django.core.cache import cache
 from django.db import transaction
 from django.db.models import Count, Q, Sum
 from django.utils import timezone
@@ -61,6 +62,7 @@ def get_overview_metrics() -> dict:
     provider_counts = ProviderProfile.objects.aggregate(
         total=Count("id"),
         verified=Count("id", filter=Q(verification_status=VerificationStatus.VERIFIED)),
+        featured=Count("id", filter=Q(is_featured=True)),
         pending=Count("id", filter=Q(verification_status=VerificationStatus.PENDING)),
         unverified=Count("id", filter=Q(verification_status=VerificationStatus.UNVERIFIED)),
         rejected=Count("id", filter=Q(verification_status=VerificationStatus.REJECTED)),
@@ -225,6 +227,36 @@ def set_provider_verification(
         note=note,
         metadata={"from": previous, "to": verification_status, "kind": profile.kind},
     )
+    return profile
+
+
+@transaction.atomic
+def set_provider_featured(
+    *, actor, provider_id, is_featured: bool, note: str = ""
+) -> ProviderProfile:
+    profile = (
+        ProviderProfile.objects.select_for_update(of=("self",))
+        .select_related("user", "business")
+        .filter(id=provider_id)
+        .first()
+    )
+    if profile is None:
+        raise NotFound("Provider profile not found.")
+
+    previous = profile.is_featured
+    profile.is_featured = is_featured
+    profile.save(update_fields=["is_featured", "updated_at"])
+
+    _log(
+        actor=actor,
+        action=AdminAuditAction.PROVIDER_FEATURED_UPDATED,
+        target_type="provider_profile",
+        target_id=profile.id,
+        target_label=f"{profile.display_name} ({profile.user.email})",
+        note=note,
+        metadata={"from": previous, "to": is_featured, "kind": profile.kind},
+    )
+    cache.clear()
     return profile
 
 

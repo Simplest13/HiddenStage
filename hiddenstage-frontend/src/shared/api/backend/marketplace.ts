@@ -24,6 +24,7 @@ export type PublicDirectoryParams = {
   category?: string
   kind?: string
   location?: string
+  featured?: boolean
 }
 
 export type QuoteItemPayload = {
@@ -57,6 +58,7 @@ export const marketplaceApi = {
     if (params?.category) search.set('category', params.category)
     if (params?.kind) search.set('kind', params.kind)
     if (params?.location) search.set('location', params.location)
+    if (params?.featured !== undefined) search.set('featured', String(params.featured))
     const query = search.toString()
     return apiRequest<ApiPublicDirectoryProvider[]>(`/directory/providers/${query ? `?${query}` : ''}`)
   },

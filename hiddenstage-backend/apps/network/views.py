@@ -614,7 +614,7 @@ class ConversationListView(APIView):
         return Response(serializer.data)
 
     def post(self, request):
-        target_id = request.data.get("provider_id") or request.data.get("user_id")
+        target_id = request.data.get("provider_id") or request.data.get("user_id") or request.data.get("username")
         event_id = request.data.get("event_id")
         if not target_id:
             return Response(
@@ -622,16 +622,44 @@ class ConversationListView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        target_user = User.objects.filter(pk=target_id, is_active=True).first()
+        if not target_user:
+            profile = ProviderProfile.objects.filter(pk=target_id).select_related("user").first()
+            if profile and profile.user and profile.user.is_active:
+                target_user = profile.user
+
+        if not target_user:
+            clean_u = str(target_id).lstrip("@").strip()
+            target_user = User.objects.filter(username__iexact=clean_u, is_active=True).first()
+            if not target_user:
+                profile = ProviderProfile.objects.filter(
+                    Q(username__iexact=clean_u) | Q(user__username__iexact=clean_u)
+                ).select_related("user").first()
+                if profile and profile.user and profile.user.is_active:
+                    target_user = profile.user
+
+        if not target_user:
+            return Response(
+                {"detail": "Target user or provider not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if target_user.id == request.user.id:
+            return Response(
+                {"detail": "Cannot start conversation with yourself."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         if request.user.role == "PROVIDER":
-            customer_id = target_id
-            provider_id = request.user.id
+            customer = target_user
+            provider = request.user
         else:
-            customer_id = request.user.id
-            provider_id = target_id
+            customer = request.user
+            provider = target_user
 
         conv, _ = Conversation.objects.get_or_create(
-            customer_id=customer_id,
-            provider_id=provider_id,
+            customer=customer,
+            provider=provider,
             defaults={"event_id": event_id if event_id else None},
         )
         serializer = ConversationSerializer(conv, context={"request": request})
