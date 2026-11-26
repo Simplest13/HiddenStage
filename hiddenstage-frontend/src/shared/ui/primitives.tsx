@@ -12,8 +12,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
   return <button ref={ref} className={`button button--${variant} button--${size} ${className}`} {...props}>{children}</button>
 })
 
-export function ButtonLink({ to, variant = 'primary', size = 'md', className = '', style, onClick, children }: { to: string; variant?: ButtonProps['variant']; size?: ButtonProps['size']; className?: string; style?: React.CSSProperties; onClick?: () => void; children: ReactNode }) {
-  return <Link to={to} onClick={onClick} className={`button button--${variant} button--${size} ${className}`} style={style}>{children}</Link>
+export function ButtonLink({ to, variant = 'primary', size = 'md', className = '', style, onClick, title, children }: { to: string; variant?: ButtonProps['variant']; size?: ButtonProps['size']; className?: string; style?: React.CSSProperties; onClick?: () => void; title?: string; children: ReactNode }) {
+  return <Link to={to} onClick={onClick} title={title} className={`button button--${variant} button--${size} ${className}`} style={style}>{children}</Link>
 }
 
 type FieldProps = { label: string; hint?: string; error?: string; id?: string }

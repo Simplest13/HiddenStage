@@ -340,6 +340,7 @@ export type ApiOpportunityRequirement = {
   title: string
   category: string
   category_name: string
+  custom_service_name?: string
   description: string
   instructions: string
   budget_paise: number | null
@@ -350,13 +351,16 @@ export type ApiProviderOpportunity = {
   id: string
   name: string
   event_type: string
+  description?: string
   event_date: string
+  end_date?: string | null
   start_time: string
   end_time: string
   guest_count: number
   locality: string
   city: string
   state: string
+  pin_code?: string
   requirements: ApiOpportunityRequirement[]
   invitation_status: InvitationStatus | null
   already_quoted: boolean
@@ -629,6 +633,13 @@ export type ApiPublicDirectoryProvider = {
   pin_code?: string | null
   starting_price_paise?: number | null
   coverage_count: number
+  coverage_locations?: string[]
+  coverage_areas?: Array<{
+    locality: string
+    city: string
+    state: string
+    pin_code: string
+  }>
   rating?: number | null
   review_count: number
 }
@@ -639,15 +650,28 @@ export type ApiInvitationEventDetail = {
   id: string
   name: string
   event_type: string
+  description?: string
   event_date: string
+  end_date?: string | null
   start_time: string
   end_time: string
   guest_count: number
   city: string
   locality: string
+  state?: string
   pin_code: string
   status: EventStatus
-  requirements: Array<{ id: string; title: string; category: string; budget_paise: number | null; status: RequirementStatus }>
+  requirements: Array<{
+    id: string
+    title: string
+    category: string
+    category_name?: string
+    custom_service_name?: string
+    description?: string
+    instructions?: string
+    budget_paise: number | null
+    status: RequirementStatus
+  }>
 }
 
 export type ApiInvitation = {
@@ -702,6 +726,7 @@ export type ApiQuotation = {
   event: string
   event_name: string
   event_date?: string | null
+  event_detail?: ApiInvitationEventDetail
   provider: string
   provider_display_name: string
   provider_profile_id: string | null

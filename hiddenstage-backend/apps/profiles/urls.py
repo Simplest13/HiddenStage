@@ -57,6 +57,11 @@ urlpatterns = [
         name="portfolio-detail",
     ),
     path(
+        "media/portfolio/<str:filename>",
+        views.PortfolioMediaView.as_view(),
+        name="portfolio-media",
+    ),
+    path(
         "profiles/team/",
         views.ProfileTeamMemberListCreateView.as_view(),
         name="team-list",

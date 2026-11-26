@@ -71,10 +71,10 @@ export default function AuthPages() {
 
   useEffect(() => {
     if (auth.status === 'authenticated' && page !== 'verifyEmail') {
-      const requested = (location.state as { from?: string } | null)?.from
+      const requested = (location.state as { from?: string } | null)?.from || searchParams.get('from') || searchParams.get('next')
       navigate(requested && requested !== routes.auth.login ? requested : destinationFor(auth.user), { replace: true })
     }
-  }, [auth, page, navigate, location.state])
+  }, [auth, page, navigate, location.state, searchParams])
 
   useEffect(() => {
     if (page !== 'verifyEmail' || !token || verificationStarted.current) return
@@ -117,7 +117,7 @@ export default function AuthPages() {
         })
       } else if (page === 'login') {
         const user = await actions.login({ email, password })
-        const requested = (location.state as { from?: string } | null)?.from
+        const requested = (location.state as { from?: string } | null)?.from || searchParams.get('from') || searchParams.get('next')
         navigate(requested && requested !== routes.auth.login ? requested : destinationFor(user))
       } else if (page === 'forgotPassword') {
         await actions.requestPasswordReset(email)

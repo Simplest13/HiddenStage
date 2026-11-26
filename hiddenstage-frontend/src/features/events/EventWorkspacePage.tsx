@@ -21,7 +21,6 @@ import {
   CommitmentStatusBadge,
   EventStatusBadge,
   InvitationRow,
-  QuoteCard,
   QuoteComparison,
   ReleaseCommitmentDialog,
 } from '../marketplace/MarketplaceUI'
@@ -301,10 +300,11 @@ export default function EventWorkspacePage({ initialTab }: { initialTab?: TabKey
         description="A supplier can quote after accepting your invitation. Quotes show their priced services, message and validity."
         action={<Button type="button" variant="secondary" onClick={() => changeTab('providers')}>Review suggested professionals</Button>}
       />}
-      {quotations.length > 0 && <QuoteComparison quotations={quotations} />}
-      <div className="quote-list">
-        {quotations.map((quotation) => <QuoteCard key={quotation.id} quotation={quotation} event={event} onAccepted={() => { showToast('Supplier chosen. The commitment is recorded in your workspace.', 'success'); refreshAll() }} />)}
-      </div>
+      {quotations.length > 0 && <QuoteComparison
+        quotations={quotations}
+        event={event}
+        onAccepted={() => { showToast('Supplier chosen. The commitment is recorded in your workspace.', 'success'); refreshAll() }}
+      />}
       <p className="muted-note">HiddenStage does not run an in-platform chat in this release. Use the supplier contact shown on a quote, and keep the commitment recorded here as your agreed scope.</p>
     </>}
 

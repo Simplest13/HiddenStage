@@ -16,6 +16,7 @@ type Step = 0 | 1 | 2 | 3 | 4
 type EventValues = {
   name: string
   type: string
+  customType?: string
   description: string
   date: string
   endDate?: string
@@ -49,7 +50,7 @@ const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'
 const maxFileSize = 5 * 1024 * 1024
 const today = () => new Date().toISOString().slice(0, 10)
 const blankValues = (): EventValues => ({
-  name: '', type: '', description: '', date: '', endDate: '', startTime: '', endTime: '',
+  name: '', type: '', customType: '', description: '', date: '', endDate: '', startTime: '', endTime: '',
   guests: '50', pinCode: '', locality: '', city: '', state: '', venueName: '', address: '',
 })
 const blankRequirement = (): RequirementDraft => ({
@@ -120,12 +121,25 @@ export default function EventPages() {
       .then(([event, invitations]) => {
         if (!active) return
         setStatus(event.status)
+        const isStandard = eventTypes.includes(event.event_type) && event.event_type !== 'Other'
+        const formType = isStandard ? event.event_type : (event.event_type ? 'Other' : '')
+        const customType = isStandard ? '' : (event.event_type === 'Other' ? '' : event.event_type)
         setValues({
-          name: event.name, type: event.event_type, description: event.description,
-          date: event.event_date, endDate: event.end_date ?? '',
-          startTime: event.start_time.slice(0, 5), endTime: event.end_time.slice(0, 5),
-          guests: String(event.guest_count), pinCode: event.pin_code, locality: event.locality,
-          city: event.city, state: event.state, venueName: event.venue_name, address: event.venue_address,
+          name: event.name,
+          type: formType,
+          customType: customType,
+          description: event.description,
+          date: event.event_date,
+          endDate: event.end_date ?? '',
+          startTime: event.start_time.slice(0, 5),
+          endTime: event.end_time.slice(0, 5),
+          guests: String(event.guest_count),
+          pinCode: event.pin_code,
+          locality: event.locality,
+          city: event.city,
+          state: event.state,
+          venueName: event.venue_name,
+          address: event.venue_address,
         })
         setRequirements(event.requirements.map((item) => ({
           key: item.id, category: item.category, title: item.title, description: item.description,
@@ -144,6 +158,7 @@ export default function EventPages() {
 
   function update<K extends keyof EventValues>(field: K, value: EventValues[K]) {
     setValues((current) => ({ ...current, [field]: value }))
+    if (errors[field]) setErrors((current) => ({ ...current, [field]: '' }))
   }
 
   function updateRequirement(field: keyof RequirementDraft, value: string) {
@@ -193,6 +208,9 @@ export default function EventPages() {
     if (lastStep >= 0) {
       if (values.name.trim().length < 3) next.name = 'Give your request a name of at least 3 characters.'
       if (!values.type) next.type = 'Choose the type of event.'
+      else if (values.type === 'Other' && (!values.customType || values.customType.trim().length < 2)) {
+        next.customType = 'Specify what type of event this is.'
+      }
       if (!values.date) next.date = 'Choose the event date.'
       else if (values.date < today()) next.date = 'The event date cannot be in the past.'
       if (values.endDate && values.endDate < values.date) {
@@ -219,7 +237,7 @@ export default function EventPages() {
     setErrors(next)
     if (Object.keys(next).length) {
       setError('Check the highlighted details before continuing.')
-      if (next.name || next.type || next.date || next.endDate || next.startTime || next.endTime || next.guests) setStep(0)
+      if (next.name || next.type || next.customType || next.date || next.endDate || next.startTime || next.endTime || next.guests) setStep(0)
       else if (next.pinCode || next.locality || next.city || next.state) setStep(1)
       else setStep(2)
       return false
@@ -247,10 +265,13 @@ export default function EventPages() {
       values.date && values.startTime && values.endTime && values.endTime <= values.startTime
     )
     const effectiveEndDate = values.endDate || (isOvernight ? addDays(values.date, 1) : values.date)
+    const resolvedEventType = values.type === 'Other'
+      ? (values.customType?.trim() || 'Other')
+      : values.type
 
     return {
       name: values.name.trim(),
-      event_type: values.type,
+      event_type: resolvedEventType,
       description: values.description.trim(),
       event_date: values.date,
       end_date: effectiveEndDate,
@@ -430,11 +451,40 @@ function BasicDetails({ values, errors, onChange }: { values: EventValues; error
     <FormHeading number="01" title="The essentials" intro="What is the occasion, when is it, and how many people are you expecting?" />
     <Input label="Request name" name="name" required minLength={3} maxLength={120} value={values.name} onChange={(event) => onChange('name', event.target.value)} hint="A name only you see, for example “Aisha & Tom’s wedding”." error={errors.name} />
     <div className="event-form-grid">
-      <Select label="Type of event" name="type" required value={values.type} onChange={(event) => onChange('type', event.target.value)} error={errors.type}>
+      <Select
+        label="Type of event"
+        name="type"
+        required
+        value={values.type}
+        onChange={(event) => {
+          const selected = event.target.value
+          onChange('type', selected)
+          if (selected !== 'Other') {
+            onChange('customType', '')
+          }
+        }}
+        error={errors.type}
+      >
         <option value="">Choose an event type</option>
         {eventTypes.map((type) => <option key={type} value={type}>{type}</option>)}
       </Select>
       <Input label="Guest count" name="guests" type="number" min={1} max={10000} required value={values.guests} onChange={(event) => onChange('guests', event.target.value)} error={errors.guests} />
+      {values.type === 'Other' && (
+        <div style={{ gridColumn: '1 / -1' }}>
+          <Input
+            label="Other type of event"
+            name="customType"
+            required
+            minLength={2}
+            maxLength={60}
+            placeholder="e.g. Baby shower, Exhibition, Reunion, Gala dinner"
+            value={values.customType ?? ''}
+            onChange={(event) => onChange('customType', event.target.value)}
+            error={errors.customType}
+            hint="Please specify the type of event so specialists can tailor their quote."
+          />
+        </div>
+      )}
       <Input label="Event start date" name="date" type="date" min={today()} required value={values.date} onChange={(event) => onChange('date', event.target.value)} error={errors.date} />
       <Input
         label="Event end date"
@@ -670,7 +720,14 @@ function Review({ values, requirements, categories, files, existing, onEdit, sta
     </div>
     <ReviewSection title="Event" onEdit={() => onEdit(0)}>
       <ReviewRow label="Request name" value={values.name} />
-      <ReviewRow label="Type" value={values.type} />
+      <ReviewRow
+        label="Type"
+        value={
+          values.type === 'Other'
+            ? (values.customType?.trim() ? `Other (${values.customType.trim()})` : 'Other')
+            : values.type
+        }
+      />
       <ReviewRow label="Date and time" value={dateSummary} />
       <ReviewRow label="Guests" value={`${values.guests} guests`} />
       {values.description && <ReviewRow label="About" value={values.description} />}

@@ -11,10 +11,18 @@ import { CategoryIcon } from '../../shared/ui/CategoryIcon'
 import { Icon } from '../../shared/ui/Icon'
 import { Clock, MapPin, Phone, ShieldCheck } from 'kubai-icons-react'
 import { marketplaceApi } from '../../shared/api/backend/marketplace'
+import { networkApi } from '../../shared/api/backend/ecosystem'
 import { useApiData } from '../../shared/api/backend/useApiData'
 import { formatPaise } from '../../shared/api/backend/format'
 import { useAuth } from '../../app/auth/useAuth'
-import type { ApiProviderDetail, ApiPublicDirectoryProvider, ProviderKind } from '../../shared/api/backend/types'
+import { useToast } from '../../shared/ui/useToast'
+import type {
+  ApiPortfolioItem,
+  ApiProviderDetail,
+  ApiProviderService,
+  ApiPublicDirectoryProvider,
+  ProviderKind,
+} from '../../shared/api/backend/types'
 import './discovery.css'
 
 export function ServiceDiscoveryPage() {
@@ -96,8 +104,124 @@ const kindBadges: Record<ProviderKind, string> = {
   WORKER: 'Event Operations Crew',
 }
 
-function PublicProviderCard({ provider }: { provider: ApiPublicDirectoryProvider }) {
+function CoverageLocationsDisplay({
+  locations,
+  fallbackCount,
+}: {
+  locations: string[]
+  fallbackCount?: number
+}) {
+  const [expanded, setExpanded] = useState(false)
+
+  if (!locations || locations.length === 0) {
+    if (fallbackCount && fallbackCount > 0) {
+      return (
+        <span className="directory-card__coverage">
+          <Icon name="mapPin" size={13} style={{ flexShrink: 0, color: 'var(--color-orange)' }} />
+          <span>Covers {fallbackCount} location{fallbackCount === 1 ? '' : 's'}</span>
+        </span>
+      )
+    }
+    return (
+      <span className="directory-card__coverage">
+        <Icon name="mapPin" size={13} style={{ flexShrink: 0, color: 'var(--color-orange)' }} />
+        <span>Location on enquiry</span>
+      </span>
+    )
+  }
+
+  const MAX_VISIBLE = 3
+  const isOverflow = locations.length > MAX_VISIBLE
+  const visible = expanded ? locations : locations.slice(0, MAX_VISIBLE)
+  const text = visible.join(', ') + (!expanded && isOverflow ? '...' : '')
+
+  return (
+    <span className="directory-card__coverage" title={locations.join(', ')}>
+      <Icon name="mapPin" size={13} style={{ flexShrink: 0, color: 'var(--color-orange)' }} />
+      <span>
+        Covers {text}
+        {isOverflow && (
+          <button
+            type="button"
+            className="directory-card__show-more"
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              setExpanded(!expanded)
+            }}
+          >
+            {expanded ? ' [show less]' : ' [show more]'}
+          </button>
+        )}
+      </span>
+    </span>
+  )
+}
+
+function PublicProviderCard({
+  provider,
+  isInitiallyConnected,
+  onConnected,
+}: {
+  provider: ApiPublicDirectoryProvider
+  isInitiallyConnected?: boolean
+  onConnected?: (id: string) => void
+}) {
+  const auth = useAuth()
+  const user = auth.status === 'authenticated' ? auth.user : null
+  const { showToast } = useToast()
+  const navigate = useNavigate()
+  const [connecting, setConnecting] = useState(false)
+  const [connected, setConnected] = useState(Boolean(isInitiallyConnected))
+
+  useEffect(() => {
+    if (isInitiallyConnected) setConnected(true)
+  }, [isInitiallyConnected])
+
   const locationStr = [provider.locality, provider.city, provider.pin_code].filter(Boolean).join(', ')
+
+  const coverageList: string[] = useMemo(() => {
+    if (provider.coverage_locations && provider.coverage_locations.length > 0) {
+      return provider.coverage_locations
+    }
+    if (provider.coverage_areas && provider.coverage_areas.length > 0) {
+      const areas = provider.coverage_areas
+        .map((a) => a.locality || a.city || a.pin_code)
+        .filter(Boolean)
+      if (areas.length > 0) return Array.from(new Set(areas))
+    }
+    const loc = provider.locality || provider.city || provider.pin_code
+    return loc ? [loc] : []
+  }, [provider])
+
+  async function handleAddToNetwork(e: React.MouseEvent) {
+    e.preventDefault()
+    e.stopPropagation()
+
+    if (!user) {
+      navigate(`${routes.auth.login}?next=${encodeURIComponent(window.location.pathname + window.location.search)}`)
+      return
+    }
+
+    if (user.id === provider.id) {
+      showToast('This is your own profile.', 'info')
+      return
+    }
+
+    setConnecting(true)
+    try {
+      await networkApi.connect(provider.id, provider.username || undefined, 'Connected from Provider Directory')
+      setConnected(true)
+      onConnected?.(provider.id)
+      showToast(`Added ${provider.display_name} to your network!`, 'success')
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Could not add to network.'
+      showToast(msg, 'error')
+    } finally {
+      setConnecting(false)
+    }
+  }
+
   return (
     <article className="directory-card">
       <div className="directory-card__media" style={{ background: provider.cover_image ? `url(${provider.cover_image}) center/cover` : undefined }}>
@@ -124,12 +248,33 @@ function PublicProviderCard({ provider }: { provider: ApiPublicDirectoryProvider
           {provider.categories.map((code) => <Badge key={code}>{categoryName(code) || code}</Badge>)}
         </div>
         <div className="directory-card__footer">
-          <span className="directory-card__coverage">
-            {provider.starting_price_paise ? `Starting from ${formatPaise(provider.starting_price_paise)}` : (provider.coverage_count ? `Covers ${provider.coverage_count} location${provider.coverage_count === 1 ? '' : 's'}` : 'Custom quotes available')}
-          </span>
-          <ButtonLink to={providerDetailPath(provider.username || provider.id)} variant="secondary" size="sm">
-            View Profile <Icon name="arrowRight" size={14} />
-          </ButtonLink>
+          <div className="directory-card__footer-meta">
+            {provider.starting_price_paise ? (
+              <div className="directory-card__price">
+                Starting from {formatPaise(provider.starting_price_paise)}
+              </div>
+            ) : null}
+            <CoverageLocationsDisplay locations={coverageList} fallbackCount={provider.coverage_count} />
+          </div>
+          <div className="directory-card__actions">
+            <button
+              type="button"
+              className={`button button--sm directory-card__network-btn ${connected ? 'button--secondary directory-card__network-btn--connected' : 'button--primary'}`}
+              disabled={connected || connecting}
+              onClick={handleAddToNetwork}
+            >
+              {connecting ? (
+                <>Connecting…</>
+              ) : connected ? (
+                <><Icon name="circleCheck" size={13} /> In Network</>
+              ) : (
+                <>+ Add to my network</>
+              )}
+            </button>
+            <ButtonLink to={providerDetailPath(provider.username || provider.id)} variant="secondary" size="sm">
+              View Profile <Icon name="arrowRight" size={14} />
+            </ButtonLink>
+          </div>
         </div>
       </div>
     </article>
@@ -137,6 +282,7 @@ function PublicProviderCard({ provider }: { provider: ApiPublicDirectoryProvider
 }
 
 function DemoProviderCard({ provider }: { provider: (typeof demoProviders)[number] }) {
+  const { showToast } = useToast()
   return (
     <article className="directory-card">
       <div className="directory-card__media" aria-hidden="true">
@@ -156,10 +302,19 @@ function DemoProviderCard({ provider }: { provider: (typeof demoProviders)[numbe
           {provider.categories.map((slug) => <Badge key={slug}>{categoryName(slug)}</Badge>)}
         </div>
         <div className="directory-card__footer">
-          <span className="directory-card__coverage">Covers {provider.coverage.join(' · ')}</span>
-          <ButtonLink to={providerDetailPath(provider.id)} variant="secondary" size="sm">
-            View Profile <Icon name="arrowRight" size={14} />
-          </ButtonLink>
+          <CoverageLocationsDisplay locations={provider.coverage} />
+          <div className="directory-card__actions">
+            <button
+              type="button"
+              className="button button--sm button--primary directory-card__network-btn"
+              onClick={() => showToast('Demo profile: register or sign in to connect with live event professionals.', 'info')}
+            >
+              + Add to my network
+            </button>
+            <ButtonLink to={providerDetailPath(provider.id)} variant="secondary" size="sm">
+              View Profile <Icon name="arrowRight" size={14} />
+            </ButtonLink>
+          </div>
         </div>
       </div>
     </article>
@@ -169,6 +324,8 @@ function DemoProviderCard({ provider }: { provider: (typeof demoProviders)[numbe
 export function ProviderDirectoryPage() {
   const { categorySlug } = useParams<{ categorySlug?: string }>()
   const navigate = useNavigate()
+  const auth = useAuth()
+  const user = auth.status === 'authenticated' ? auth.user : null
   const [searchParams, setSearchParams] = useSearchParams()
   const [query, setQuery] = useState(() => searchParams.get('q') ?? '')
   const [pin, setPin] = useState('')
@@ -181,6 +338,21 @@ export function ProviderDirectoryPage() {
     [category, kindFilter, locality, query]
   )
   const liveProviders = liveData.data ?? []
+
+  const connectionsData = useApiData(
+    () => (user ? networkApi.listConnections().catch(() => []) : Promise.resolve([])),
+    [user]
+  )
+  const [locallyConnectedIds, setLocallyConnectedIds] = useState<Set<string>>(new Set())
+
+  const connectedIds = useMemo(() => {
+    const set = new Set<string>(locallyConnectedIds)
+      ; (connectionsData.data || []).forEach((c) => {
+        if (c.provider) set.add(c.provider)
+        if (c.provider_username) set.add(c.provider_username)
+      })
+    return set
+  }, [connectionsData.data, locallyConnectedIds])
 
   const demoItems = useMemo(() => demoProviders.filter((p) => {
     return (!category || p.categories.includes(category)) &&
@@ -254,14 +426,14 @@ export function ProviderDirectoryPage() {
           items={
             activeCategoryName
               ? [
-                  { label: 'Home', href: routes.home },
-                  { label: 'Services', href: routes.services },
-                  { label: activeCategoryName },
-                ]
+                { label: 'Home', href: routes.home },
+                { label: 'Services', href: routes.services },
+                { label: activeCategoryName },
+              ]
               : [
-                  { label: 'Home', href: routes.home },
-                  { label: 'Event professionals' },
-                ]
+                { label: 'Home', href: routes.home },
+                { label: 'Event professionals' },
+              ]
           }
         />
         <span className="eyebrow">{activeCategoryName ? `${activeCategoryName} Specialists` : 'Explore Event Specialists'}</span>
@@ -312,7 +484,14 @@ export function ProviderDirectoryPage() {
           <Spinner label="Loading professionals..." />
         ) : liveProviders.length > 0 ? (
           <div className="directory-list">
-            {liveProviders.map((provider) => <PublicProviderCard key={provider.id} provider={provider} />)}
+            {liveProviders.map((provider) => (
+              <PublicProviderCard
+                key={provider.id}
+                provider={provider}
+                isInitiallyConnected={connectedIds.has(provider.id) || (Boolean(provider.username) && connectedIds.has(provider.username!))}
+                onConnected={(id) => setLocallyConnectedIds((prev) => new Set([...prev, id]))}
+              />
+            ))}
           </div>
         ) : demoItems.length > 0 ? (
           <div className="directory-list">
@@ -400,6 +579,53 @@ function LightboxModal({
   )
 }
 
+const defaultCategoryImages: Record<string, string> = {
+  spaces: '/categories/spaces.jpg',
+  'food-and-drink': '/categories/food-and-drink.jpg',
+  'music-and-performance': '/categories/music-and-performance.jpg',
+  photography: '/categories/photography.jpg',
+  videography: '/categories/videography.jpg',
+  'decor-and-styling': '/categories/decor-and-styling.jpg',
+  'dj-and-sound': '/categories/dj-and-sound.jpg',
+  'event-hosting': '/categories/event-hosting.jpg',
+  planning: '/categories/planning.jpg',
+}
+
+function resolveServiceBackground(
+  service: ApiProviderService,
+  portfolioItems: ApiPortfolioItem[] = []
+): { bgUrl: string | null; isCompanyPortfolio: boolean; count: number } {
+  const catKey = (service.category || '').toLowerCase().trim()
+  const nameKey = (service.category_name || '').toLowerCase().trim()
+  const titleKey = (service.title || '').toLowerCase().trim()
+
+  const matching = portfolioItems.filter((item) => {
+    if (!item.media || item.media_kind !== 'IMAGE') return false
+    const itemCat = (item.category || '').toLowerCase().trim()
+    return (
+      itemCat === catKey ||
+      (nameKey && itemCat === nameKey) ||
+      (titleKey && itemCat === titleKey) ||
+      (catKey && itemCat.replace(/-/g, '') === catKey.replace(/-/g, ''))
+    )
+  })
+
+  if (matching.length > 0 && matching[0].media) {
+    return {
+      bgUrl: matching[0].media,
+      isCompanyPortfolio: true,
+      count: matching.length,
+    }
+  }
+
+  const fallback = defaultCategoryImages[catKey] || null
+  return {
+    bgUrl: fallback,
+    isCompanyPortfolio: false,
+    count: 0,
+  }
+}
+
 export function ProviderProfilePage() {
   const { providerId } = useParams()
   const auth = useAuth()
@@ -440,6 +666,24 @@ export function ProviderProfilePage() {
     if (!liveProvider) return []
     return (liveProvider.portfolio_items || []).filter((item) => item.media_kind === 'VIDEO' || item.external_url)
   }, [liveProvider])
+
+  const [projectCategoryFilter, setProjectCategoryFilter] = useState<string>('ALL')
+
+  const availableProjectCategories = useMemo(() => {
+    if (!liveProvider) return []
+    const cats = new Set<string>()
+      ; (liveProvider.portfolio_items || []).forEach((item) => {
+        if (item.category) cats.add(item.category)
+      })
+    return Array.from(cats)
+  }, [liveProvider])
+
+  const filteredProjects = useMemo(() => {
+    if (!liveProvider) return []
+    const all = liveProvider.portfolio_items || []
+    if (projectCategoryFilter === 'ALL') return all
+    return all.filter((item) => (item.category || '').toLowerCase().trim() === projectCategoryFilter.toLowerCase().trim())
+  }, [liveProvider, projectCategoryFilter])
 
   if (liveData.loading) {
     return (
@@ -664,20 +908,34 @@ export function ProviderProfilePage() {
                     <Button type="button" size="sm" variant="quiet" onClick={() => setActiveTab('services')}>View all services <Icon name="arrowRight" size={14} /></Button>
                   </div>
                   <div className="wmg-services-grid">
-                    {(p.services || []).slice(0, 3).map((service) => (
-                      <div key={service.id} className="wmg-service-card">
-                        <div>
-                          <Badge>{service.category_name}</Badge>
-                          <h3 style={{ margin: '0.5rem 0 0.25rem' }}>{service.title || service.category_name}</h3>
-                          {service.description && <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', margin: 0 }}>{service.description}</p>}
-                        </div>
-                        {service.base_price_paise && (
-                          <div className="wmg-service-card__price">
-                            From {formatPaise(service.base_price_paise)}
+                    {(p.services || []).slice(0, 3).map((service) => {
+                      const bgInfo = resolveServiceBackground(service, p.portfolio_items || [])
+                      return (
+                        <div
+                          key={service.id}
+                          className={`wmg-service-card ${bgInfo.bgUrl ? 'wmg-service-card--has-bg' : ''}`}
+                          style={bgInfo.bgUrl ? { backgroundImage: `url(${bgInfo.bgUrl})` } : undefined}
+                        >
+                          <div>
+                            <div className="wmg-service-card__badge-row">
+                              <Badge>{service.category_name}</Badge>
+                              {bgInfo.isCompanyPortfolio && (
+                                <span className="wmg-service-card__photo-count">
+                                  <Icon name="camera" size={12} /> {bgInfo.count} photo{bgInfo.count === 1 ? '' : 's'}
+                                </span>
+                              )}
+                            </div>
+                            <h3 style={{ margin: '0.5rem 0 0.25rem' }}>{service.title || service.category_name}</h3>
+                            {service.description && <p style={{ fontSize: '0.85rem', margin: 0 }}>{service.description}</p>}
                           </div>
-                        )}
-                      </div>
-                    ))}
+                          {service.base_price_paise && (
+                            <div className="wmg-service-card__price">
+                              From {formatPaise(service.base_price_paise)}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
                   </div>
                 </div>
               )}
@@ -761,31 +1019,45 @@ export function ProviderProfilePage() {
               <h2>Services & Package Offerings</h2>
               <p style={{ color: 'var(--color-text-muted)', marginBottom: '1.5rem' }}>Every booking is custom tailored. Prices indicate starting budgets and guidelines.</p>
               <div className="wmg-services-grid">
-                {(p.services || []).map((service) => (
-                  <div key={service.id} className="wmg-service-card">
-                    <div>
-                      <Badge>{service.category_name}</Badge>
-                      <h3 style={{ margin: '0.5rem 0' }}>{service.title || service.category_name}</h3>
-                      {service.description && <p style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)', lineHeight: 1.6 }}>{service.description}</p>}
-                    </div>
-                    <div>
-                      {service.base_price_paise && (
-                        <div className="wmg-service-card__price">
-                          From {formatPaise(service.base_price_paise)}
+                {(p.services || []).map((service) => {
+                  const bgInfo = resolveServiceBackground(service, p.portfolio_items || [])
+                  return (
+                    <div
+                      key={service.id}
+                      className={`wmg-service-card ${bgInfo.bgUrl ? 'wmg-service-card--has-bg' : ''}`}
+                      style={bgInfo.bgUrl ? { backgroundImage: `url(${bgInfo.bgUrl})` } : undefined}
+                    >
+                      <div>
+                        <div className="wmg-service-card__badge-row">
+                          <Badge>{service.category_name}</Badge>
+                          {bgInfo.isCompanyPortfolio && (
+                            <span className="wmg-service-card__photo-count">
+                              <Icon name="camera" size={12} /> {bgInfo.count} portfolio photo{bgInfo.count === 1 ? '' : 's'}
+                            </span>
+                          )}
                         </div>
-                      )}
-                      <div style={{ marginTop: '0.75rem', width: '100%' }}>
-                        <ButtonLink
-                          to={`${routes.customer.newRequest}?provider=${encodeURIComponent(p.id)}&category=${encodeURIComponent(service.category)}&providerName=${encodeURIComponent(p.display_name)}`}
-                          variant="secondary"
-                          size="sm"
-                        >
-                          Request This Service
-                        </ButtonLink>
+                        <h3 style={{ margin: '0.5rem 0' }}>{service.title || service.category_name}</h3>
+                        {service.description && <p style={{ fontSize: '0.9rem', lineHeight: 1.6 }}>{service.description}</p>}
+                      </div>
+                      <div>
+                        {service.base_price_paise && (
+                          <div className="wmg-service-card__price">
+                            From {formatPaise(service.base_price_paise)}
+                          </div>
+                        )}
+                        <div style={{ marginTop: '0.75rem', width: '100%' }}>
+                          <ButtonLink
+                            to={`${routes.customer.newRequest}?provider=${encodeURIComponent(p.id)}&category=${encodeURIComponent(service.category)}&providerName=${encodeURIComponent(p.display_name)}`}
+                            variant="secondary"
+                            size="sm"
+                          >
+                            Request This Service
+                          </ButtonLink>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
           )}
@@ -793,12 +1065,47 @@ export function ProviderProfilePage() {
           {/* Projects & Work Tab */}
           {activeTab === 'projects' && (
             <div className="wmg-card-section">
-              <h2>Projects & Previous Events</h2>
-              {(p.portfolio_items || []).length === 0 ? (
-                <EmptyState title="No previous projects posted" description="This professional has not listed projects yet." />
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1.25rem' }}>
+                <div>
+                  <h2 style={{ margin: 0 }}>Projects & Previous Events</h2>
+                  <p style={{ color: 'var(--color-text-muted)', margin: '0.25rem 0 0 0', fontSize: '0.9rem' }}>
+                    Showcase of past events, assignments, and portfolio work categorized by service.
+                  </p>
+                </div>
+                {availableProjectCategories.length > 0 && (
+                  <div className="wmg-category-filter-pills">
+                    <button
+                      type="button"
+                      className={`wmg-filter-pill ${projectCategoryFilter === 'ALL' ? 'wmg-filter-pill--active' : ''}`}
+                      onClick={() => setProjectCategoryFilter('ALL')}
+                    >
+                      All Work ({(p.portfolio_items || []).length})
+                    </button>
+                    {availableProjectCategories.map((catCode) => {
+                      const count = (p.portfolio_items || []).filter((it) => (it.category || '').toLowerCase().trim() === catCode.toLowerCase().trim()).length
+                      return (
+                        <button
+                          key={catCode}
+                          type="button"
+                          className={`wmg-filter-pill ${projectCategoryFilter === catCode ? 'wmg-filter-pill--active' : ''}`}
+                          onClick={() => setProjectCategoryFilter(catCode)}
+                        >
+                          {categoryName(catCode) || catCode} ({count})
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {filteredProjects.length === 0 ? (
+                <EmptyState
+                  title={projectCategoryFilter === 'ALL' ? 'No previous projects posted' : `No projects in ${categoryName(projectCategoryFilter) || projectCategoryFilter}`}
+                  description="This professional has not listed projects in this category yet."
+                />
               ) : (
                 <div className="wmg-projects-grid">
-                  {(p.portfolio_items || []).map((item) => (
+                  {filteredProjects.map((item) => (
                     <div key={item.id} className="wmg-project-card">
                       {item.media && (
                         <div className="wmg-project-card__img" onClick={() => {
@@ -810,7 +1117,7 @@ export function ProviderProfilePage() {
                       )}
                       <div className="wmg-project-card__body">
                         <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                          {item.category && <Badge>{item.category}</Badge>}
+                          {item.category && <Badge>{categoryName(item.category) || item.category}</Badge>}
                           {item.event_date && <small style={{ color: 'var(--color-text-muted)' }}>{item.event_date}</small>}
                         </div>
                         <h3 style={{ margin: '0.5rem 0 0.25rem' }}>{item.title}</h3>

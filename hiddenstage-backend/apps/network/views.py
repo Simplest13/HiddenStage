@@ -14,7 +14,7 @@ from rest_framework.views import APIView
 from apps.accounts.models import Notification, User
 from apps.core.permissions import IsCustomerOrProvider, IsProvider
 from apps.network.events import event_bus
-from apps.profiles.models import ProviderCoverage, ProviderService
+from apps.profiles.models import ProviderCoverage, ProviderProfile, ProviderService
 from apps.network.models import (
     AssociationStatus,
     ChatMessage,
@@ -429,9 +429,20 @@ class CustomerNetworkConnectView(APIView):
         provider = None
         if provider_id:
             provider = User.objects.filter(pk=provider_id, is_active=True).first()
-        elif username:
+            if not provider:
+                profile = ProviderProfile.objects.filter(pk=provider_id).select_related("user").first()
+                if profile and profile.user and profile.user.is_active:
+                    provider = profile.user
+
+        if not provider and username:
             clean_u = username.lstrip("@").strip()
             provider = User.objects.filter(username__iexact=clean_u, is_active=True).first()
+            if not provider:
+                profile = ProviderProfile.objects.filter(
+                    Q(username__iexact=clean_u) | Q(user__username__iexact=clean_u)
+                ).select_related("user").first()
+                if profile and profile.user and profile.user.is_active:
+                    provider = profile.user
 
         if not provider:
             return Response(

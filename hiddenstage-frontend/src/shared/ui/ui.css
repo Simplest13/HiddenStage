@@ -50,11 +50,15 @@
 .control--textarea { min-height: 6.5rem; resize: vertical; }
 .control--select {
   appearance: none;
-  background-image: linear-gradient(45deg, transparent 50%, var(--color-indigo) 50%), linear-gradient(135deg, var(--color-indigo) 50%, transparent 50%);
-  background-position: calc(100% - 1.15rem) 1.25rem, calc(100% - 0.85rem) 1.25rem;
-  background-size: 0.3rem 0.3rem;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-color: var(--color-paper-bright);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236B3E26' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-position: right 0.85rem center;
+  background-size: 1rem 1rem;
   background-repeat: no-repeat;
-  padding-right: 2.2rem;
+  padding-right: 2.4rem;
+  cursor: pointer;
 }
 .control--error { border-color: var(--color-danger); }
 .choice { position: relative; display: inline-flex; align-items: center; gap: 0.6rem; cursor: pointer; font-size: 0.875rem; line-height: 1.5; }
@@ -253,7 +257,7 @@
 [data-theme="dark"] input[type="date"],
 [data-theme="dark"] textarea,
 [data-theme="dark"] select {
-  background: #1C1F27;
+  background-color: #1C1F27;
   border: 1px solid #30333E;
   color: #FFFFFF;
   border-radius: var(--radius-sm);
@@ -287,7 +291,7 @@
 [data-theme="dark"] input:disabled,
 [data-theme="dark"] textarea:disabled,
 [data-theme="dark"] select:disabled {
-  background: #14161C;
+  background-color: #14161C;
   border-color: #252832;
   color: #9699A6;
   cursor: not-allowed;
@@ -299,8 +303,38 @@
   box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.22);
 }
 
-[data-theme="dark"] .control--select {
-  background-image: linear-gradient(45deg, transparent 50%, #D5D6DE 50%), linear-gradient(135deg, #D5D6DE 50%, transparent 50%);
+[data-theme="dark"] .control--select,
+[data-theme="dark"] select.control {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-color: #1C1F27;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23D5D6DE' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.85rem center;
+  background-size: 1rem 1rem;
+  padding-right: 2.4rem;
+  cursor: pointer;
+  color: #FFFFFF;
+  border: 1px solid #30333E;
+}
+
+[data-theme="dark"] .control--select:hover:not(:disabled):not(:focus),
+[data-theme="dark"] select.control:hover:not(:disabled):not(:focus) {
+  border-color: #454958;
+}
+
+[data-theme="dark"] .control--select:focus,
+[data-theme="dark"] select.control:focus {
+  border-color: #F8B6C1;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23F8B6C1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  outline: 0;
+  box-shadow: 0 0 0 3px rgba(248, 182, 193, 0.22);
+}
+
+[data-theme="dark"] select option {
+  background-color: #1C1F27;
+  color: #FFFFFF;
 }
 
 /* Choices: Radio & Checkbox ------------------------------------------------ */

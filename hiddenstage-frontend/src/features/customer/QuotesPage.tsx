@@ -6,7 +6,7 @@ import { marketplaceApi } from '../../shared/api/backend/marketplace'
 import { useApiData } from '../../shared/api/backend/useApiData'
 import { formatPaise } from '../../shared/api/backend/format'
 import type { ApiEvent, ApiQuotation } from '../../shared/api/backend/types'
-import { QuoteCard, QuoteComparison } from '../marketplace/MarketplaceUI'
+import { QuoteComparison } from '../marketplace/MarketplaceUI'
 import { actionableRevision } from '../../shared/api/backend/quoteSelection'
 import './customer.css'
 
@@ -74,18 +74,14 @@ export default function QuotesPage() {
 
       {filtered.length === 0 && <EmptyState title="No quotes match those filters" description="Clear the filters to see every quotation you have received." action={<Button type="button" variant="secondary" onClick={() => { setSearch(''); setEventFilter('ALL'); setOnlyActionable(false) }}>Clear filters</Button>} />}
 
-      {filtered.length > 1 && <QuoteComparison quotations={filtered.map((entry) => entry.quotation)} showEvent />}
-
-      <div className="quote-list">{filtered.map(({ quotation, event }) => <QuoteCard
-        key={quotation.id}
-        quotation={quotation}
-        event={event}
-        showEventLink
+      {filtered.length > 0 && <QuoteComparison
+        quotations={filtered.map((entry) => entry.quotation)}
+        showEvent
         onAccepted={() => {
-          showToast(`Supplier chosen for “${event.name}”. The commitment is recorded.`, 'success')
+          showToast('Supplier chosen. The commitment is recorded in your workspace.', 'success')
           data.reload()
         }}
-      />)}</div>
+      />}
 
       <p className="muted-note">Quotation totals are the supplier's own priced lines. If a brief is unclear, ask the supplier directly using the contact on their quote — in-platform chat is not part of this release.</p>
     </>}

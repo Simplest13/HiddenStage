@@ -1,5 +1,9 @@
+import os
+import uuid
 from django.core.cache import cache
+from django.core.files.storage import default_storage
 from django.db.models import Q
+from django.http import FileResponse, Http404
 from drf_spectacular.utils import extend_schema
 from rest_framework import generics, status
 from rest_framework.exceptions import PermissionDenied, ValidationError
@@ -305,7 +309,16 @@ class PortfolioItemListCreateView(generics.ListCreateAPIView):
 
         provider = getattr(owner, "provider_profile", None)
         position = PortfolioItem.objects.filter(owner=owner).count()
-        serializer.save(owner=owner, provider=provider, position=position)
+
+        media_file = self.request.FILES.get("media") or self.request.FILES.get("file")
+        if media_file:
+            ext = os.path.splitext(media_file.name)[1]
+            safe_name = f"portfolio/{uuid.uuid4().hex}{ext}"
+            saved_path = default_storage.save(safe_name, media_file)
+            media_url = f"/api/v1/media/portfolio/{os.path.basename(saved_path)}"
+            serializer.save(owner=owner, provider=provider, position=position, media=media_url)
+        else:
+            serializer.save(owner=owner, provider=provider, position=position)
 
 
 class PortfolioItemDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -321,6 +334,46 @@ class PortfolioItemDetailView(generics.RetrieveUpdateDestroyAPIView):
         return PortfolioItem.objects.filter(
             Q(owner=user) | Q(owner_id__in=managed_owners)
         )
+
+    def perform_update(self, serializer):
+        media_file = self.request.FILES.get("media") or self.request.FILES.get("file")
+        if media_file:
+            ext = os.path.splitext(media_file.name)[1]
+            safe_name = f"portfolio/{uuid.uuid4().hex}{ext}"
+            saved_path = default_storage.save(safe_name, media_file)
+            media_url = f"/api/v1/media/portfolio/{os.path.basename(saved_path)}"
+            serializer.save(media=media_url)
+        else:
+            serializer.save()
+
+
+class PortfolioMediaView(APIView):
+    """Serve uploaded portfolio showcase media files publicly."""
+
+    permission_classes = [AllowAny]
+    throttle_classes = []
+
+    def get(self, request, filename):
+        safe_name = os.path.basename(filename)
+        if not safe_name or ".." in filename:
+            raise Http404("Invalid media filename.")
+
+        path = f"portfolio/{safe_name}"
+        if not default_storage.exists(path):
+            raise Http404("Portfolio media not found.")
+
+        file_obj = default_storage.open(path)
+        content_type = "image/jpeg"
+        lower = filename.lower()
+        if lower.endswith(".png"):
+            content_type = "image/png"
+        elif lower.endswith(".webp"):
+            content_type = "image/webp"
+        elif lower.endswith(".gif"):
+            content_type = "image/gif"
+        elif lower.endswith(".pdf"):
+            content_type = "application/pdf"
+        return FileResponse(file_obj, content_type=content_type)
 
 
 class ProfileTeamMemberListCreateView(generics.ListCreateAPIView):

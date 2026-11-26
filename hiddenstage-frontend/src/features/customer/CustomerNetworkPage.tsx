@@ -1,14 +1,56 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
+import { providerDetailPath } from '../../app/routes/routePaths'
 import { networkApi } from '../../shared/api/backend/ecosystem'
 import { subscribeToRealtime } from '../../shared/api/realtime'
 import type { ApiChatMessage, ApiConversation, ApiCustomerConnection } from '../../shared/api/backend/types'
-import { Avatar, Button, Card, Spinner } from '../../shared/ui'
+import { Avatar, Button, ButtonLink, Card, Spinner } from '../../shared/ui'
 import { Icon } from '../../shared/ui/Icon'
 import { useAuth } from '../../app/auth/useAuth'
+import '../network/network.css'
+
+function getConnectionPartnerId(
+  conn: ApiCustomerConnection,
+  currentUserId?: string,
+  isProviderRole?: boolean
+): string {
+  if (conn.customer_details?.id && conn.customer_details.id !== currentUserId) {
+    return conn.customer_details.id
+  }
+  if (conn.customer && conn.customer !== currentUserId) {
+    return conn.customer
+  }
+  if (conn.provider && conn.provider !== currentUserId) {
+    return conn.provider
+  }
+  if (isProviderRole) {
+    return conn.customer || conn.customer_details?.id || conn.provider
+  }
+  return conn.provider || conn.customer || ''
+}
+
+function findConversationForPartner(
+  convList: ApiConversation[],
+  connId: string,
+  partnerId: string,
+  currentUserId?: string
+): ApiConversation | undefined {
+  return convList.find((c) => {
+    if (c.id === connId) return true
+    if (partnerId && c.other_user?.id === partnerId) return true
+    if (partnerId && currentUserId) {
+      if (c.customer === partnerId && c.customer !== currentUserId) return true
+      if (c.provider === partnerId && c.provider !== currentUserId) return true
+    }
+    return false
+  })
+}
 
 export function CustomerNetworkPage() {
   const auth = useAuth()
   const isProvider = auth.status === 'authenticated' && auth.roles.includes('PROVIDER') && !auth.roles.includes('CUSTOMER')
+  const currentUserId = (auth as any).user?.id
+  const [searchParams] = useSearchParams()
 
   const [connections, setConnections] = useState<ApiCustomerConnection[]>([])
   const [conversations, setConversations] = useState<ApiConversation[]>([])
@@ -62,6 +104,29 @@ export function CustomerNetworkPage() {
     void loadData()
   }, [])
 
+  // Deep-linking: auto-select chat based on URL search query (?user= or ?convId= or ?provider=)
+  useEffect(() => {
+    const targetUserId = searchParams.get('userId') || searchParams.get('providerId') || searchParams.get('user')
+    const targetConvId = searchParams.get('convId') || searchParams.get('conversation')
+    if (targetConvId) {
+      setActiveConvId(targetConvId)
+    } else if (targetUserId && conversations.length > 0) {
+      const match = conversations.find(
+        (c) => c.other_user?.id === targetUserId || c.customer === targetUserId || c.provider === targetUserId
+      )
+      if (match) {
+        setActiveConvId(match.id)
+      } else {
+        void networkApi.startConversation(targetUserId).then((conv) => {
+          if (conv?.id) {
+            setConversations((prev) => [conv, ...prev.filter((c) => c.id !== conv.id)])
+            setActiveConvId(conv.id)
+          }
+        }).catch(() => { })
+      }
+    }
+  }, [searchParams, conversations])
+
   // Live debounced search against platform profiles when user types in left search input
   useEffect(() => {
     const q = searchQuery.trim()
@@ -106,7 +171,7 @@ export function CustomerNetworkPage() {
         })
         if (!isBackground) {
           setTimeout(() => {
-            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+            messagesEndRef.current?.scrollIntoView?.({ behavior: 'smooth' })
           }, 100)
         }
       } catch {
@@ -127,7 +192,7 @@ export function CustomerNetworkPage() {
           return [...prev, incoming]
         })
         setTimeout(() => {
-          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+          messagesEndRef.current?.scrollIntoView?.({ behavior: 'smooth' })
         }, 50)
       }
     })
@@ -171,7 +236,7 @@ export function CustomerNetworkPage() {
     setMessageText('')
     setAttachmentFile(null)
     setTimeout(() => {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+      messagesEndRef.current?.scrollIntoView?.({ behavior: 'smooth' })
     }, 20)
 
     try {
@@ -250,48 +315,55 @@ export function CustomerNetworkPage() {
     if (!window.confirm(isProvider ? 'Remove this client from your network?' : 'Remove this specialist from your network?')) return
     try {
       await networkApi.disconnect(partnerId)
-      setConnections((prev) => prev.filter((c) => c.provider !== partnerId && c.customer !== partnerId))
+      setConnections((prev) => prev.filter((c) => {
+        const pid = getConnectionPartnerId(c, currentUserId, isProvider)
+        return pid !== partnerId
+      }))
     } catch {
       // ignore
     }
   }
 
   async function handleSelectConnection(conn: ApiCustomerConnection) {
-    const existing = conversations.find(
-      (c) =>
-        c.id === conn.id ||
-        (conn.customer && c.customer === conn.customer) ||
-        c.provider === conn.provider ||
-        c.other_user?.id === conn.provider ||
-        (conn.customer && c.other_user?.id === conn.customer)
-    )
+    const partnerId = getConnectionPartnerId(conn, currentUserId, isProvider)
+    const existing = findConversationForPartner(conversations, conn.id, partnerId, currentUserId)
+
     if (existing) {
       setActiveConvId(existing.id)
-    } else {
+    } else if (partnerId) {
       try {
-        const targetId = isProvider ? (conn.customer || conn.provider) : conn.provider
-        const conv = await networkApi.startConversation(targetId)
-        setConversations((prev) => [conv, ...prev])
+        setLoadingMessages(true)
+        const conv = await networkApi.startConversation(partnerId)
+        setConversations((prev) => {
+          const next = prev.filter((c) => c.id !== conv.id)
+          return [conv, ...next]
+        })
         setActiveConvId(conv.id)
-      } catch {
-        // ignore
+      } catch (err) {
+        console.error('Failed to start conversation:', err)
+      } finally {
+        setLoadingMessages(false)
       }
     }
   }
 
-  // Merged list of contacts from connections and conversations
-  const allContacts: ApiCustomerConnection[] = [...connections]
-  for (const conv of conversations) {
-    const alreadyPresent = allContacts.some(
-      (c) =>
-        c.id === conv.id ||
-        (c.customer && c.customer === conv.customer) ||
-        c.provider === conv.provider ||
-        c.provider === conv.other_user?.id ||
-        (c.customer && c.customer === conv.other_user?.id)
-    )
-    if (!alreadyPresent && conv.other_user) {
-      allContacts.push({
+  // Merged list of contacts from connections and conversations, cleanly deduplicated by partner ID
+  const allContacts = useMemo(() => {
+    const list: ApiCustomerConnection[] = [...connections]
+    const seenPartnerIds = new Set<string>()
+
+    for (const c of connections) {
+      const pid = getConnectionPartnerId(c, currentUserId, isProvider)
+      if (pid) seenPartnerIds.add(pid)
+    }
+
+    for (const conv of conversations) {
+      const partnerId = conv.other_user?.id
+      if (!partnerId || seenPartnerIds.has(partnerId)) {
+        continue
+      }
+      seenPartnerIds.add(partnerId)
+      list.push({
         id: conv.id,
         customer: conv.customer,
         provider: conv.provider,
@@ -307,7 +379,8 @@ export function CustomerNetworkPage() {
         created_at: conv.created_at,
       })
     }
-  }
+    return list
+  }, [connections, conversations, currentUserId, isProvider])
 
   // Filtered connections
   const filteredConnections = allContacts.filter((c) => {
@@ -325,12 +398,14 @@ export function CustomerNetworkPage() {
   const connectedUserIds = useMemo(() => {
     const ids = new Set<string>()
     for (const c of allContacts) {
+      const pid = getConnectionPartnerId(c, currentUserId, isProvider)
+      if (pid) ids.add(pid)
       if (c.provider) ids.add(c.provider)
       if (c.customer) ids.add(c.customer)
       if (c.id) ids.add(c.id)
     }
     return ids
-  }, [allContacts])
+  }, [allContacts, currentUserId, isProvider])
 
   // Filter out suggestions that are already in active network
   const unaddedSuggestions = useMemo(() => {
@@ -338,19 +413,26 @@ export function CustomerNetworkPage() {
   }, [liveSuggestions, connectedUserIds])
 
   function renderConnectionItem(conn: ApiCustomerConnection) {
-    const conv = conversations.find(
-      (c) =>
-        c.id === conn.id ||
-        (conn.customer && c.customer === conn.customer) ||
-        c.provider === conn.provider ||
-        c.other_user?.id === conn.provider ||
-        (conn.customer && c.other_user?.id === conn.customer)
-    )
-    const isSelected = conv && conv.id === activeConvId
+    const partnerId = getConnectionPartnerId(conn, currentUserId, isProvider)
+    const conv = findConversationForPartner(conversations, conn.id, partnerId, currentUserId)
+    const isSelected = activeConvId
+      ? (conv && conv.id === activeConvId) ||
+      conn.id === activeConvId ||
+      (activeConv && activeConv.other_user?.id === partnerId)
+      : false
+
     return (
       <li key={conn.id}>
         <div
+          role="button"
+          tabIndex={0}
           onClick={() => void handleSelectConnection(conn)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault()
+              void handleSelectConnection(conn)
+            }
+          }}
           style={{
             padding: '0.85rem 1rem',
             borderBottom: '1px solid var(--color-line)',
@@ -364,7 +446,7 @@ export function CustomerNetworkPage() {
             transition: 'background 0.12s ease',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', minWidth: 0, flex: 1 }}>
             {conn.provider_avatar ? (
               <img
                 src={conn.provider_avatar}
@@ -374,7 +456,7 @@ export function CustomerNetworkPage() {
             ) : (
               <Avatar name={conn.provider_name} size="md" />
             )}
-            <div style={{ minWidth: 0 }}>
+            <div style={{ minWidth: 0, flex: 1 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                 <strong
                   style={{
@@ -403,19 +485,31 @@ export function CustomerNetworkPage() {
                 )}
               </div>
               <span style={{ fontSize: '0.74rem', color: 'var(--color-muted)', display: 'block' }}>
-                {conn.provider_username ? `@${conn.provider_username}` : 'Specialist'} • {conn.category}
+                {conn.provider_username ? (
+                  <Link
+                    to={providerDetailPath(conn.provider_username)}
+                    onClick={(e) => e.stopPropagation()}
+                    className="network-username-link"
+                    title={`View @${conn.provider_username}'s portfolio`}
+                  >
+                    @{conn.provider_username}
+                  </Link>
+                ) : (
+                  isProvider ? 'Client' : 'Specialist'
+                )}{' '}
+                • {conn.category}
               </span>
             </div>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.3rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.3rem', flexShrink: 0 }}>
             <button
               type="button"
               title={isProvider ? 'Disconnect client' : 'Disconnect specialist'}
               onClick={(e) => {
                 e.stopPropagation()
-                const partnerId = isProvider ? (conn.customer || conn.provider) : conn.provider
-                void handleDisconnect(partnerId)
+                const pid = getConnectionPartnerId(conn, currentUserId, isProvider)
+                void handleDisconnect(pid)
               }}
               style={{
                 background: 'none',
@@ -607,6 +701,15 @@ export function CustomerNetworkPage() {
                         return (
                           <li
                             key={p.id}
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => void handleAddSuggestionToNetwork(p)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault()
+                                void handleAddSuggestionToNetwork(p)
+                              }
+                            }}
                             style={{
                               padding: '0.85rem 1rem',
                               borderBottom: '1px solid var(--color-line)',
@@ -615,10 +718,11 @@ export function CustomerNetworkPage() {
                               justifyContent: 'space-between',
                               gap: '0.75rem',
                               background: 'var(--color-paper-bright)',
+                              cursor: 'pointer',
                               transition: 'background 0.15s ease',
                             }}
                           >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', minWidth: 0 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', minWidth: 0, flex: 1 }}>
                               {p.avatar ? (
                                 <img
                                   src={p.avatar}
@@ -642,18 +746,20 @@ export function CustomerNetworkPage() {
                                     {p.business_name || p.name}
                                   </strong>
                                   {p.username && (
-                                    <span
+                                    <Link
+                                      to={providerDetailPath(p.username)}
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="network-username-link"
                                       style={{
                                         fontSize: '0.7rem',
-                                        color: 'var(--color-orange)',
-                                        fontWeight: 700,
                                         background: 'var(--color-tint)',
                                         padding: '0.05rem 0.35rem',
                                         borderRadius: 'var(--radius-pill)',
                                       }}
+                                      title={`View @${p.username}'s portfolio`}
                                     >
                                       @{p.username}
-                                    </span>
+                                    </Link>
                                   )}
                                 </div>
                                 <span style={{ fontSize: '0.74rem', color: 'var(--color-muted)', display: 'block' }}>
@@ -665,7 +771,10 @@ export function CustomerNetworkPage() {
                             <Button
                               size="sm"
                               disabled={isConnecting}
-                              onClick={() => void handleAddSuggestionToNetwork(p)}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                void handleAddSuggestionToNetwork(p)
+                              }}
                               style={{
                                 flexShrink: 0,
                                 fontSize: '0.75rem',
@@ -725,7 +834,23 @@ export function CustomerNetworkPage() {
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
-                  {activeConv.other_user.avatar ? (
+                  {activeConv.other_user.username || activeConv.other_user.id ? (
+                    <Link
+                      to={providerDetailPath(activeConv.other_user.username || activeConv.other_user.id)}
+                      style={{ display: 'inline-flex', flexShrink: 0, textDecoration: 'none' }}
+                      title={`View ${activeConv.other_user.name}'s portfolio`}
+                    >
+                      {activeConv.other_user.avatar ? (
+                        <img
+                          src={activeConv.other_user.avatar}
+                          alt={activeConv.other_user.name}
+                          style={{ width: '2.5rem', height: '2.5rem', borderRadius: '50%', objectFit: 'cover' }}
+                        />
+                      ) : (
+                        <Avatar name={activeConv.other_user.name} size="md" />
+                      )}
+                    </Link>
+                  ) : activeConv.other_user.avatar ? (
                     <img
                       src={activeConv.other_user.avatar}
                       alt={activeConv.other_user.name}
@@ -735,16 +860,49 @@ export function CustomerNetworkPage() {
                     <Avatar name={activeConv.other_user.name} size="md" />
                   )}
                   <div>
-                    <strong style={{ fontSize: '1rem', color: 'var(--color-ink)', display: 'block' }}>
-                      {activeConv.other_user.business_name || activeConv.other_user.name}
-                    </strong>
+                    {activeConv.other_user.username || activeConv.other_user.id ? (
+                      <Link
+                        to={providerDetailPath(activeConv.other_user.username || activeConv.other_user.id)}
+                        className="network-chat-name-link"
+                        title={`View ${activeConv.other_user.name}'s portfolio`}
+                      >
+                        <strong style={{ fontSize: '1rem', color: 'var(--color-ink)', display: 'block', cursor: 'pointer' }}>
+                          {activeConv.other_user.business_name || activeConv.other_user.name}
+                        </strong>
+                      </Link>
+                    ) : (
+                      <strong style={{ fontSize: '1rem', color: 'var(--color-ink)', display: 'block' }}>
+                        {activeConv.other_user.business_name || activeConv.other_user.name}
+                      </strong>
+                    )}
                     <span style={{ fontSize: '0.75rem', color: 'var(--color-muted)' }}>
-                      {activeConv.other_user.username ? `@${activeConv.other_user.username}` : 'Specialist'} • Verified Partner
+                      {activeConv.other_user.username ? (
+                        <Link
+                          to={providerDetailPath(activeConv.other_user.username)}
+                          className="network-username-link"
+                          title={`View @${activeConv.other_user.username}'s portfolio`}
+                        >
+                          @{activeConv.other_user.username}
+                        </Link>
+                      ) : (
+                        'Specialist'
+                      )}{' '}
+                      • Verified Partner
                     </span>
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                  {(activeConv.other_user.username || activeConv.other_user.id) && (
+                    <ButtonLink
+                      size="sm"
+                      variant="secondary"
+                      to={providerDetailPath(activeConv.other_user.username || activeConv.other_user.id)}
+                      title={`View @${activeConv.other_user.username || activeConv.other_user.name}'s portfolio`}
+                    >
+                      <Icon name="user" size={14} /> View Portfolio
+                    </ButtonLink>
+                  )}
                   <Button size="sm" variant="secondary" onClick={() => window.open(`tel:+918047182200`)}>
                     <Icon name="phone" size={14} /> Contact Support
                   </Button>
@@ -999,7 +1157,18 @@ export function CustomerNetworkPage() {
                       <div>
                         <strong style={{ fontSize: '0.92rem', color: 'var(--color-ink)' }}>{p.business_name || p.name}</strong>
                         <span style={{ fontSize: '0.75rem', color: 'var(--color-muted)', display: 'block' }}>
-                          {p.username ? `@${p.username}` : ''} • {p.category} • <Icon name="mapPin" size={12} /> {p.city}
+                          {p.username ? (
+                            <Link
+                              to={providerDetailPath(p.username)}
+                              className="network-username-link"
+                              title={`View @${p.username}'s portfolio`}
+                            >
+                              @{p.username}
+                            </Link>
+                          ) : (
+                            ''
+                          )}{' '}
+                          • {p.category} • <Icon name="mapPin" size={12} /> {p.city}
                         </span>
                       </div>
                     </div>

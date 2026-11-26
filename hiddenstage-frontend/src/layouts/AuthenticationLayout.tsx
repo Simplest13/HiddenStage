@@ -26,7 +26,7 @@ export function AuthenticationLayout() {
     <section className="auth-layout__panel">
       <div className="auth-layout__top">
         <Brand />
-        <Link to={routes.home}><Icon name="arrowLeft" size={14} /> Back to HiddenStage</Link>
+        <Link to={routes.home} className="auth-layout__back">Back to HiddenStage</Link>
       </div>
       <section className="auth-card">
         <Outlet />

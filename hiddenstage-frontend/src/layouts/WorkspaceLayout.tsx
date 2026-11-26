@@ -59,7 +59,9 @@ export function WorkspaceLayout({ audience }: { audience: WorkspaceAudience }) {
         >
           <Icon name="logOut" size={16} /> Sign out
         </button>
-        <Link to={routes.home}><Icon name="arrowLeft" size={16} /> Return to HiddenStage</Link>
+        <Link to={routes.home} className="workspace-sidebar__return">
+          <Icon name="arrowLeft" size={16} /> Return to HiddenStage
+        </Link>
       </div>
     </aside>
     <div className="workspace-main">

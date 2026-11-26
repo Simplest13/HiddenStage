@@ -90,6 +90,20 @@ class PublicDirectoryView(APIView):
             ]
             min_price = min(active_prices) if active_prices else None
             declared_cats = p.declared_categories()
+            coverage_locations = []
+            seen_locs = set()
+            for c in coverages:
+                loc = (c.locality or "").strip()
+                city = (c.city or "").strip()
+                pin = (c.pin_code or "").strip()
+                label = loc if loc else city
+                if label and label.lower() not in seen_locs:
+                    seen_locs.add(label.lower())
+                    coverage_locations.append(label)
+                elif not label and pin and pin not in seen_locs:
+                    seen_locs.add(pin)
+                    coverage_locations.append(pin)
+
             results.append({
                 "id": p.id,
                 "display_name": p.display_name,
@@ -108,6 +122,16 @@ class PublicDirectoryView(APIView):
                 "pin_code": first_coverage.pin_code if first_coverage else "",
                 "starting_price_paise": min_price,
                 "coverage_count": len(coverages),
+                "coverage_locations": coverage_locations,
+                "coverage_areas": [
+                    {
+                        "locality": c.locality or "",
+                        "city": c.city or "",
+                        "state": c.state or "",
+                        "pin_code": c.pin_code or "",
+                    }
+                    for c in coverages
+                ],
                 "rating": None,
                 "review_count": 0,
             })
@@ -216,7 +240,9 @@ class ProviderDetailView(APIView):
                 return Response({"detail": "This profile is not currently public."}, status=status.HTTP_404_NOT_FOUND)
 
         portfolio_items = [
-            item for item in provider.portfolio_items.all()
+            item for item in PortfolioItem.objects.filter(
+                Q(provider=provider) | Q(owner=provider.user)
+            ).distinct().order_by("position", "-created_at")
             if is_owner or item.visibility == "PUBLIC"
         ]
 

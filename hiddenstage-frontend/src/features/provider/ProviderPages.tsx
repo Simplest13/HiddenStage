@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 're
 import { Link, useMatches, useOutletContext, useParams, useSearchParams } from 'react-router-dom'
 import { Award, CircleCheck, FileText, Mail, ShieldCheck, Sparkles } from 'kubai-icons-react'
 import { Icon } from '../../shared/ui/Icon'
-import { customerEventPath, providerQuotePath, routes } from '../../app/routes/routePaths'
+import { providerQuotePath, routes } from '../../app/routes/routePaths'
 import { useAuth } from '../../app/auth/useAuth'
 import { Badge, Button, ButtonLink, Card, EmptyState, ErrorState, Input, Modal, Select, Spinner, Textarea, useToast } from '../../shared/ui'
 import { eventsApi } from '../../shared/api/backend/events'
@@ -22,6 +22,7 @@ import type {
   ApiCommitment,
   ApiInvitation,
   ApiManagerSearchResult,
+  ApiPortfolioItem,
   ApiProviderOpportunity,
   ApiProviderProfile,
   ApiProviderService,
@@ -947,6 +948,8 @@ function ProfilePage() {
       {profile && activeTab === 'portfolio' && (
         <PortfolioManager
           categories={categoriesState.data ?? []}
+          services={profile.services || []}
+          providerCategories={profile.categories || []}
           onItemsChanged={() => {
             portfolioData.reload()
             data.reload()
@@ -1231,10 +1234,22 @@ function EmbeddedServicesManager({ providerKind, onServicesChanged }: { provider
   )
 }
 
-function PortfolioManager({ categories, onItemsChanged }: { categories: { code: string; name: string }[]; onItemsChanged?: () => void }) {
+function PortfolioManager({
+  categories,
+  services = [],
+  providerCategories = [],
+  onItemsChanged,
+}: {
+  categories: { code: string; name: string }[]
+  services?: ApiProviderService[]
+  providerCategories?: string[]
+  onItemsChanged?: () => void
+}) {
   const { showToast } = useToast()
   const data = useApiData(() => profilesApi.listPortfolioItems(), [])
-  const items = data.data ?? []
+  const items = useMemo(() => data.data ?? [], [data.data])
+
+  const [activeAlbumTab, setActiveAlbumTab] = useState<string>('ALL')
   const [showAdd, setShowAdd] = useState(false)
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
@@ -1243,14 +1258,83 @@ function PortfolioManager({ categories, onItemsChanged }: { categories: { code: 
   const [mediaKind, setMediaKind] = useState<PortfolioMediaKind>('IMAGE')
   const [externalUrl, setExternalUrl] = useState('')
   const [file, setFile] = useState<File | null>(null)
+  const [filePreview, setFilePreview] = useState<string | null>(null)
   const [visibility, setVisibility] = useState<PortfolioVisibility>('PUBLIC')
+  const [setAsCover, setSetAsCover] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
+  // Compute dedicated service category albums from provider services and categories
+  const serviceAlbums = useMemo(() => {
+    const codes = new Set<string>()
+    services.forEach((s) => {
+      if (s.category) codes.add(s.category)
+    })
+    providerCategories.forEach((c) => {
+      if (c) codes.add(c)
+    })
+    const baseCodes = codes.size > 0 ? Array.from(codes) : categories.map((c) => c.code)
+
+    return baseCodes.map((code) => {
+      const catObj = categories.find((c) => c.code === code)
+      const serviceObj = services.find((s) => s.category === code)
+      const albumName = catObj?.name || serviceObj?.title || code.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())
+
+      const albumItems = items.filter((it) => {
+        const icat = (it.category || '').toLowerCase().trim()
+        const cCode = code.toLowerCase().trim()
+        const sTitle = (serviceObj?.title || '').toLowerCase().trim()
+        return (
+          icat === cCode ||
+          (sTitle && icat === sTitle) ||
+          (cCode && icat.replace(/-/g, '') === cCode.replace(/-/g, ''))
+        )
+      })
+
+      return {
+        code,
+        name: albumName,
+        service: serviceObj,
+        items: albumItems,
+      }
+    })
+  }, [categories, services, providerCategories, items])
+
+  const generalItems = useMemo(() => {
+    const allAlbumCodes = new Set(serviceAlbums.map((a) => a.code.toLowerCase().trim()))
+    return items.filter((it) => {
+      const icat = (it.category || '').toLowerCase().trim()
+      return !icat || !allAlbumCodes.has(icat)
+    })
+  }, [serviceAlbums, items])
+
+  function openUploadForCategory(catCode?: string) {
+    if (catCode) {
+      setCategory(catCode)
+    } else if (serviceAlbums.length > 0 && !category) {
+      setCategory(serviceAlbums[0].code)
+    }
+    setShowAdd(true)
+  }
+
+  function handleFileChange(selectedFile: File | null) {
+    setFile(selectedFile)
+    if (selectedFile && selectedFile.type.startsWith('image/')) {
+      const previewUrl = URL.createObjectURL(selectedFile)
+      setFilePreview(previewUrl)
+    } else {
+      setFilePreview(null)
+    }
+  }
+
   async function handleAdd(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!title.trim()) { setError('Title is required.'); return }
-    setSaving(true); setError('')
+    if (!title.trim()) {
+      setError('Title is required.')
+      return
+    }
+    setSaving(true)
+    setError('')
     try {
       const formData = new FormData()
       formData.append('title', title.trim())
@@ -1261,17 +1345,41 @@ function PortfolioManager({ categories, onItemsChanged }: { categories: { code: 
       if (externalUrl.trim()) formData.append('external_url', externalUrl.trim())
       formData.append('visibility', visibility)
       if (file) formData.append('media', file)
+      if (setAsCover) formData.append('position', '0')
 
       await profilesApi.createPortfolioItem(formData)
-      showToast('Portfolio item added.', 'success')
+      showToast('Showcase photo added to album.', 'success')
       setShowAdd(false)
-      setTitle(''); setDescription(''); setCategory(''); setEventDate(''); setFile(null); setExternalUrl('')
+      setTitle('')
+      setDescription('')
+      setEventDate('')
+      setFile(null)
+      setFilePreview(null)
+      setExternalUrl('')
       data.reload()
       onItemsChanged?.()
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Could not add portfolio item.')
     } finally {
       setSaving(false)
+    }
+  }
+
+  async function handleSetCover(targetItem: ApiPortfolioItem, albumItems: ApiPortfolioItem[]) {
+    try {
+      await profilesApi.updatePortfolioItem(targetItem.id, { position: 0 })
+      // Bump remaining items
+      for (let i = 0; i < albumItems.length; i++) {
+        const it = albumItems[i]
+        if (it.id !== targetItem.id && it.position <= 0) {
+          await profilesApi.updatePortfolioItem(it.id, { position: i + 1 })
+        }
+      }
+      showToast(`"${targetItem.title}" set as service card background!`, 'success')
+      data.reload()
+      onItemsChanged?.()
+    } catch (caught) {
+      showToast(caught instanceof Error ? caught.message : 'Could not update cover photo.', 'error')
     }
   }
 
@@ -1286,86 +1394,405 @@ function PortfolioManager({ categories, onItemsChanged }: { categories: { code: 
     }
   }
 
+  const displayedAlbums = activeAlbumTab === 'ALL'
+    ? serviceAlbums
+    : serviceAlbums.filter((a) => a.code === activeAlbumTab)
+
+  const showGeneralAlbum = activeAlbumTab === 'ALL' || activeAlbumTab === 'GENERAL'
+
   return (
     <div className="portfolio-manager">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-        <h3>Work Showcase ({items.length})</h3>
-        <Button type="button" onClick={() => setShowAdd(!showAdd)}>{showAdd ? 'Close form' : '+ Add showcase item'}</Button>
+      {/* Overview Notice */}
+      <div className="portfolio-banner">
+        <div className="portfolio-banner__text">
+          <h3 style={{ margin: '0 0 0.35rem 0', color: 'var(--color-orange)' }}>
+            Service Category Albums & Background Showcase
+          </h3>
+          <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--color-muted)' }}>
+            Every service category you offer has its own dedicated portfolio album. Photos uploaded into a category album will appear in your public portfolio, and the <strong>Cover Photo (first image)</strong> will automatically be displayed as the photo background for that service offering on your profile.
+          </p>
+        </div>
+        <Button type="button" onClick={() => openUploadForCategory()}>
+          {showAdd ? 'Close upload form' : '+ Upload to Portfolio'}
+        </Button>
       </div>
 
+      {/* Album Filter Tabs */}
+      <div className="portfolio-filter-tabs">
+        <button
+          type="button"
+          className={`portfolio-filter-tab ${activeAlbumTab === 'ALL' ? 'portfolio-filter-tab--active' : ''}`}
+          onClick={() => setActiveAlbumTab('ALL')}
+        >
+          All Albums ({items.length})
+        </button>
+        {serviceAlbums.map((album) => (
+          <button
+            key={album.code}
+            type="button"
+            className={`portfolio-filter-tab ${activeAlbumTab === album.code ? 'portfolio-filter-tab--active' : ''}`}
+            onClick={() => setActiveAlbumTab(album.code)}
+          >
+            {album.name} ({album.items.length})
+          </button>
+        ))}
+        {generalItems.length > 0 && (
+          <button
+            type="button"
+            className={`portfolio-filter-tab ${activeAlbumTab === 'GENERAL' ? 'portfolio-filter-tab--active' : ''}`}
+            onClick={() => setActiveAlbumTab('GENERAL')}
+          >
+            General Showcase ({generalItems.length})
+          </button>
+        )}
+      </div>
+
+      {/* Upload Form */}
       {showAdd && (
-        <div className="card" style={{ padding: '1.25rem', marginBottom: '1.5rem', border: '1px solid var(--color-border)' }}>
+        <div className="card portfolio-upload-card" style={{ padding: '1.5rem', marginBottom: '1.75rem', border: '1px solid var(--color-orange)' }}>
           <form onSubmit={handleAdd} noValidate>
-            <h4 style={{ margin: '0 0 1rem 0' }}>Add Portfolio Showcase</h4>
-            <div className="event-form-grid">
-              <Input label="Title" name="portfolioTitle" required value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Grand Ballroom Reception" />
-              <Select label="Category" name="portfolioCategory" value={category} onChange={(e) => setCategory(e.target.value)}>
-                <option value="">Choose category</option>
-                {categories.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}
-              </Select>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h4 style={{ margin: 0 }}>Add Photo to Album</h4>
+              <Badge tone="accent">
+                {serviceAlbums.find((a) => a.code === category)?.name || 'Select Category Album'}
+              </Badge>
             </div>
+
             <div className="event-form-grid">
-              <Select label="Media Type" name="mediaKind" value={mediaKind} onChange={(e) => setMediaKind(e.target.value as PortfolioMediaKind)}>
-                <option value="IMAGE">Image / Photo</option>
+              <Select
+                label="Service Category Album"
+                name="portfolioCategory"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                required
+                hint="Choose which service offering this photo represents"
+              >
+                <option value="">Choose service category album</option>
+                {serviceAlbums.map((c) => (
+                  <option key={c.code} value={c.code}>
+                    {c.name} Album
+                  </option>
+                ))}
+                <option value="general">General / Other Showcase</option>
+              </Select>
+
+              <Input
+                label="Photo / Project Title"
+                name="portfolioTitle"
+                required
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="e.g. Royal Banquet Hall Lighting Setup"
+              />
+            </div>
+
+            <div className="event-form-grid">
+              <Select
+                label="Media Type"
+                name="mediaKind"
+                value={mediaKind}
+                onChange={(e) => setMediaKind(e.target.value as PortfolioMediaKind)}
+              >
+                <option value="IMAGE">Image / Photo (Upload)</option>
                 <option value="VIDEO">Video Link (YouTube / Vimeo)</option>
                 <option value="DOCUMENT">Document / Brochure (PDF)</option>
                 <option value="LINK">External Link</option>
               </Select>
-              <Select label="Visibility" name="visibility" value={visibility} onChange={(e) => setVisibility(e.target.value as PortfolioVisibility)}>
+
+              <Select
+                label="Visibility"
+                name="visibility"
+                value={visibility}
+                onChange={(e) => setVisibility(e.target.value as PortfolioVisibility)}
+              >
                 <option value="PUBLIC">Public — visible on public profile</option>
                 <option value="PRIVATE">Private — client reference only</option>
               </Select>
             </div>
+
             {mediaKind === 'IMAGE' || mediaKind === 'DOCUMENT' ? (
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.25rem' }}>Upload File</label>
-                <input type="file" onChange={(e) => setFile(e.target.files?.[0] || null)} />
+              <div style={{ marginBottom: '1.25rem' }}>
+                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.35rem' }}>
+                  Upload File
+                </label>
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <input
+                    type="file"
+                    accept={mediaKind === 'IMAGE' ? 'image/*' : '.pdf,.doc,.docx'}
+                    onChange={(e) => handleFileChange(e.target.files?.[0] || null)}
+                  />
+                  {filePreview && (
+                    <div className="portfolio-preview-thumb">
+                      <img src={filePreview} alt="Upload preview" />
+                    </div>
+                  )}
+                </div>
               </div>
             ) : (
-              <Input label="External URL" name="externalUrl" placeholder="https://..." value={externalUrl} onChange={(e) => setExternalUrl(e.target.value)} />
+              <Input
+                label="External URL"
+                name="externalUrl"
+                placeholder="https://..."
+                value={externalUrl}
+                onChange={(e) => setExternalUrl(e.target.value)}
+              />
             )}
-            <Input label="Event Date (optional)" name="portfolioDate" type="date" value={eventDate} onChange={(e) => setEventDate(e.target.value)} />
-            <Textarea label="Description" name="portfolioDescription" rows={3} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Brief description of the work and outcome..." />
+
+            <div style={{ margin: '0.75rem 0' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.9rem' }}>
+                <input
+                  type="checkbox"
+                  checked={setAsCover}
+                  onChange={(e) => setSetAsCover(e.target.checked)}
+                />
+                <strong>Set as Cover Photo</strong> (Use this picture as the background for this service category card)
+              </label>
+            </div>
+
+            <Input
+              label="Event Date (optional)"
+              name="portfolioDate"
+              type="date"
+              value={eventDate}
+              onChange={(e) => setEventDate(e.target.value)}
+            />
+
+            <Textarea
+              label="Description (optional)"
+              name="portfolioDescription"
+              rows={3}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Highlight key details, themes, venue, or outcomes..."
+            />
+
             {error && <p className="customer-error" role="alert">{error}</p>}
-            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
-              <Button type="submit" disabled={saving}>{saving ? 'Adding…' : 'Add Item'}</Button>
-              <Button type="button" variant="secondary" onClick={() => setShowAdd(false)}>Cancel</Button>
+
+            <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.25rem' }}>
+              <Button type="submit" disabled={saving}>
+                {saving ? 'Uploading…' : 'Upload to Album'}
+              </Button>
+              <Button type="button" variant="secondary" onClick={() => setShowAdd(false)}>
+                Cancel
+              </Button>
             </div>
           </form>
         </div>
       )}
 
-      {items.length === 0 ? (
-        <EmptyState title="No showcase items yet" description="Add photos, videos or documents from past events to attract more clients." />
-      ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
-          {items.map((item) => (
-            <div key={item.id} className="card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                  <Badge>{item.media_kind}</Badge>
-                  <Badge tone={item.visibility === 'PUBLIC' ? 'success' : 'neutral'}>{item.visibility}</Badge>
+      {/* Render Service Category Albums */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+        {displayedAlbums.map((album) => {
+          const firstImage = album.items.find((it) => it.media_kind === 'IMAGE' && it.media)
+          return (
+            <div key={album.code} className="portfolio-album-box">
+              <div className="portfolio-album-header">
+                <div className="portfolio-album-info">
+                  <div className="portfolio-album-title-row">
+                    <h4 className="portfolio-album-title">{album.name} Album</h4>
+                    <Badge tone={album.items.length > 0 ? 'success' : 'neutral'}>
+                      {album.items.length} {album.items.length === 1 ? 'photo' : 'photos'}
+                    </Badge>
+                  </div>
+                  <p className="portfolio-album-subtitle">
+                    ★ <strong>Service Card Background:</strong> {firstImage ? 'The photo marked with ★ below is used as the background on your public profile.' : 'Upload a photo to give your service card an authentic photo background.'}
+                  </p>
                 </div>
-                <h4 style={{ margin: '0 0 0.5rem 0' }}>{item.title}</h4>
-                {item.description && <p style={{ fontSize: '0.875rem', margin: '0 0 0.5rem 0', color: 'var(--color-muted)' }}>{item.description}</p>}
-                {item.external_url && (
-                  <a href={item.external_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.85rem' }}>
-                    View Link <Icon name="arrowUpRight" size={14} />
-                  </a>
-                )}
-                {item.media && (
-                  <a href={item.media} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.85rem' }}>
-                    View Media <Icon name="arrowUpRight" size={14} />
-                  </a>
-                )}
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => openUploadForCategory(album.code)}
+                >
+                  + Add to {album.name}
+                </Button>
               </div>
-              <div style={{ marginTop: '1rem', borderTop: '1px solid var(--color-border)', paddingTop: '0.5rem', display: 'flex', justifyContent: 'flex-end' }}>
-                <Button type="button" size="sm" variant="quiet" onClick={() => void handleDelete(item.id)}>Remove</Button>
-              </div>
+
+              {album.items.length === 0 ? (
+                <div className="portfolio-album-empty">
+                  <div className="portfolio-album-empty__icon">
+                    <Icon name="camera" size={26} />
+                  </div>
+                  <p className="portfolio-album-empty__text">
+                    No photos in the <strong>{album.name}</strong> album yet. Upload photos of your past {album.name.toLowerCase()} work to make your service card stand out with a custom background!
+                  </p>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => openUploadForCategory(album.code)}
+                  >
+                    Upload {album.name} Photo
+                  </Button>
+                </div>
+              ) : (
+                <div className="portfolio-album-gallery">
+                  {album.items.map((item) => {
+                    const isCover = item.id === firstImage?.id
+                    return (
+                      <div
+                        key={item.id}
+                        className={`portfolio-album-card ${isCover ? 'portfolio-album-card--cover' : ''}`}
+                      >
+                        <div className="portfolio-album-card__media">
+                          {item.media ? (
+                            <img src={item.media} alt={item.title} />
+                          ) : (
+                            <div className="portfolio-album-card__placeholder">
+                              <Icon name={item.media_kind === 'VIDEO' ? 'play' : 'fileText'} size={28} />
+                            </div>
+                          )}
+                          {isCover && (
+                            <div className="portfolio-album-card__cover-tag">
+                              ★ Service Card Background
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="portfolio-album-card__content">
+                          <div className="portfolio-album-card__meta">
+                            <Badge tone={item.visibility === 'PUBLIC' ? 'success' : 'neutral'}>
+                              {item.visibility}
+                            </Badge>
+                            {item.event_date && <small>{item.event_date}</small>}
+                          </div>
+                          <h5 className="portfolio-album-card__title">{item.title}</h5>
+                          {item.description && (
+                            <p className="portfolio-album-card__desc">{item.description}</p>
+                          )}
+                        </div>
+
+                        <div className="portfolio-album-card__actions">
+                          {!isCover && item.media_kind === 'IMAGE' && (
+                            <button
+                              type="button"
+                              className="portfolio-action-btn"
+                              onClick={() => void handleSetCover(item, album.items)}
+                              title="Set as background image for this service category card"
+                            >
+                              ★ Set as Background
+                            </button>
+                          )}
+                          {item.media && (
+                            <a
+                              href={item.media}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="portfolio-action-btn"
+                            >
+                              View <Icon name="arrowUpRight" size={12} />
+                            </a>
+                          )}
+                          {item.external_url && (
+                            <a
+                              href={item.external_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="portfolio-action-btn"
+                            >
+                              Link <Icon name="arrowUpRight" size={12} />
+                            </a>
+                          )}
+                          <button
+                            type="button"
+                            className="portfolio-action-btn portfolio-action-btn--danger"
+                            onClick={() => void handleDelete(item.id)}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
             </div>
-          ))}
-        </div>
-      )}
+          )
+        })}
+
+        {/* General Showcase Album if exists */}
+        {showGeneralAlbum && generalItems.length > 0 && (
+          <div className="portfolio-album-box">
+            <div className="portfolio-album-header">
+              <div className="portfolio-album-info">
+                <div className="portfolio-album-title-row">
+                  <h4 className="portfolio-album-title">General / Additional Showcase</h4>
+                  <Badge tone="neutral">{generalItems.length} items</Badge>
+                </div>
+                <p className="portfolio-album-subtitle">
+                  Work showcase items not tied to a specific service category offering.
+                </p>
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                onClick={() => openUploadForCategory('general')}
+              >
+                + Add General Item
+              </Button>
+            </div>
+
+            <div className="portfolio-album-gallery">
+              {generalItems.map((item) => (
+                <div key={item.id} className="portfolio-album-card">
+                  <div className="portfolio-album-card__media">
+                    {item.media ? (
+                      <img src={item.media} alt={item.title} />
+                    ) : (
+                      <div className="portfolio-album-card__placeholder">
+                        <Icon name={item.media_kind === 'VIDEO' ? 'play' : 'fileText'} size={28} />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="portfolio-album-card__content">
+                    <div className="portfolio-album-card__meta">
+                      <Badge tone={item.visibility === 'PUBLIC' ? 'success' : 'neutral'}>
+                        {item.visibility}
+                      </Badge>
+                      {item.event_date && <small>{item.event_date}</small>}
+                    </div>
+                    <h5 className="portfolio-album-card__title">{item.title}</h5>
+                    {item.description && (
+                      <p className="portfolio-album-card__desc">{item.description}</p>
+                    )}
+                  </div>
+
+                  <div className="portfolio-album-card__actions">
+                    {item.media && (
+                      <a
+                        href={item.media}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="portfolio-action-btn"
+                      >
+                        View <Icon name="arrowUpRight" size={12} />
+                      </a>
+                    )}
+                    {item.external_url && (
+                      <a
+                        href={item.external_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="portfolio-action-btn"
+                      >
+                        Link <Icon name="arrowUpRight" size={12} />
+                      </a>
+                    )}
+                    <button
+                      type="button"
+                      className="portfolio-action-btn portfolio-action-btn--danger"
+                      onClick={() => void handleDelete(item.id)}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
@@ -1821,7 +2248,7 @@ function QuotationsPage() {
       </div>
       {latestRevision(quotation) && <QuoteBreakdown revision={latestRevision(quotation)!} />}
       <div className="provider-quote-row__actions">
-        <Link className="text-link" to={customerEventPath(quotation.event)}>View request</Link>
+        <Link className="text-link" to={providerQuotePath(quotation.event)}>View request</Link>
         <div>
           {quotation.status === 'OPEN' && <ButtonLink to={providerQuotePath(quotation.event)} size="sm" variant="secondary">{latestRevision(quotation)?.status === 'SUBMITTED' ? 'Revise quote' : 'Continue quote'}</ButtonLink>}
           {quotation.status === 'OPEN' && latestRevision(quotation)?.status === 'SUBMITTED' && <Button type="button" size="sm" variant="quiet" onClick={() => void marketplaceApi.withdrawQuotation(quotation.id).then(() => data.reload())}>Withdraw</Button>}
@@ -1858,7 +2285,8 @@ function QuoteEditorPage() {
   const [busy, setBusy] = useState('')
   const [error, setError] = useState('')
 
-  const brief = invitation?.event_detail ?? opportunity
+  const brief = invitation?.event_detail ?? opportunity ?? quotation?.event_detail
+  const eventName = invitation?.event_name ?? opportunity?.name ?? quotation?.event_name ?? 'Matched request'
   const requirements = useMemo(() => brief?.requirements ?? [], [brief])
   const openRequirements = useMemo(() => requirements.filter((requirement) => requirement.status === 'OPEN'), [requirements])
   useEffect(() => {
@@ -1944,8 +2372,8 @@ function QuoteEditorPage() {
 
   if (data.loading) return <section className="customer-page"><Spinner label="Loading the request" /></section>
   if (data.error) return <section className="customer-page"><ErrorState description={data.error} onRetry={data.reload} /></section>
-  if (!invitation && !opportunity) return <section className="customer-page"><EmptyState title="This request is not available" description="This event is not matched to your services and coverage, and you have not been invited to it." action={<ButtonLink to={routes.provider.opportunities}>Back to opportunities</ButtonLink>} /></section>
-  if (!opportunity && invitation && invitation.status !== 'ACCEPTED') return <section className="customer-page">
+  if (!invitation && !opportunity && !quotation) return <section className="customer-page"><EmptyState title="This request is not available" description="This event is not matched to your services and coverage, and you have not been invited to it." action={<ButtonLink to={routes.provider.opportunities}>Back to opportunities</ButtonLink>} /></section>
+  if (!opportunity && !quotation && invitation && invitation.status !== 'ACCEPTED') return <section className="customer-page">
     <PageHeading eyebrow="QUOTATION" title="Accept the invitation first" intro="The organiser asked you to quote, but the invitation is not accepted yet." />
     <ButtonLink to={routes.provider.requests}>Respond to the invitation</ButtonLink>
   </section>
@@ -1956,12 +2384,90 @@ function QuoteEditorPage() {
   return <section className="customer-page">
     <PageHeading
       eyebrow="QUOTATION"
-      title={invitation?.event_name ?? opportunity?.name ?? 'Matched request'}
+      title={eventName}
       intro={brief ? `${formatDate(brief.event_date)} · ${formatTimeRange(brief.start_time, brief.end_time)} · ${brief.guest_count} guests · ${brief.city}${'pin_code' in brief ? ` ${brief.pin_code}` : ''}` : 'Prepare your quotation against the organiser’s brief.'}
       action={<ButtonLink to={routes.provider.quotes} variant="secondary">All quotations</ButtonLink>}
     />
-    {invitation?.message && <blockquote className="invitation-card__message">“{invitation.message}”</blockquote>}
-    {opportunity && invitation?.status !== 'ACCEPTED' && <p className="form-note">This request matches your declared services and coverage, so you can quote it directly. The customer’s contact details appear only after they choose your quotation.</p>}
+
+    {brief && (
+      <Card className="request-overview-card">
+        <div className="request-overview-card__head">
+          <div>
+            <span className="eyebrow">EVENT SPECIFICATION & BRIEF</span>
+            <h2>{brief.name || eventName}</h2>
+          </div>
+          {brief.event_type && <Badge tone="neutral">{brief.event_type}</Badge>}
+        </div>
+
+        <div className="request-overview-grid">
+          <div className="request-overview-item">
+            <span className="request-overview-label">Date & Timing</span>
+            <strong className="request-overview-val">
+              {formatDate(brief.event_date)}
+              {brief.end_date && brief.end_date !== brief.event_date ? ` to ${formatDate(brief.end_date)}` : ''}
+              {brief.start_time ? ` · ${formatTimeRange(brief.start_time, brief.end_time)}` : ''}
+            </strong>
+          </div>
+
+          <div className="request-overview-item">
+            <span className="request-overview-label">Location</span>
+            <strong className="request-overview-val">
+              {[brief.locality, brief.city, 'state' in brief ? brief.state : '', 'pin_code' in brief ? brief.pin_code : ''].filter(Boolean).join(', ') || 'Venue shared upon confirmation'}
+            </strong>
+          </div>
+
+          <div className="request-overview-item">
+            <span className="request-overview-label">Expected Attendance</span>
+            <strong className="request-overview-val">{brief.guest_count} guests</strong>
+          </div>
+        </div>
+
+        {brief.description && (
+          <div className="request-overview-section">
+            <span className="request-overview-label">About the Event</span>
+            <p className="request-overview-text">{brief.description}</p>
+          </div>
+        )}
+
+        {invitation?.message && (
+          <div className="request-overview-section">
+            <span className="request-overview-label">Personal Message from Organiser</span>
+            <blockquote className="invitation-card__message">“{invitation.message}”</blockquote>
+          </div>
+        )}
+
+        {requirements.length > 0 && (
+          <div className="request-overview-section">
+            <span className="request-overview-label">Requested Services & Scope</span>
+            <div className="request-overview-services">
+              {requirements.map((req) => (
+                <div className="request-service-pill" key={req.id}>
+                  <div className="request-service-pill__top">
+                    <span className="request-service-pill__title">
+                      <strong>{req.title}</strong>
+                      {('category_name' in req && req.category_name) ? (
+                        <small className="request-service-pill__cat">{req.category_name}{'custom_service_name' in req && req.custom_service_name ? ` (${req.custom_service_name})` : ''}</small>
+                      ) : null}
+                    </span>
+                    <span className="request-service-pill__budget">
+                      {req.budget_paise != null ? `Budget: ${formatPaise(req.budget_paise)}` : 'No budget specified'}
+                    </span>
+                  </div>
+                  {('description' in req && req.description) ? (
+                    <p className="request-service-pill__detail"><strong>Brief:</strong> {req.description}</p>
+                  ) : null}
+                  {('instructions' in req && req.instructions) ? (
+                    <p className="request-service-pill__detail"><strong>Instructions:</strong> {req.instructions}</p>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </Card>
+    )}
+
+    {opportunity && invitation?.status !== 'ACCEPTED' && !quotation && <p className="form-note">This request matches your declared services and coverage, so you can quote it directly. The customer’s contact details appear only after they choose your quotation.</p>}
 
     {!quotation && <Card className="customer-form">
       <h2>Start a quotation</h2>
@@ -2006,6 +2512,16 @@ function QuoteEditorPage() {
               <span><strong>{requirement?.title ?? item.title}</strong><small>{requirement?.budget_paise === null || requirement?.budget_paise === undefined ? 'No budget given' : `Organiser budget ${formatPaise(requirement.budget_paise)}`}</small></span>
             </label>
             {item.include && <div className="quote-editor__fields">
+              {(('description' in (requirement || {}) && requirement?.description) || ('instructions' in (requirement || {}) && requirement?.instructions)) && (
+                <div className="quote-editor__req-brief">
+                  {('description' in (requirement || {}) && requirement?.description) && (
+                    <div><span className="eyebrow">ORGANISER BRIEF</span><p>{requirement.description}</p></div>
+                  )}
+                  {('instructions' in (requirement || {}) && requirement?.instructions) && (
+                    <div><span className="eyebrow">SPECIAL INSTRUCTIONS</span><p>{requirement.instructions}</p></div>
+                  )}
+                </div>
+              )}
               <Input label="Line title" name={`title-${item.requirementId}`} value={item.title} onChange={(event) => updateItem(item.requirementId, 'title', event.target.value)} />
               <Input label="Price in ₹" name={`price-${item.requirementId}`} inputMode="decimal" required value={item.price} onChange={(event) => updateItem(item.requirementId, 'price', event.target.value.replace(/[^0-9.]/g, ''))} />
               <Textarea label="What is included" name={`description-${item.requirementId}`} rows={2} maxLength={1000} value={item.description} onChange={(event) => updateItem(item.requirementId, 'description', event.target.value)} hint="Deliverables, exclusions, crew, travel." />

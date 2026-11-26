@@ -47,8 +47,14 @@ export function RequireCustomerOnboarding() {
   if (auth.status === 'loading') return <Spinner label="Checking your session" />
   if (auth.status !== 'authenticated') return <Navigate to={routes.auth.login} replace />
   if (!auth.roles.includes('CUSTOMER')) {
-    if (auth.roles.includes('PROVIDER') && (location.pathname === routes.customer.network || location.pathname === '/app/network')) {
-      return <Navigate to={routes.provider.customerNetwork} replace />
+    if (auth.roles.includes('PROVIDER')) {
+      if (location.pathname === routes.customer.network || location.pathname === '/app/network') {
+        return <Navigate to={routes.provider.customerNetwork} replace />
+      }
+      const eventMatch = location.pathname.match(/^\/app\/events\/([^/]+)$/)
+      if (eventMatch) {
+        return <Navigate to={`/app/provider/quotes/${eventMatch[1]}`} replace />
+      }
     }
     return <Navigate to={routes.forbidden} replace />
   }

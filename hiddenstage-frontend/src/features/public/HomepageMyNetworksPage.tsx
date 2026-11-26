@@ -37,7 +37,9 @@ export function HomepageMyNetworksPage() {
   const [connectingId, setConnectingId] = useState<string | null>(null)
   const [connectedIds, setConnectedIds] = useState<Set<string>>(new Set())
 
-  const isCustomer = auth.status === 'authenticated' && auth.user.accountType === 'CUSTOMER'
+  const isAuthenticated = auth.status === 'authenticated'
+  const isProvider = isAuthenticated && (auth.user.accountType === 'PROVIDER' || auth.roles?.includes('PROVIDER'))
+  const chatPath = isProvider ? routes.provider.customerNetwork : routes.customer.network
 
   async function fetchProviders(q: string = search, cat: string = category) {
     try {
@@ -61,8 +63,15 @@ export function HomepageMyNetworksPage() {
   }, [search, category])
 
   async function handleConnect(providerId: string) {
-    if (!isCustomer) {
-      navigate(`${routes.auth.login}?from=${encodeURIComponent(routes.myNetworks)}`)
+    if (!isAuthenticated) {
+      navigate(`${routes.auth.login}?from=${encodeURIComponent(routes.myNetworks)}`, {
+        state: { from: routes.myNetworks },
+      })
+      return
+    }
+
+    if (auth.user.id === providerId) {
+      alert('This is your own profile.')
       return
     }
 
@@ -232,8 +241,16 @@ export function HomepageMyNetworksPage() {
                       </div>
 
                       {p.username && (
-                        <div style={{ fontSize: '0.85rem', color: 'var(--color-orange, #e05822)', fontWeight: 600 }}>
-                          @{p.username}
+                        <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>
+                          <Link
+                            to={routes.providerDetail.replace(':providerId', p.username || p.id)}
+                            style={{ color: 'var(--color-orange, #e05822)', textDecoration: 'none' }}
+                            onMouseEnter={(e) => (e.currentTarget.style.textDecoration = 'underline')}
+                            onMouseLeave={(e) => (e.currentTarget.style.textDecoration = 'none')}
+                            title={`View @${p.username}'s portfolio`}
+                          >
+                            @{p.username}
+                          </Link>
                         </div>
                       )}
 
@@ -259,10 +276,14 @@ export function HomepageMyNetworksPage() {
                     </Button>
                   </Link>
 
-                  {isConnected ? (
+                  {isAuthenticated && auth.user.id === p.id ? (
+                    <span style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.82rem', color: 'var(--color-muted)', fontWeight: 600 }}>
+                      Your profile
+                    </span>
+                  ) : isConnected ? (
                     <ButtonLink
                       size="sm"
-                      to={routes.customer.network}
+                      to={`${chatPath}?user=${p.id}`}
                       style={{ flex: 1, background: '#16a34a', borderColor: '#16a34a', color: '#fff' }}
                     >
                       <Icon name="circleCheck" size={14} /> Chat in App

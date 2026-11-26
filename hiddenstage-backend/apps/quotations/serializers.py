@@ -50,6 +50,7 @@ class QuotationSerializer(serializers.ModelSerializer):
     provider_profile_id = serializers.SerializerMethodField()
     event_name = serializers.CharField(source="event.name", read_only=True)
     event_date = serializers.DateField(source="event.event_date", read_only=True)
+    event_detail = serializers.SerializerMethodField()
 
     class Meta:
         model = Quotation
@@ -58,6 +59,7 @@ class QuotationSerializer(serializers.ModelSerializer):
             "event",
             "event_name",
             "event_date",
+            "event_detail",
             "provider",
             "provider_display_name",
             "provider_profile_id",
@@ -78,6 +80,39 @@ class QuotationSerializer(serializers.ModelSerializer):
     def get_provider_profile_id(self, obj) -> str | None:
         profile = getattr(obj.provider, "provider_profile", None)
         return str(profile.id) if profile else None
+
+    def get_event_detail(self, obj) -> dict:
+        event = obj.event
+        return {
+            "id": event.id,
+            "name": event.name,
+            "event_type": event.event_type,
+            "description": event.description or "",
+            "event_date": event.event_date,
+            "end_date": event.end_date,
+            "start_time": event.start_time,
+            "end_time": event.end_time,
+            "guest_count": event.guest_count,
+            "city": event.city,
+            "locality": event.locality,
+            "state": event.state,
+            "pin_code": event.pin_code or "",
+            "status": event.status,
+            "requirements": [
+                {
+                    "id": requirement.id,
+                    "title": requirement.title,
+                    "category": requirement.category.code if requirement.category else "",
+                    "category_name": requirement.category.name if requirement.category else "",
+                    "custom_service_name": getattr(requirement, "custom_service_name", "") or "",
+                    "description": requirement.description or "",
+                    "instructions": requirement.instructions or "",
+                    "budget_paise": requirement.budget_paise,
+                    "status": requirement.status,
+                }
+                for requirement in event.requirements.all()
+            ],
+        }
 
 
 class QuotationItemInputSerializer(serializers.Serializer):
