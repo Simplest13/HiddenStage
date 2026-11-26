@@ -3,7 +3,7 @@ import uuid
 from django.core.cache import cache
 from django.core.files.storage import default_storage
 from django.db.models import Q
-from django.http import FileResponse, Http404
+from django.http import FileResponse, Http404, HttpResponseRedirect
 from drf_spectacular.utils import extend_schema
 from rest_framework import generics, status
 from rest_framework.exceptions import PermissionDenied, ValidationError
@@ -13,6 +13,7 @@ from rest_framework.views import APIView
 
 from apps.accounts.models import User
 from apps.core.permissions import IsCustomer, IsProvider
+from apps.core.validators import validate_portfolio_upload
 from apps.profiles.models import (
     CustomerProfile,
     PortfolioItem,
@@ -309,14 +310,23 @@ class PortfolioItemListCreateView(generics.ListCreateAPIView):
 
         provider = getattr(owner, "provider_profile", None)
         position = PortfolioItem.objects.filter(owner=owner).count()
+        if position >= 50:
+            raise ValidationError({"portfolio": "Maximum limit of 50 portfolio items reached."})
 
         media_file = self.request.FILES.get("media") or self.request.FILES.get("file")
         if media_file:
-            ext = os.path.splitext(media_file.name)[1]
+            media_kind = validate_portfolio_upload(media_file)
+            ext = os.path.splitext(media_file.name)[1].lower()
             safe_name = f"portfolio/{uuid.uuid4().hex}{ext}"
             saved_path = default_storage.save(safe_name, media_file)
             media_url = f"/api/v1/media/portfolio/{os.path.basename(saved_path)}"
-            serializer.save(owner=owner, provider=provider, position=position, media=media_url)
+            serializer.save(
+                owner=owner,
+                provider=provider,
+                position=position,
+                media=media_url,
+                media_kind=media_kind,
+            )
         else:
             serializer.save(owner=owner, provider=provider, position=position)
 
@@ -338,11 +348,12 @@ class PortfolioItemDetailView(generics.RetrieveUpdateDestroyAPIView):
     def perform_update(self, serializer):
         media_file = self.request.FILES.get("media") or self.request.FILES.get("file")
         if media_file:
-            ext = os.path.splitext(media_file.name)[1]
+            media_kind = validate_portfolio_upload(media_file)
+            ext = os.path.splitext(media_file.name)[1].lower()
             safe_name = f"portfolio/{uuid.uuid4().hex}{ext}"
             saved_path = default_storage.save(safe_name, media_file)
             media_url = f"/api/v1/media/portfolio/{os.path.basename(saved_path)}"
-            serializer.save(media=media_url)
+            serializer.save(media=media_url, media_kind=media_kind)
         else:
             serializer.save()
 
@@ -361,6 +372,10 @@ class PortfolioMediaView(APIView):
         path = f"portfolio/{safe_name}"
         if not default_storage.exists(path):
             raise Http404("Portfolio media not found.")
+
+        url = default_storage.url(path)
+        if url and (url.startswith("http://") or url.startswith("https://")):
+            return HttpResponseRedirect(url)
 
         file_obj = default_storage.open(path)
         content_type = "image/jpeg"

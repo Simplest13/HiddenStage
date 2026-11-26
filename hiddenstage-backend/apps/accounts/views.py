@@ -12,7 +12,7 @@ from django.conf import settings
 from django.contrib.auth import authenticate, login, logout
 from django.core.files.storage import default_storage
 from django.db import transaction
-from django.http import FileResponse, Http404
+from django.http import FileResponse, Http404, HttpResponseRedirect
 from django.middleware.csrf import get_token
 from django.utils import timezone
 from drf_spectacular.utils import OpenApiResponse, extend_schema
@@ -352,6 +352,10 @@ class AvatarMediaView(APIView):
         path = f"avatars/{safe_name}"
         if not default_storage.exists(path):
             raise Http404("Avatar not found.")
+
+        url = default_storage.url(path)
+        if url and (url.startswith("http://") or url.startswith("https://")):
+            return HttpResponseRedirect(url)
 
         file_handle = default_storage.open(path, "rb")
         response = FileResponse(file_handle)

@@ -13,6 +13,7 @@ from rest_framework.views import APIView
 
 from apps.accounts.models import Notification, User
 from apps.core.permissions import IsCustomerOrProvider, IsProvider
+from apps.core.validators import validate_chat_attachment
 from apps.network.events import event_bus
 from apps.profiles.models import ProviderCoverage, ProviderProfile, ProviderService
 from apps.network.models import (
@@ -689,6 +690,8 @@ class SendMessageView(APIView):
                 {"detail": "Message content or attachment required."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        if attachment:
+            validate_chat_attachment(attachment)
 
         msg = ChatMessage.objects.create(
             conversation=conv,

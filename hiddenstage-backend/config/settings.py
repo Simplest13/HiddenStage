@@ -117,6 +117,8 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "cloudinary_storage",
+    "cloudinary",
     "corsheaders",
     "rest_framework",
     "drf_spectacular",
@@ -287,8 +289,8 @@ MEDIA_URL = "/private-media/"
 # download URL all keep working, because `download_url` points at the authorizing
 # API view rather than at the bucket. Credentials come only from the environment.
 MEDIA_STORAGE = os.environ.get("MEDIA_STORAGE", "local").strip().lower()
-if MEDIA_STORAGE not in {"local", "s3"}:
-    raise ImproperlyConfigured("MEDIA_STORAGE must be 'local' or 's3'.")
+if MEDIA_STORAGE not in {"local", "s3", "cloudinary"}:
+    raise ImproperlyConfigured("MEDIA_STORAGE must be 'local', 's3', or 'cloudinary'.")
 
 _s3_options: dict[str, object] = {}
 if MEDIA_STORAGE == "s3":
@@ -311,13 +313,42 @@ if MEDIA_STORAGE == "s3":
         "file_overwrite": False,
     }
 
+CLOUDINARY_STORAGE = {
+    "CLOUD_NAME": os.environ.get("CLOUDINARY_CLOUD_NAME", "").strip(),
+    "API_KEY": os.environ.get("CLOUDINARY_API_KEY", "").strip(),
+    "API_SECRET": os.environ.get("CLOUDINARY_API_SECRET", "").strip(),
+}
+if os.environ.get("CLOUDINARY_URL", "").strip():
+    CLOUDINARY_STORAGE["CLOUDINARY_URL"] = os.environ.get("CLOUDINARY_URL", "").strip()
+
+if MEDIA_STORAGE == "cloudinary":
+    if not (
+        CLOUDINARY_STORAGE.get("CLOUDINARY_URL")
+        or (
+            CLOUDINARY_STORAGE["CLOUD_NAME"]
+            and CLOUDINARY_STORAGE["API_KEY"]
+            and CLOUDINARY_STORAGE["API_SECRET"]
+        )
+    ):
+        raise ImproperlyConfigured(
+            "CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET (or CLOUDINARY_URL) must be set when MEDIA_STORAGE=cloudinary."
+        )
+
 STORAGES = {
     "default": (
-        {"BACKEND": "storages.backends.s3.S3Storage", "OPTIONS": _s3_options}
-        if MEDIA_STORAGE == "s3"
-        # No OPTIONS: FileSystemStorage reads MEDIA_ROOT/MEDIA_URL at access time,
-        # so override_settings(MEDIA_ROOT=...) in tests keeps working.
-        else {"BACKEND": "django.core.files.storage.FileSystemStorage"}
+        {"BACKEND": "django.core.files.storage.FileSystemStorage"}
+        if _is_test
+        else (
+            {"BACKEND": "apps.core.storage.DynamicCloudinaryStorage"}
+            if MEDIA_STORAGE == "cloudinary"
+            else (
+                {"BACKEND": "storages.backends.s3.S3Storage", "OPTIONS": _s3_options}
+                if MEDIA_STORAGE == "s3"
+                # No OPTIONS: FileSystemStorage reads MEDIA_ROOT/MEDIA_URL at access time,
+                # so override_settings(MEDIA_ROOT=...) in tests keeps working.
+                else {"BACKEND": "django.core.files.storage.FileSystemStorage"}
+            )
+        )
     ),
     "staticfiles": {
         # Hashed, pre-compressed names in production; the plain storage in
