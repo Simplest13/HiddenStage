@@ -150,6 +150,10 @@ class Migration(migrations.Migration):
             name='owner',
             field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='portfolio_items', to=settings.AUTH_USER_MODEL),
         ),
+        migrations.AddIndex(
+            model_name='portfolioitem',
+            index=models.Index(fields=['owner', 'visibility'], name='portfolio_owner_visibility_idx'),
+        ),
         migrations.AddField(
             model_name='portfolioitem',
             name='provider',
