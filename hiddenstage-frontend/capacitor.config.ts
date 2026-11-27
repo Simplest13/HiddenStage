@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: 'HiddenStage',
   webDir: 'dist',
   server: {
-    androidScheme: 'https',
+    url: 'https://www.hiddenstage.in',
     cleartext: true,
   },
   android: {
