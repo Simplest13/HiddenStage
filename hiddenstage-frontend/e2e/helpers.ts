@@ -76,7 +76,12 @@ export async function completeProviderOnboarding(
       const workerRoleCheck = page.locator('.role-choice--compact input[type="checkbox"]').first()
       if (await workerRoleCheck.count()) await workerRoleCheck.check()
     }
-    const catCheck = page.locator('fieldset.provider-onboarding__categories input[type="checkbox"]').first()
+    // Match the category used by publishEventRequest so the manager is eligible for that request.
+    const catFieldset = page.locator('fieldset.provider-onboarding__categories')
+    const photoCat = catFieldset.getByRole('checkbox', { name: /photograph/i }).first()
+    const catCheck = (await photoCat.count())
+      ? photoCat
+      : catFieldset.locator('input[type="checkbox"]').first()
     if (await catCheck.count()) await catCheck.check()
     await page.getByRole('button', { name: 'Continue', exact: true }).click()
 
@@ -146,7 +151,7 @@ export async function publishEventRequest(page: Page, name = 'QA Terrace supper'
   await setField(page, 'Request name', name)
   await setField(page, 'Type of event', 'Private dinner')
   await setField(page, 'Guest count', '24')
-  await page.getByLabel('Event date').fill('2030-04-18')
+  await page.getByLabel('Event start date').fill('2030-04-18')
   await page.getByLabel('Start time').fill('18:30')
   await page.getByLabel('End time').fill('22:30')
   await page.getByRole('button', { name: 'Continue' }).click()

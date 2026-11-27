@@ -4,7 +4,7 @@ import { Award, CircleCheck, FileText, Mail, ShieldCheck, Sparkles } from 'kubai
 import { Icon } from '../../shared/ui/Icon'
 import { providerQuotePath, routes } from '../../app/routes/routePaths'
 import { useAuth } from '../../app/auth/useAuth'
-import { Badge, Button, ButtonLink, Card, EmptyState, ErrorState, Input, Modal, Select, Spinner, Textarea, useToast } from '../../shared/ui'
+import { Badge, Button, ButtonLink, Card, CardLink, EmptyState, ErrorState, Input, Modal, Select, Spinner, Textarea, useToast } from '../../shared/ui'
 import { eventsApi } from '../../shared/api/backend/events'
 import { marketplaceApi } from '../../shared/api/backend/marketplace'
 import { networkApi } from '../../shared/api/backend/network'
@@ -110,6 +110,7 @@ function DashboardPage({ workspaceProfile }: { workspaceProfile?: ApiProviderPro
     value: profile ? verificationStatusLabels[profile.verification_status] : '—',
     description: profile?.completed_at ? 'Published to matching organisers.' : 'Complete profile to be matched.',
     icon: <ShieldCheck size={20} color="#ff7a00" />,
+    to: routes.provider.profile,
   }
   const dashboardMetrics = isManager
     ? [
@@ -118,24 +119,28 @@ function DashboardPage({ workspaceProfile }: { workspaceProfile?: ApiProviderPro
         value: activeCommitments.length,
         description: 'Accepted engagements recorded for your business.',
         icon: <Award size={20} color="#6b3e26" />,
+        to: routes.provider.commitments,
       },
       {
         label: 'Active Workers',
         value: activeNetwork.length,
         description: 'Workers in your active network.',
         icon: <Sparkles size={20} color="#ff7a00" />,
+        to: routes.provider.network,
       },
       {
         label: 'Assignment invitations',
         value: assignmentInvitations.length,
         description: 'Assignments awaiting a Worker response.',
         icon: <Mail size={20} color="#f8b6c1" />,
+        to: routes.provider.assignments,
       },
       {
         label: 'Upcoming assignments',
         value: upcomingAssignments.length,
         description: 'Accepted or in-progress Worker assignments.',
         icon: <FileText size={20} color="#ff7a00" />,
+        to: routes.provider.assignments,
       },
       profileMetric,
     ]
@@ -146,24 +151,28 @@ function DashboardPage({ workspaceProfile }: { workspaceProfile?: ApiProviderPro
           value: assignmentInvitations.length,
           description: 'Assignments waiting for your response.',
           icon: <Mail size={20} color="#f8b6c1" />,
+          to: routes.provider.assignments,
         },
         {
           label: 'Upcoming assignments',
           value: upcomingAssignments.length,
           description: 'Accepted or in-progress work.',
           icon: <FileText size={20} color="#ff7a00" />,
+          to: routes.provider.assignments,
         },
         {
           label: 'Active Managers',
           value: activeNetwork.length,
           description: 'Managers in your active network.',
           icon: <Sparkles size={20} color="#ff7a00" />,
+          to: routes.provider.network,
         },
         {
           label: 'Network invitations',
           value: pendingNetwork.length,
           description: 'Manager invitations awaiting your response.',
           icon: <Award size={20} color="#6b3e26" />,
+          to: routes.provider.network,
         },
         profileMetric,
       ]
@@ -173,24 +182,28 @@ function DashboardPage({ workspaceProfile }: { workspaceProfile?: ApiProviderPro
           value: data.data?.opportunities.length ?? 0,
           description: 'Open requests matched to your profile.',
           icon: <Sparkles size={20} color="#ff7a00" />,
+          to: routes.provider.opportunities,
         },
         {
           label: profile?.kind === 'TALENT' ? 'Performance invitations' : 'Invitations',
           value: pending.length,
           description: 'Organisers waiting for your answer.',
           icon: <Mail size={20} color="#f8b6c1" />,
+          to: routes.provider.requests,
         },
         {
           label: profile?.kind === 'TALENT' ? 'Open quotations' : 'Open quotes',
           value: openQuotes.length,
           description: 'Quotes you can revise or track.',
           icon: <FileText size={20} color="#ff7a00" />,
+          to: routes.provider.quotes,
         },
         {
           label: profile?.kind === 'ASSOCIATED_SERVICE_PROVIDER' ? 'Active engagements' : profile?.kind === 'TALENT' ? 'Booked performances' : 'Commitments',
           value: activeCommitments.length,
           description: 'Services an organiser has chosen.',
           icon: <Award size={20} color="#6b3e26" />,
+          to: routes.provider.commitments,
         },
         profileMetric,
       ]
@@ -221,14 +234,14 @@ function DashboardPage({ workspaceProfile }: { workspaceProfile?: ApiProviderPro
     {!data.loading && <>
       <div className="stat-grid stat-grid--five">
         {dashboardMetrics.map((metric) => (
-          <Card className="dashboard-stat" key={metric.label}>
+          <CardLink className="dashboard-stat" key={metric.label} to={metric.to}>
             <div className="dashboard-stat__top">
               <span className="stat-icon-wrap">{metric.icon}</span>
               <span className="dashboard-stat__label">{metric.label}</span>
             </div>
             <strong className={typeof metric.value === 'string' ? 'dashboard-stat__text' : undefined}>{metric.value}</strong>
             <p>{metric.description}</p>
-          </Card>
+          </CardLink>
         ))}
       </div>
 
@@ -262,10 +275,10 @@ function DashboardPage({ workspaceProfile }: { workspaceProfile?: ApiProviderPro
       {(isManager || isWorker) && <Card className="dashboard-panel network-dashboard">
         <div className="dashboard-panel__head"><div><h2>{profile?.kind === 'WORKER' ? 'Managers and assignments' : 'Your network and team'}</h2><p>{profile?.kind === 'WORKER' ? 'Independent relationships across every Manager you work with.' : 'Workers you can assign to accepted customer events.'}</p></div><ButtonLink to={routes.provider.network} variant="quiet" size="sm">Open network</ButtonLink></div>
         <div className="network-dashboard__metrics">
-          <div><span>{profile?.kind === 'WORKER' ? 'Active Managers' : 'Active Workers'}</span><strong>{activeNetwork.length}</strong></div>
-          <div><span>{profile?.kind === 'WORKER' ? 'Network invitations' : 'Invitations pending'}</span><strong>{pendingNetwork.length}</strong></div>
-          <div><span>Assignment invitations</span><strong>{assignmentInvitations.length}</strong></div>
-          <div><span>Upcoming assignments</span><strong>{upcomingAssignments.length}</strong></div>
+          <Link to={routes.provider.network}><span>{profile?.kind === 'WORKER' ? 'Active Managers' : 'Active Workers'}</span><strong>{activeNetwork.length}</strong></Link>
+          <Link to={routes.provider.network}><span>{profile?.kind === 'WORKER' ? 'Network invitations' : 'Invitations pending'}</span><strong>{pendingNetwork.length}</strong></Link>
+          <Link to={routes.provider.assignments}><span>Assignment invitations</span><strong>{assignmentInvitations.length}</strong></Link>
+          <Link to={routes.provider.assignments}><span>Upcoming assignments</span><strong>{upcomingAssignments.length}</strong></Link>
         </div>
         <div className="network-dashboard__links"><Link to={routes.provider.network}>{isWorker ? 'My Manager network' : 'My network'}</Link><Link to={routes.provider.assignments}>Assignments</Link>{isManager && <Link to={routes.provider.networkDiscover}>Discover Workers</Link>}</div>
       </Card>}
@@ -282,10 +295,10 @@ function DashboardPage({ workspaceProfile }: { workspaceProfile?: ApiProviderPro
             </ButtonLink>
           </div>
           <div className="network-dashboard__metrics">
-            <div><span>Active Associations</span><strong>{activeNetwork.length}</strong></div>
-            <div><span>Pending Requests</span><strong>{pendingNetwork.length}</strong></div>
-            <div><span>Direct Enquiries</span><strong>{pending.length}</strong></div>
-            <div><span>Engagements</span><strong>{activeCommitments.length}</strong></div>
+            <Link to={`${routes.provider.profile}?tab=association`}><span>Active Associations</span><strong>{activeNetwork.length}</strong></Link>
+            <Link to={`${routes.provider.profile}?tab=association`}><span>Pending Requests</span><strong>{pendingNetwork.length}</strong></Link>
+            <Link to={routes.provider.requests}><span>Direct Enquiries</span><strong>{pending.length}</strong></Link>
+            <Link to={routes.provider.commitments}><span>Engagements</span><strong>{activeCommitments.length}</strong></Link>
           </div>
           <div className="network-dashboard__links">
             <Link to={`${routes.provider.profile}?tab=association`}>Connect to Manager</Link>
@@ -307,10 +320,10 @@ function DashboardPage({ workspaceProfile }: { workspaceProfile?: ApiProviderPro
             </ButtonLink>
           </div>
           <div className="network-dashboard__metrics">
-            <div><span>Booked Gigs</span><strong>{activeCommitments.length}</strong></div>
-            <div><span>Direct Enquiries</span><strong>{pending.length}</strong></div>
-            <div><span>Active Quotes</span><strong>{openQuotes.length}</strong></div>
-            <div><span>Open Opportunities</span><strong>{data.data?.opportunities.length ?? 0}</strong></div>
+            <Link to={routes.provider.commitments}><span>Booked Gigs</span><strong>{activeCommitments.length}</strong></Link>
+            <Link to={routes.provider.requests}><span>Direct Enquiries</span><strong>{pending.length}</strong></Link>
+            <Link to={routes.provider.quotes}><span>Active Quotes</span><strong>{openQuotes.length}</strong></Link>
+            <Link to={routes.provider.opportunities}><span>Open Opportunities</span><strong>{data.data?.opportunities.length ?? 0}</strong></Link>
           </div>
           <div className="network-dashboard__links">
             <Link to={`${routes.provider.profile}?tab=portfolio`}>Upload Performance Media</Link>
@@ -332,10 +345,10 @@ function DashboardPage({ workspaceProfile }: { workspaceProfile?: ApiProviderPro
             </ButtonLink>
           </div>
           <div className="network-dashboard__metrics">
-            <div><span>Direct Bookings</span><strong>{activeCommitments.length}</strong></div>
-            <div><span>New Invitations</span><strong>{pending.length}</strong></div>
-            <div><span>Active Proposals</span><strong>{openQuotes.length}</strong></div>
-            <div><span>Matched Requests</span><strong>{data.data?.opportunities.length ?? 0}</strong></div>
+            <Link to={routes.provider.commitments}><span>Direct Bookings</span><strong>{activeCommitments.length}</strong></Link>
+            <Link to={routes.provider.requests}><span>New Invitations</span><strong>{pending.length}</strong></Link>
+            <Link to={routes.provider.quotes}><span>Active Proposals</span><strong>{openQuotes.length}</strong></Link>
+            <Link to={routes.provider.opportunities}><span>Matched Requests</span><strong>{data.data?.opportunities.length ?? 0}</strong></Link>
           </div>
           <div className="network-dashboard__links">
             <Link to={routes.provider.services}>Update Service Price</Link>

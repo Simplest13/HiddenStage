@@ -8,8 +8,25 @@ from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.renderers import BaseRenderer
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
+
+class EventStreamRenderer(BaseRenderer):
+    """Accept the EventSource `Accept: text/event-stream` request.
+
+    Without this renderer DRF's content negotiation answered 406 before the
+    streaming response was ever built, so every page that opens the realtime
+    stream logged a failed request and received no push updates.
+    """
+
+    media_type = "text/event-stream"
+    format = "event-stream"
+    charset = "utf-8"
+
+    def render(self, data, accepted_media_type=None, renderer_context=None):
+        return data
 
 from apps.accounts.models import Notification, User
 from apps.core.permissions import IsCustomerOrProvider, IsProvider
@@ -776,6 +793,7 @@ class RealtimeStreamView(APIView):
     """
 
     permission_classes = [IsAuthenticated]
+    renderer_classes = [EventStreamRenderer]
 
     def get(self, request):
         user_id = str(request.user.id)

@@ -150,7 +150,11 @@
 
 .network-dashboard { padding: 0; }
 .network-dashboard__metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: var(--color-line); }
-.network-dashboard__metrics > div { display: grid; gap: 0.25rem; padding: 0.9rem 1.1rem; background: var(--color-paper-bright); }
+.network-dashboard__metrics > div,
+.network-dashboard__metrics > a { display: grid; gap: 0.25rem; padding: 0.9rem 1.1rem; background: var(--color-paper-bright); }
+.network-dashboard__metrics > a { color: inherit; text-decoration: none; transition: background 150ms ease; }
+.network-dashboard__metrics > a:hover { background: var(--color-tint); }
+.network-dashboard__metrics > a:focus-visible { position: relative; z-index: 1; outline: 3px solid var(--color-orange); outline-offset: -3px; }
 .network-dashboard__metrics span { color: var(--color-muted); font-size: 0.74rem; font-weight: 600; }
 .network-dashboard__metrics strong { color: var(--color-indigo); font: 700 1.35rem/1.1 var(--font-ui); }
 .network-dashboard__links { display: flex; flex-wrap: wrap; gap: 1rem; padding: 0.85rem 1.1rem; }
@@ -272,7 +276,8 @@
   background: #30333E;
 }
 
-[data-theme="dark"] .network-dashboard__metrics > div {
+[data-theme="dark"] .network-dashboard__metrics > div,
+[data-theme="dark"] .network-dashboard__metrics > a {
   background: #1C1F27;
 }
 

@@ -48,7 +48,9 @@ def run_settings(database_url: str | None, extra_env: dict[str, str] | None = No
     }
     # A dotenv file (e.g. .env.neon) would override the values each case sets,
     # so the probe runs without it and sees only the environment it was given.
-    env.pop("DJANGO_ENV_FILE", None)
+    # Set it empty rather than removing it: the project's own .env sets this
+    # variable and would otherwise reintroduce the managed database.
+    env["DJANGO_ENV_FILE"] = ""
     # The surrounding suite may set this; each case opts in explicitly instead.
     env.pop("ALLOW_REMOTE_TEST_DB", None)
     if database_url is None:

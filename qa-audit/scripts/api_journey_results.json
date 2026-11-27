@@ -1,0 +1,542 @@
+[
+  {
+    "case": "health endpoint returns database ok",
+    "pass": true,
+    "detail": "{'status': 'ok', 'database': 'ok'}"
+  },
+  {
+    "case": "public category catalog",
+    "pass": true,
+    "detail": "HTTP 200"
+  },
+  {
+    "case": "catalog includes seeded categories",
+    "pass": true,
+    "detail": "18 categories"
+  },
+  {
+    "case": "catalog exposes the 'other' custom category",
+    "pass": true,
+    "detail": "['spaces', 'food-and-drink', 'music-and-performance', 'photography', 'videography', 'decor-and-styling', 'dj-and-sound', 'event-hosting']"
+  },
+  {
+    "case": "registration rejects a missing username",
+    "pass": true,
+    "detail": "HTTP 400"
+  },
+  {
+    "case": "registration rejects a weak password",
+    "pass": true,
+    "detail": "HTTP 400"
+  },
+  {
+    "case": "registration rejects an invalid email",
+    "pass": true,
+    "detail": "HTTP 400"
+  },
+  {
+    "case": "registration requires terms acceptance",
+    "pass": true,
+    "detail": "HTTP 400"
+  },
+  {
+    "case": "customer registration succeeds",
+    "pass": true,
+    "detail": "HTTP 201"
+  },
+  {
+    "case": "session established after registration",
+    "pass": true,
+    "detail": "HTTP 200"
+  },
+  {
+    "case": "duplicate email registration is rejected",
+    "pass": true,
+    "detail": "HTTP 400"
+  },
+  {
+    "case": "customer profile onboarding persists",
+    "pass": true,
+    "detail": "HTTP 200"
+  },
+  {
+    "case": "manager registration succeeds",
+    "pass": true,
+    "detail": "HTTP 201"
+  },
+  {
+    "case": "manager profile onboarding persists",
+    "pass": true,
+    "detail": "HTTP 200"
+  },
+  {
+    "case": "individual registration succeeds",
+    "pass": true,
+    "detail": "HTTP 201"
+  },
+  {
+    "case": "individual profile onboarding persists",
+    "pass": true,
+    "detail": "HTTP 200"
+  },
+  {
+    "case": "associated registration succeeds",
+    "pass": true,
+    "detail": "HTTP 201"
+  },
+  {
+    "case": "associated profile onboarding persists",
+    "pass": true,
+    "detail": "HTTP 200"
+  },
+  {
+    "case": "talent registration succeeds",
+    "pass": true,
+    "detail": "HTTP 201"
+  },
+  {
+    "case": "talent profile onboarding persists",
+    "pass": true,
+    "detail": "HTTP 200"
+  },
+  {
+    "case": "worker registration succeeds",
+    "pass": true,
+    "detail": "HTTP 201"
+  },
+  {
+    "case": "worker profile onboarding persists",
+    "pass": true,
+    "detail": "HTTP 200"
+  },
+  {
+    "case": "talent-specific fields persist",
+    "pass": true,
+    "detail": "{\"kind\": \"TALENT\", \"talent_category\": \"Singer\", \"performance_styles\": \"Bollywood, Sufi\"}"
+  },
+  {
+    "case": "provider kind persists for every professional type",
+    "pass": true,
+    "detail": "{\"manager\": \"MANAGER\", \"individual\": \"INDIVIDUAL_SERVICE_PROVIDER\", \"associated\": \"ASSOCIATED_SERVICE_PROVIDER\", \"talent\": \"TALENT\", \"worker\": \"WORKER\"}"
+  },
+  {
+    "case": "provider service listing can be created",
+    "pass": true,
+    "detail": "HTTP 201"
+  },
+  {
+    "case": "duplicate provider service returns a validation error, not a server error",
+    "pass": true,
+    "detail": "HTTP 400"
+  },
+  {
+    "case": "custom category rejects an empty name",
+    "pass": true,
+    "detail": "HTTP 400"
+  },
+  {
+    "case": "custom category rejects a one-character name",
+    "pass": true,
+    "detail": "HTTP 400"
+  },
+  {
+    "case": "custom category rejects names over 80 characters",
+    "pass": true,
+    "detail": "HTTP 400"
+  },
+  {
+    "case": "custom category is created",
+    "pass": true,
+    "detail": "HTTP 201"
+  },
+  {
+    "case": "custom category is flagged is_custom",
+    "pass": true,
+    "detail": "{'id': '7fcb0307-b52f-49d4-9590-0be4bcbdea85', 'code': 'qa-live-mehndi-17957681259b4d', 'name': 'QA Live Mehndi 17957681259b4d', 'description': 'Traditional henna for guests', 'sort_order': 100, 'is_custom': True}"
+  },
+  {
+    "case": "custom category receives its own slug, not 'other'",
+    "pass": true,
+    "detail": "qa-live-mehndi-17957681259b4d"
+  },
+  {
+    "case": "duplicate custom category returns the existing row",
+    "pass": true,
+    "detail": "HTTP 200"
+  },
+  {
+    "case": "duplicate custom category does not create a second row",
+    "pass": true,
+    "detail": "7fcb0307-b52f-49d4-9590-0be4bcbdea85 vs 7fcb0307-b52f-49d4-9590-0be4bcbdea85"
+  },
+  {
+    "case": "case-insensitive duplicate is deduplicated",
+    "pass": true,
+    "detail": "HTTP 200"
+  },
+  {
+    "case": "special characters in custom category are accepted",
+    "pass": true,
+    "detail": "HTTP 201"
+  },
+  {
+    "case": "custom category persists in the public catalog",
+    "pass": true,
+    "detail": "20 categories"
+  },
+  {
+    "case": "event with a custom category requirement is created",
+    "pass": true,
+    "detail": "HTTP 201"
+  },
+  {
+    "case": "custom category is stored as its own category (not generic 'other')",
+    "pass": true,
+    "detail": "qa-live-mehndi-17957681259b4d / QA Live Mehndi 17957681259b4d"
+  },
+  {
+    "case": "custom category survives a refresh",
+    "pass": true,
+    "detail": ""
+  },
+  {
+    "case": "custom service name on a standard category is rejected",
+    "pass": true,
+    "detail": "HTTP 400"
+  },
+  {
+    "case": "catalog exposes a generic 'other' category for the free-text service flow",
+    "pass": true,
+    "detail": "'other' present: True (customer UI has no Other option either)"
+  },
+  {
+    "case": "multi-requirement event is created",
+    "pass": true,
+    "detail": "HTTP 201"
+  },
+  {
+    "case": "event can be submitted",
+    "pass": true,
+    "detail": "HTTP 200"
+  },
+  {
+    "case": "submitted event status is persisted",
+    "pass": true,
+    "detail": ""
+  },
+  {
+    "case": "customer can invite a manager to a submitted event",
+    "pass": true,
+    "detail": "HTTP 201"
+  },
+  {
+    "case": "manager sees the invitation in the inbox",
+    "pass": true,
+    "detail": "HTTP 200"
+  },
+  {
+    "case": "invitation inbox contains the new invitation",
+    "pass": true,
+    "detail": "1 invitations"
+  },
+  {
+    "case": "manager accepts the invitation",
+    "pass": true,
+    "detail": "HTTP 200"
+  },
+  {
+    "case": "manager starts a quotation",
+    "pass": true,
+    "detail": "HTTP 201"
+  },
+  {
+    "case": "draft revision is created",
+    "pass": true,
+    "detail": "HTTP 201"
+  },
+  {
+    "case": "quotation revision items are saved",
+    "pass": true,
+    "detail": "HTTP 200"
+  },
+  {
+    "case": "quotation revision is submitted",
+    "pass": true,
+    "detail": "HTTP 200"
+  },
+  {
+    "case": "submitted revision total is computed server-side",
+    "pass": true,
+    "detail": "1000000"
+  },
+  {
+    "case": "a submitted revision cannot be submitted twice",
+    "pass": true,
+    "detail": "HTTP 409"
+  },
+  {
+    "case": "customer sees quotations for the event",
+    "pass": true,
+    "detail": "HTTP 200"
+  },
+  {
+    "case": "customer quotation list contains the manager quote",
+    "pass": true,
+    "detail": "1 quotes"
+  },
+  {
+    "case": "customer accepts a single service line",
+    "pass": true,
+    "detail": "HTTP 201"
+  },
+  {
+    "case": "accepted line creates a commitment for the selected requirement",
+    "pass": true,
+    "detail": "750000"
+  },
+  {
+    "case": "customer commitment list is available",
+    "pass": true,
+    "detail": "HTTP 200"
+  },
+  {
+    "case": "commitment appears in the customer list",
+    "pass": true,
+    "detail": "1 commitments"
+  },
+  {
+    "case": "provider cannot read the customer quotation inbox",
+    "pass": true,
+    "detail": "HTTP 403"
+  },
+  {
+    "case": "customer cannot read the provider quotation inbox",
+    "pass": true,
+    "detail": "HTTP 403"
+  },
+  {
+    "case": "anonymous access to events is refused",
+    "pass": true,
+    "detail": "HTTP 403"
+  },
+  {
+    "case": "manager can invite a worker to the network",
+    "pass": true,
+    "detail": "HTTP 201"
+  },
+  {
+    "case": "worker accepts the network invitation",
+    "pass": true,
+    "detail": "HTTP 200"
+  },
+  {
+    "case": "manager association list is available",
+    "pass": true,
+    "detail": "HTTP 200"
+  },
+  {
+    "case": "active manager-worker association exists",
+    "pass": true,
+    "detail": "1 associations"
+  },
+  {
+    "case": "manager creates an assignment for an associated worker",
+    "pass": true,
+    "detail": "HTTP 201"
+  },
+  {
+    "case": "worker sees their assignment list",
+    "pass": true,
+    "detail": "HTTP 200"
+  },
+  {
+    "case": "assignment appears for the worker",
+    "pass": true,
+    "detail": "1 assignments"
+  },
+  {
+    "case": "worker accepts the assignment",
+    "pass": true,
+    "detail": "HTTP 200"
+  },
+  {
+    "case": "accepting the same assignment twice is refused",
+    "pass": true,
+    "detail": "HTTP 409"
+  },
+  {
+    "case": "availability endpoint answers a manager",
+    "pass": true,
+    "detail": "HTTP 200"
+  },
+  {
+    "case": "availability marks the conflicting slot unavailable",
+    "pass": true,
+    "detail": "{\"available\": false, \"conflict\": true, \"event_date\": \"2030-06-15\", \"start_time\": \"19:00:00\", \"end_time\": \"21:00:00\"}"
+  },
+  {
+    "case": "availability response does not leak event or customer details",
+    "pass": true,
+    "detail": "[]"
+  },
+  {
+    "case": "manager cannot assign a professional with no active association",
+    "pass": true,
+    "detail": "HTTP 400"
+  },
+  {
+    "case": "customer cannot create assignments",
+    "pass": true,
+    "detail": "HTTP 403"
+  },
+  {
+    "case": "non-manager provider cannot create assignments",
+    "pass": true,
+    "detail": "HTTP 403"
+  },
+  {
+    "case": "another customer cannot read a foreign event (IDOR)",
+    "pass": true,
+    "detail": "HTTP 403"
+  },
+  {
+    "case": "another customer cannot read foreign quotations",
+    "pass": true,
+    "detail": "HTTP 403"
+  },
+  {
+    "case": "another provider cannot read a foreign quotation",
+    "pass": true,
+    "detail": "HTTP 403"
+  },
+  {
+    "case": "valid PNG avatar uploads",
+    "pass": true,
+    "detail": "HTTP 200"
+  },
+  {
+    "case": "uploaded avatar is served back",
+    "pass": true,
+    "detail": "HTTP 200"
+  },
+  {
+    "case": "unsupported avatar format is rejected",
+    "pass": true,
+    "detail": "HTTP 400"
+  },
+  {
+    "case": "oversized avatar is rejected",
+    "pass": true,
+    "detail": "HTTP 400"
+  },
+  {
+    "case": "empty avatar is rejected",
+    "pass": true,
+    "detail": "HTTP 400"
+  },
+  {
+    "case": "avatar upload rejects content that is not an image (extension-only validation)",
+    "pass": true,
+    "detail": "HTTP 400: accepted a non-image payload named .png"
+  },
+  {
+    "case": "portfolio image uploads",
+    "pass": true,
+    "detail": "HTTP 201"
+  },
+  {
+    "case": "executable portfolio upload is rejected",
+    "pass": true,
+    "detail": "HTTP 400"
+  },
+  {
+    "case": "empty portfolio upload is rejected",
+    "pass": true,
+    "detail": "HTTP 400"
+  },
+  {
+    "case": "valid event attachment uploads",
+    "pass": true,
+    "detail": "HTTP 201"
+  },
+  {
+    "case": "event attachment downloads for its owner",
+    "pass": true,
+    "detail": "HTTP 200"
+  },
+  {
+    "case": "unsupported attachment type is rejected",
+    "pass": true,
+    "detail": "HTTP 400"
+  },
+  {
+    "case": "attachment content/type mismatch is rejected",
+    "pass": true,
+    "detail": "HTTP 400"
+  },
+  {
+    "case": "foreign user cannot download another customer's attachment",
+    "pass": true,
+    "detail": "HTTP 403"
+  },
+  {
+    "case": "account settings update",
+    "pass": true,
+    "detail": "HTTP 200"
+  },
+  {
+    "case": "theme preference persists",
+    "pass": true,
+    "detail": ""
+  },
+  {
+    "case": "notifications endpoint loads",
+    "pass": true,
+    "detail": "HTTP 200"
+  },
+  {
+    "case": "provider opportunities endpoint loads",
+    "pass": true,
+    "detail": "HTTP 200"
+  },
+  {
+    "case": "worker opportunity feed is scoped",
+    "pass": true,
+    "detail": "HTTP 200"
+  },
+  {
+    "case": "worker discovery loads for a manager",
+    "pass": true,
+    "detail": "HTTP 200"
+  },
+  {
+    "case": "public provider detail loads",
+    "pass": true,
+    "detail": "HTTP 200"
+  },
+  {
+    "case": "anonymous provider detail hides contact details",
+    "pass": true,
+    "detail": "''"
+  },
+  {
+    "case": "customer without a commitment cannot see provider contact",
+    "pass": true,
+    "detail": "''"
+  },
+  {
+    "case": "customer with a persisted commitment sees provider contact",
+    "pass": true,
+    "detail": "'+91981236136'"
+  },
+  {
+    "case": "owner sees their own contact details",
+    "pass": true,
+    "detail": ""
+  },
+  {
+    "case": "manager team members expose names only",
+    "pass": true,
+    "detail": ""
+  }
+]

@@ -55,12 +55,6 @@ export default function AdminLoginPage() {
     }
   }
 
-  function handleAutoFill() {
-    setEmail('admin@hiddenstage.in')
-    setPassword('Admin@HiddenStage2026')
-    setError('')
-  }
-
   return (
     <div className="admin-login-screen">
       <div className="admin-login-screen__container">
@@ -121,16 +115,6 @@ export default function AdminLoginPage() {
                 onClick={() => setShowPassword((v) => !v)}
               >
                 {showPassword ? 'Hide password' : 'Show password'}
-              </button>
-            </div>
-
-            <div className="admin-login-helpers">
-              <button
-                type="button"
-                className="admin-login-fill-btn"
-                onClick={handleAutoFill}
-              >
-                <Icon name="sparkles" size={15} /> Fill default admin credentials
               </button>
             </div>
 

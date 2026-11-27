@@ -27,11 +27,13 @@ export const sessionApi = {
   async register(input: RegisterInput) {
     const user = await apiRequest<ApiUser>('/auth/register/', { method: 'POST', ...jsonBody(input) })
     resetCsrfToken()
+    await ensureCsrfToken(true)
     return user
   },
   async login(input: LoginInput) {
     const user = await apiRequest<ApiUser>('/auth/login/', { method: 'POST', ...jsonBody(input) })
     resetCsrfToken()
+    await ensureCsrfToken(true)
     return user
   },
   async logout() {

@@ -3,7 +3,7 @@ import { routes } from '../../app/routes/routePaths'
 import { paymentsApi } from '../../shared/api/backend/ecosystem'
 import type { ApiInvoice, ApiPaymentTransaction } from '../../shared/api/backend/types'
 import { formatPaise, formatShortDate } from '../../shared/api/backend/format'
-import { Badge, Button, ButtonLink, Card, Spinner } from '../../shared/ui'
+import { Badge, Button, ButtonLink, Card, CardButton, Spinner } from '../../shared/ui'
 import { Icon } from '../../shared/ui/Icon'
 
 export function CustomerPaymentsPage() {
@@ -139,7 +139,7 @@ export function CustomerPaymentsPage() {
           marginBottom: '2rem',
         }}
       >
-        <Card style={{ padding: '1.25rem', borderLeft: '4px solid var(--color-orange, #e05822)' }}>
+        <CardButton aria-label="Show event payment breakdown" aria-pressed={activeTab === 'overview'} onClick={() => setActiveTab('overview')} style={{ padding: '1.25rem', borderLeft: '4px solid var(--color-orange, #e05822)' }}>
           <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-fg-muted)', textTransform: 'uppercase' }}>
             Total Contract Value
           </div>
@@ -149,9 +149,9 @@ export function CustomerPaymentsPage() {
           <div style={{ fontSize: '0.8rem', color: 'var(--color-fg-muted)' }}>
             Across all booked event milestones
           </div>
-        </Card>
+        </CardButton>
 
-        <Card style={{ padding: '1.25rem', borderLeft: '4px solid #22c55e' }}>
+        <CardButton aria-label="Show payment transactions" aria-pressed={activeTab === 'transactions'} onClick={() => setActiveTab('transactions')} style={{ padding: '1.25rem', borderLeft: '4px solid #22c55e' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-fg-muted)', textTransform: 'uppercase' }}>
               Paid in Escrow
@@ -164,9 +164,9 @@ export function CustomerPaymentsPage() {
           <div style={{ fontSize: '0.8rem', color: 'var(--color-fg-muted)' }}>
             Held safely until service delivery
           </div>
-        </Card>
+        </CardButton>
 
-        <Card style={{ padding: '1.25rem', borderLeft: '4px solid #f59e0b' }}>
+        <CardButton aria-label="Show pending advance invoices" aria-pressed={activeTab === 'invoices' && invoiceFilter === 'PENDING'} onClick={() => { setInvoiceFilter('PENDING'); setActiveTab('invoices') }} style={{ padding: '1.25rem', borderLeft: '4px solid #f59e0b' }}>
           <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-fg-muted)', textTransform: 'uppercase' }}>
             Advance Pending
           </div>
@@ -176,9 +176,9 @@ export function CustomerPaymentsPage() {
           <div style={{ fontSize: '0.8rem', color: 'var(--color-fg-muted)' }}>
             Required to confirm bookings
           </div>
-        </Card>
+        </CardButton>
 
-        <Card style={{ padding: '1.25rem', borderLeft: '4px solid #6366f1' }}>
+        <CardButton aria-label="Show pending final balance invoices" aria-pressed={activeTab === 'invoices' && invoiceFilter === 'PENDING'} onClick={() => { setInvoiceFilter('PENDING'); setActiveTab('invoices') }} style={{ padding: '1.25rem', borderLeft: '4px solid #6366f1' }}>
           <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-fg-muted)', textTransform: 'uppercase' }}>
             Final Balance Pending
           </div>
@@ -188,7 +188,7 @@ export function CustomerPaymentsPage() {
           <div style={{ fontSize: '0.8rem', color: 'var(--color-fg-muted)' }}>
             Due prior to or upon completion
           </div>
-        </Card>
+        </CardButton>
       </div>
 
       {/* Tabs Bar */}

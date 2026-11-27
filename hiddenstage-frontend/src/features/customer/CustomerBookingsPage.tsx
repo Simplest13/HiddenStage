@@ -5,7 +5,7 @@ import { bookingsApi } from '../../shared/api/backend/ecosystem'
 import { useApiData } from '../../shared/api/backend/useApiData'
 import type { ApiBooking } from '../../shared/api/backend/types'
 import { formatPaise, formatShortDate } from '../../shared/api/backend/format'
-import { Avatar, Button, ButtonLink, Card, Spinner } from '../../shared/ui'
+import { Avatar, Button, ButtonLink, Card, CardButton, CardLink, Spinner } from '../../shared/ui'
 import { Icon } from '../../shared/ui/Icon'
 
 const LIFECYCLE_STEPS = [
@@ -92,29 +92,29 @@ export function CustomerBookingsPage() {
 
       {/* KPI Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-        <Card style={{ padding: '1.25rem', background: 'var(--color-paper-bright)', border: '1px solid var(--color-line)' }}>
+        <CardButton aria-pressed={filter === 'ALL'} onClick={() => setFilter('ALL')} style={{ padding: '1.25rem', background: 'var(--color-paper-bright)', border: '1px solid var(--color-line)' }}>
           <span style={{ fontSize: '0.78rem', color: 'var(--color-muted)', fontWeight: 600 }}>TOTAL BOOKINGS</span>
           <div style={{ fontSize: '1.85rem', fontWeight: 800, color: 'var(--color-ink)', margin: '0.25rem 0' }}>{totalBookings}</div>
           <span style={{ fontSize: '0.75rem', color: 'var(--color-muted)' }}>Created event journeys</span>
-        </Card>
+        </CardButton>
 
-        <Card style={{ padding: '1.25rem', background: 'var(--color-paper-bright)', border: '1px solid var(--color-line)' }}>
+        <CardButton aria-pressed={filter === 'ACTIVE'} onClick={() => setFilter('ACTIVE')} style={{ padding: '1.25rem', background: 'var(--color-paper-bright)', border: '1px solid var(--color-line)' }}>
           <span style={{ fontSize: '0.78rem', color: 'var(--color-muted)', fontWeight: 600 }}>ACTIVE EVENTS</span>
           <div style={{ fontSize: '1.85rem', fontWeight: 800, color: 'var(--color-orange)', margin: '0.25rem 0' }}>{activeBookings}</div>
           <span style={{ fontSize: '0.75rem', color: 'var(--color-muted)' }}>In negotiation or progress</span>
-        </Card>
+        </CardButton>
 
-        <Card style={{ padding: '1.25rem', background: 'var(--color-paper-bright)', border: '1px solid var(--color-line)' }}>
+        <CardButton aria-pressed={filter === 'COMPLETED'} onClick={() => setFilter('COMPLETED')} style={{ padding: '1.25rem', background: 'var(--color-paper-bright)', border: '1px solid var(--color-line)' }}>
           <span style={{ fontSize: '0.78rem', color: 'var(--color-muted)', fontWeight: 600 }}>COMPLETED GATHERINGS</span>
           <div style={{ fontSize: '1.85rem', fontWeight: 800, color: 'var(--color-success)', margin: '0.25rem 0' }}>{completedEvents}</div>
           <span style={{ fontSize: '0.75rem', color: 'var(--color-muted)' }}>Past celebrations</span>
-        </Card>
+        </CardButton>
 
-        <Card style={{ padding: '1.25rem', background: 'var(--color-paper-bright)', border: '1px solid var(--color-line)' }}>
+        <CardLink to={routes.customer.payments} style={{ padding: '1.25rem', background: 'var(--color-paper-bright)', border: '1px solid var(--color-line)' }}>
           <span style={{ fontSize: '0.78rem', color: 'var(--color-muted)', fontWeight: 600 }}>TOTAL ESCROW PAID</span>
           <div style={{ fontSize: '1.85rem', fontWeight: 800, color: 'var(--color-ink)', margin: '0.25rem 0' }}>{formatPaise(totalSpendPaise)}</div>
           <span style={{ fontSize: '0.75rem', color: 'var(--color-muted)' }}>Secured in escrow</span>
-        </Card>
+        </CardLink>
       </div>
 
       {/* Filter Tabs */}

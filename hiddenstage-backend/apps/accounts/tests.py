@@ -432,4 +432,20 @@ class AvatarTests(TestCase):
         serve_404 = APIClient().get("/api/v1/auth/avatars/nonexistent_avatar.png")
         self.assertEqual(serve_404.status_code, 404)
 
+    def test_avatar_rejects_empty_and_spoofed_files(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        empty = SimpleUploadedFile("empty.png", b"", content_type="image/png")
+        resp = self.client.post("/api/v1/auth/avatar/", {"avatar": empty}, format="multipart")
+        self.assertEqual(resp.status_code, 400, resp.content)
+
+        # A script renamed to .png must not be stored as an image.
+        spoofed = SimpleUploadedFile(
+            "payload.png", b"<html><script>alert(1)</script>", content_type="image/png"
+        )
+        resp = self.client.post("/api/v1/auth/avatar/", {"avatar": spoofed}, format="multipart")
+        self.assertEqual(resp.status_code, 400, resp.content)
+        self.user.refresh_from_db()
+        self.assertFalse(bool(self.user.avatar))
+
 

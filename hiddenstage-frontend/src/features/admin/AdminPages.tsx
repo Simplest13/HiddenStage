@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
-import { useMatches } from 'react-router-dom'
+import { useMatches, useSearchParams } from 'react-router-dom'
+import { routes } from '../../app/routes/routePaths'
 import {
   adminApi,
   type AdminAuditEntry,
@@ -11,7 +12,7 @@ import {
 } from '../../shared/api/backend/admin'
 import { formatPaise, formatShortDate } from '../../shared/api/backend/format'
 import { useApiData } from '../../shared/api/backend/useApiData'
-import { Badge, Button, Card, EmptyState, ErrorState, Input, Select, Spinner, useToast } from '../../shared/ui'
+import { Badge, Button, CardLink, EmptyState, ErrorState, Input, Select, Spinner, useToast } from '../../shared/ui'
 import './admin.css'
 
 export default function AdminPages() {
@@ -33,7 +34,9 @@ function AdminOverviewPage() {
   const usersData = useApiData(() => adminApi.listUsers(), [])
   const categoriesData = useApiData(() => adminApi.listCategories(), [])
 
-  const [activeTab, setActiveTab] = useState<'users' | 'categories'>('users')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const activeTab = searchParams.get('tab') === 'categories' ? 'categories' : 'users'
+  const setActiveTab = (tab: 'users' | 'categories') => setSearchParams({ tab }, { replace: true })
   const [userQuery, setUserQuery] = useState('')
   const [roleFilter, setRoleFilter] = useState('')
   const [userModal, setUserModal] = useState<AdminUser | null>(null)
@@ -167,26 +170,26 @@ function AdminOverviewPage() {
 
       {metrics && (
         <div className="admin-grid">
-          <Card className="admin-card">
+          <CardLink className="admin-card" to={`${routes.admin.home}?tab=users`}>
             <span className="dashboard-stat__label">Total Users</span>
             <strong>{metrics.users.total}</strong>
             <p>{metrics.users.customers} customers · {metrics.users.providers} providers · {metrics.users.staff} staff</p>
-          </Card>
-          <Card className="admin-card">
+          </CardLink>
+          <CardLink className="admin-card" to={`${routes.admin.reviews}?tab=providers`}>
             <span className="dashboard-stat__label">Provider Verification</span>
             <strong>{metrics.providers.verified}</strong>
             <p>{metrics.providers.pending} pending review · {(metrics.providers as any).featured ?? 0} featured on homepage</p>
-          </Card>
-          <Card className="admin-card">
+          </CardLink>
+          <CardLink className="admin-card" to={`${routes.admin.reviews}?tab=commitments`}>
             <span className="dashboard-stat__label">Active Commitments</span>
             <strong>{metrics.commitments.active}</strong>
             <p>{formatPaise(metrics.commitments.active_total_paise)} agreed total</p>
-          </Card>
-          <Card className="admin-card">
+          </CardLink>
+          <CardLink className="admin-card" to={`${routes.admin.reviews}?tab=events`}>
             <span className="dashboard-stat__label">Events & Requests</span>
             <strong>{metrics.events.total}</strong>
             <p>{metrics.events.submitted} submitted · {metrics.events.draft} drafts</p>
-          </Card>
+          </CardLink>
         </div>
       )}
 
@@ -613,7 +616,10 @@ function AdminBusinessesPage() {
 // ============================================================================
 function AdminModerationPage() {
   const { showToast } = useToast()
-  const [tab, setTab] = useState<'providers' | 'events' | 'commitments'>('providers')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const requestedTab = searchParams.get('tab')
+  const tab = requestedTab === 'events' || requestedTab === 'commitments' ? requestedTab : 'providers'
+  const setTab = (nextTab: 'providers' | 'events' | 'commitments') => setSearchParams({ tab: nextTab }, { replace: true })
 
   const providersData = useApiData(() => adminApi.listProviders(), [])
   const eventsData = useApiData(() => adminApi.listEvents(), [])

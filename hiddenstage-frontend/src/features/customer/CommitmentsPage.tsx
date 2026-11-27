@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { customerEventPath, routes } from '../../app/routes/routePaths'
-import { Badge, ButtonLink, Card, EmptyState, ErrorState, Spinner, useToast } from '../../shared/ui'
+import { Badge, ButtonLink, Card, CardButton, EmptyState, ErrorState, Spinner, useToast } from '../../shared/ui'
 import { marketplaceApi } from '../../shared/api/backend/marketplace'
 import { useApiData } from '../../shared/api/backend/useApiData'
 import { formatPaise, formatShortDate } from '../../shared/api/backend/format'
@@ -40,9 +40,9 @@ export default function CommitmentsPage() {
 
     {commitments.length > 0 && <>
       <div className="commitment-summary">
-        <Card className="commitment-summary__card"><span>Active commitments</span><strong>{active.length}</strong></Card>
-        <Card className="commitment-summary__card"><span>Agreed value</span><strong>{formatPaise(activeTotal)}</strong></Card>
-        <Card className="commitment-summary__card"><span>Released</span><strong>{commitments.length - active.length}</strong></Card>
+        <CardButton className="commitment-summary__card" aria-pressed={filter === 'ACTIVE'} onClick={() => setFilter('ACTIVE')}><span>Active commitments</span><strong>{active.length}</strong></CardButton>
+        <CardButton className="commitment-summary__card" aria-pressed={filter === 'ACTIVE'} onClick={() => setFilter('ACTIVE')}><span>Agreed value</span><strong>{formatPaise(activeTotal)}</strong></CardButton>
+        <CardButton className="commitment-summary__card" aria-pressed={filter === 'RELEASED'} onClick={() => setFilter('RELEASED')}><span>Released</span><strong>{commitments.length - active.length}</strong></CardButton>
         <div className="segment-control" role="group" aria-label="Filter commitments">
           {(['ALL', 'ACTIVE', 'RELEASED'] as const).map((option) => <button
             key={option}

@@ -82,6 +82,26 @@ def assignment_payload(commitment, worker):
     }
 
 
+class RealtimeStreamTests(TestCase):
+    def test_event_stream_accepts_the_sse_media_type(self):
+        """EventSource sends Accept: text/event-stream; it must not be a 406."""
+        user = make_customer("stream-user@example.com")
+        client = APIClient()
+        client.force_authenticate(user)
+        response = client.get(
+            "/api/v1/network/stream/", HTTP_ACCEPT="text/event-stream"
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response["Content-Type"].startswith("text/event-stream"))
+        response.close()
+
+    def test_event_stream_requires_authentication(self):
+        response = APIClient().get(
+            "/api/v1/network/stream/", HTTP_ACCEPT="text/event-stream"
+        )
+        self.assertIn(response.status_code, (401, 403))
+
+
 class NetworkInvitationTests(TestCase):
     def setUp(self):
         self.manager = make_provider_of_kind("manager@example.com", ProviderKind.MANAGER)

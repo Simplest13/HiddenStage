@@ -1,5 +1,5 @@
 import { forwardRef, useId, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, type LinkProps } from 'react-router-dom'
 import './ui.css'
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -66,6 +66,14 @@ export function Radio({ label, ...props }: Omit<InputHTMLAttributes<HTMLInputEle
 
 export function Card({ children, className = '', style, as: Tag = 'div' }: { children: ReactNode; className?: string; style?: React.CSSProperties; as?: 'div' | 'article' | 'section' }) {
   return <Tag className={`card ${className}`} style={style}>{children}</Tag>
+}
+
+export function CardLink({ to, children, className = '', ...props }: LinkProps) {
+  return <Link to={to} className={`card card--interactive ${className}`} {...props}>{children}</Link>
+}
+
+export function CardButton({ children, className = '', type = 'button', ...props }: ButtonHTMLAttributes<HTMLButtonElement>) {
+  return <button type={type} className={`card card--interactive ${className}`} {...props}>{children}</button>
 }
 
 export function Badge({ children, tone = 'neutral' }: { children: ReactNode; tone?: 'neutral' | 'accent' | 'success' | 'warning' }) {

@@ -189,41 +189,51 @@ function LiveEventFeed() {
           </Link>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.25rem' }}>
+        <div className="opportunity-grid">
           {feed.slice(0, 6).map((item) => (
-            <Card key={item.id} style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '1rem' }}>
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
+            <Card key={item.id} as="article" className="opportunity-card">
+              <div className="opportunity-card__content">
+                <div className="opportunity-card__header">
                   <Badge tone="accent">{item.event_type || 'Event'}</Badge>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--color-fg-muted)' }}>
-                    <Icon name="mapPin" size={14} /> {item.city}{item.state ? `, ${item.state}` : ''}
+                  <span className="opportunity-card__location">
+                    <Icon name="mapPin" size={14} />
+                    <span>{item.city}{item.state ? `, ${item.state}` : ''}</span>
                   </span>
                 </div>
 
-                <h3 style={{ fontSize: '1.2rem', fontWeight: 700, margin: '0 0 0.5rem' }}>
+                <h3 className="opportunity-card__title">
                   {item.name}
                 </h3>
 
-                <div style={{ fontSize: '0.88rem', color: 'var(--color-fg-muted)', marginBottom: '0.75rem', display: 'flex', gap: '1rem' }}>
-                  <span><Icon name="calendarDays" size={14} /> {item.event_date ? formatShortDate(item.event_date) : 'Flexible Date'}</span>
-                  {item.guest_count ? <span><Icon name="users" size={14} /> {item.guest_count} guests</span> : null}
+                <div className="opportunity-card__details">
+                  <span className="opportunity-card__detail">
+                    <Icon name="calendarDays" size={14} />
+                    <span>{item.event_date ? formatShortDate(item.event_date) : 'Flexible Date'}</span>
+                  </span>
+                  {item.guest_count ? (
+                    <span className="opportunity-card__detail">
+                      <Icon name="users" size={14} />
+                      <span>{item.guest_count} guests</span>
+                    </span>
+                  ) : null}
                 </div>
 
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
+                <div className="opportunity-card__requirements">
                   {item.requirements?.map((req) => (
                     <Badge key={req.id} tone="neutral">{req.category_name || req.title}</Badge>
                   ))}
                 </div>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--color-border)', paddingTop: '0.85rem' }}>
-                <span style={{ fontSize: '0.8rem', color: 'var(--color-fg-muted)' }}>
-                  <Icon name="user" size={14} /> {item.anonymized_host || `Host in ${item.city || 'India'}`}
+              <footer className="opportunity-card__footer">
+                <span className="opportunity-card__host">
+                  <Icon name="user" size={14} />
+                  <span>{item.anonymized_host || `Host in ${item.city || 'India'}`}</span>
                 </span>
                 <ButtonLink to={routes.forProfessionals} size="sm" variant="primary" className="quote-event-btn">
                   Quote for Event <Icon name="arrowRight" size={14} />
                 </ButtonLink>
-              </div>
+              </footer>
             </Card>
           ))}
         </div>

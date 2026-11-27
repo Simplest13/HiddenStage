@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
-import { Link, Navigate, useLocation, useMatches } from 'react-router-dom'
+import { Link, Navigate, useLocation, useMatches, useSearchParams } from 'react-router-dom'
 import { Award, Calendar, CircleCheck, Folder, Sparkles } from 'kubai-icons-react'
 import { Icon } from '../../shared/ui/Icon'
 import { customerEventPath, routes } from '../../app/routes/routePaths'
 import { useAuth, useAuthActions, useTheme } from '../../app/auth/useAuth'
-import { Avatar, Button, ButtonLink, Card, EmptyState, ErrorState, Input, Select, Spinner } from '../../shared/ui'
+import { Avatar, Button, ButtonLink, Card, CardLink, EmptyState, ErrorState, Input, Select, Spinner } from '../../shared/ui'
 import { eventsApi } from '../../shared/api/backend/events'
 import { marketplaceApi } from '../../shared/api/backend/marketplace'
 import { profilesApi } from '../../shared/api/backend/profiles'
@@ -96,38 +96,38 @@ function DashboardPage() {
     {loading && <Spinner label="Loading your workspace" />}
 
     {!loading && <div className="stat-grid">
-      <Card className="dashboard-stat">
+      <CardLink className="dashboard-stat" to={`${routes.customer.requests}?status=SUBMITTED`} aria-label="Open requests">
         <div className="dashboard-stat__top">
           <span className="stat-icon-wrap"><Calendar size={20} color="#ff7a00" /></span>
           <span className="dashboard-stat__label">Open requests</span>
         </div>
         <strong>{openRequests.length}</strong>
         <p>Requests matching professionals can quote on.</p>
-      </Card>
-      <Card className="dashboard-stat">
+      </CardLink>
+      <CardLink className="dashboard-stat" to={routes.customer.quotes} aria-label="Quotations received">
         <div className="dashboard-stat__top">
           <span className="stat-icon-wrap"><Sparkles size={20} color="#f8b6c1" /></span>
           <span className="dashboard-stat__label">Quotations received</span>
         </div>
         <strong>{quotes.length}</strong>
         <p>{quotes.length ? 'Compare totals, scope and validity.' : waitingQuotes ? 'Invite professionals to speed this up.' : 'No quotes yet.'}</p>
-      </Card>
-      <Card className="dashboard-stat">
+      </CardLink>
+      <CardLink className="dashboard-stat" to={routes.customer.commitments} aria-label="Active commitments">
         <div className="dashboard-stat__top">
           <span className="stat-icon-wrap"><Award size={20} color="#ff7a00" /></span>
           <span className="dashboard-stat__label">Active commitments</span>
         </div>
         <strong>{activeCommitments.length}</strong>
         <p>Suppliers chosen for specific services.</p>
-      </Card>
-      <Card className="dashboard-stat">
+      </CardLink>
+      <CardLink className="dashboard-stat" to={`${routes.customer.requests}?status=DRAFT`} aria-label="Drafts">
         <div className="dashboard-stat__top">
           <span className="stat-icon-wrap"><Folder size={20} color="#6b3e26" /></span>
           <span className="dashboard-stat__label">Drafts</span>
         </div>
         <strong>{events.filter((event) => event.status === 'DRAFT').length}</strong>
         <p>Unpublished requests only you can see.</p>
-      </Card>
+      </CardLink>
     </div>}
 
     {!loading && events.length === 0 && <div className="dashboard-empty">
@@ -195,10 +195,16 @@ function latestTotal(quotation: ApiQuotation) {
 
 function RequestsPage() {
   const data = useApiData(() => eventsApi.list(), [], { key: 'customer-events' })
+  const [searchParams, setSearchParams] = useSearchParams()
   const [query, setQuery] = useState('')
-  const [status, setStatus] = useState('ALL')
   const [sort, setSort] = useState('soonest')
   const [view, setView] = useState<'list' | 'grid'>('list')
+  const requestedStatus = searchParams.get('status') ?? 'ALL'
+  const status = ['ALL', 'DRAFT', 'SUBMITTED', 'CLOSED', 'WITHDRAWN'].includes(requestedStatus) ? requestedStatus : 'ALL'
+
+  function updateStatus(nextStatus: string) {
+    setSearchParams(nextStatus === 'ALL' ? {} : { status: nextStatus }, { replace: true })
+  }
 
   const filtered = useMemo(() => {
     const events = data.data ?? []
@@ -231,7 +237,7 @@ function RequestsPage() {
     {(data.data?.length ?? 0) > 0 && <>
       <div className="event-filters">
         <Input label="Search requests" name="search" type="search" placeholder="Name, type, city or PIN" value={query} onChange={(event) => setQuery(event.target.value)} />
-        <Select label="Status" name="status" value={status} onChange={(event) => setStatus(event.target.value)}>
+        <Select label="Status" name="status" value={status} onChange={(event) => updateStatus(event.target.value)}>
           <option value="ALL">All statuses</option>
           <option value="DRAFT">Drafts</option>
           <option value="SUBMITTED">Open for quotes</option>
@@ -248,9 +254,9 @@ function RequestsPage() {
         </div>
       </div>
 
-      <div className="results-head"><p><strong>{filtered.length}</strong> request{filtered.length === 1 ? '' : 's'}</p>{filtered.length !== (data.data?.length ?? 0) && <Button type="button" variant="quiet" size="sm" onClick={() => { setQuery(''); setStatus('ALL') }}>Clear filters</Button>}</div>
+      <div className="results-head"><p><strong>{filtered.length}</strong> request{filtered.length === 1 ? '' : 's'}</p>{filtered.length !== (data.data?.length ?? 0) && <Button type="button" variant="quiet" size="sm" onClick={() => { setQuery(''); updateStatus('ALL') }}>Clear filters</Button>}</div>
 
-      {filtered.length === 0 && <EmptyState title="No requests match those filters" description="Try a different status or search term." action={<Button type="button" variant="secondary" onClick={() => { setQuery(''); setStatus('ALL') }}>Clear filters</Button>} />}
+      {filtered.length === 0 && <EmptyState title="No requests match those filters" description="Try a different status or search term." action={<Button type="button" variant="secondary" onClick={() => { setQuery(''); updateStatus('ALL') }}>Clear filters</Button>} />}
 
       {filtered.length > 0 && view === 'grid' && <div className="customer-event-grid">{filtered.map((event) => <Card className="customer-event-card" key={event.id}>
         <div className="customer-event-card__top"><EventStatusBadge status={event.status} /><span>{formatShortDate(event.event_date)}</span></div>

@@ -160,6 +160,26 @@
 .section-head--center { justify-content: center; text-align: center; }
 .section-head--center p { margin-inline: auto; }
 
+/* Live marketplace opportunities ---------------------------------------- */
+.opportunity-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; align-items: stretch; }
+.opportunity-card { display: flex; min-width: 0; flex-direction: column; justify-content: space-between; gap: 1rem; padding: 1.25rem; }
+.opportunity-card__content { min-width: 0; }
+.opportunity-card__header { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 0.8rem; }
+.opportunity-card__header > .badge { max-width: 55%; overflow-wrap: anywhere; }
+.opportunity-card__location { display: inline-flex; min-width: 0; max-width: 60%; align-items: center; gap: 0.35rem; color: var(--color-muted); font-size: 0.8rem; text-align: right; }
+.opportunity-card__location > svg { flex: 0 0 auto; }
+.opportunity-card__location > span { overflow-wrap: anywhere; }
+.opportunity-card__title { margin: 0 0 0.7rem; font-size: 1.1rem; line-height: 1.3; overflow-wrap: anywhere; }
+.opportunity-card__details { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem; margin-bottom: 0.8rem; color: var(--color-muted); font-size: 0.88rem; }
+.opportunity-card__detail { display: inline-flex; min-width: 0; align-items: center; gap: 0.4rem; }
+.opportunity-card__detail > svg, .opportunity-card__host > svg { flex: 0 0 auto; }
+.opportunity-card__requirements { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.opportunity-card__requirements > .badge { max-width: 100%; overflow-wrap: anywhere; }
+.opportunity-card__footer { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 0.75rem; margin-top: 0.2rem; padding-top: 0.85rem; border-top: 1px solid var(--color-line); }
+.opportunity-card__host { display: inline-flex; min-width: 0; align-items: center; gap: 0.4rem; color: var(--color-muted); font-size: 0.75rem; }
+.opportunity-card__host > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.opportunity-card__footer .quote-event-btn { white-space: nowrap; }
+
 /* Professionals ---------------------------------------------------------- */
 .pro-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
 .pro-card { display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--color-line); border-radius: var(--radius-md); background: var(--color-paper-bright); transition: box-shadow 200ms ease, transform 200ms ease, border-color 200ms ease; }
@@ -320,6 +340,7 @@
   .hero-collage { grid-template-columns: 1.08fr 0.92fr; grid-template-rows: 12.5rem 10rem; max-width: none; }
   .category-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .pro-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .opportunity-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .pro-cta { grid-template-columns: 1fr; }
   .pro-cta__panel { min-height: 9rem; }
   .about-layout > div > p, .faq-layout > div > p { max-width: 42rem; }
@@ -353,6 +374,12 @@
 /* Large phone */
 @media (max-width: 640px) {
   .pro-grid { grid-template-columns: 1fr; }
+  .opportunity-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 420px) {
+  .opportunity-card__footer { grid-template-columns: 1fr; }
+  .opportunity-card__footer .quote-event-btn { justify-self: start; }
 }
 
 /* Phones: tighter category tabs so the strip stays within the viewport */

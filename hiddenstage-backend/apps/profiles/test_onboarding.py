@@ -2,7 +2,7 @@ from django.test import TestCase
 from rest_framework.test import APIClient
 
 from apps.core.testutils import ensure_categories, make_provider
-from apps.profiles.models import ProviderProfile
+from apps.profiles.models import ProviderProfile, ProviderService
 
 
 class ProviderOnboardingTests(TestCase):
@@ -24,6 +24,16 @@ class ProviderOnboardingTests(TestCase):
             format="json",
         )
         self.assertEqual(response.status_code, 400, response.content)
+
+    def test_duplicate_provider_service_returns_validation_error(self):
+        ProviderService.objects.filter(provider=self.profile).delete()
+        payload = {"category": "photography", "title": "Photography"}
+        first = self.client.post("/api/v1/me/provider-services/", payload, format="json")
+        self.assertEqual(first.status_code, 201, first.content)
+
+        duplicate = self.client.post("/api/v1/me/provider-services/", payload, format="json")
+        self.assertEqual(duplicate.status_code, 400, duplicate.content)
+        self.assertIn("category", duplicate.data)
 
     def test_role_data_and_progress_are_persisted(self):
         response = self.client.patch(

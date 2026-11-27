@@ -216,6 +216,11 @@ class ProviderServiceListCreateView(generics.ListCreateAPIView):
                 "contact": self.request.user.phone or self.request.user.email,
             },
         )
+        category = serializer.validated_data["category"]
+        if ProviderService.objects.filter(provider=profile, category=category).exists():
+            raise ValidationError(
+                {"category": "You already offer this service category."}
+            )
         service = serializer.save(provider=profile)
         profile.refresh_completion()
         return service

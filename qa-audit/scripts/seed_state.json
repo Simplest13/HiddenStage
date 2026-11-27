@@ -1,0 +1,28 @@
+{
+  "event_id": "9eb69370-a1b0-474d-8f6a-7c6ea54f31c7",
+  "quotation_id": "fee9e45f-ee97-4028-bd8e-0ac8b1571461",
+  "revision_id": "454bf1be-a6db-4f40-8c46-df3116107377",
+  "commitment_id": "cea174a4-776c-432a-a281-ce5f620566e6",
+  "assignment_id": "f1745819-b7eb-4e96-b8f5-2b3381bd6bed",
+  "requirement_ids": [
+    "fad9c9e5-0eec-4e14-b481-55767b65b2d5",
+    "32fcb7e3-a56f-4ed9-a8c3-aff0dfc4ccf8"
+  ],
+  "provider_profiles": {
+    "manager": "27c5a019-2da9-45c8-aa08-f38cf333694a",
+    "individual": "82743614-5d33-49c0-b7ee-39dc29a62a65",
+    "associated": "fdb2c4a5-555f-4312-8665-cc38332004a1",
+    "talent": "cc7420c7-03c8-414e-a84b-3628994cb1b9",
+    "worker": "e7d0fca7-6645-404d-a388-5ebc84ae709b"
+  },
+  "accounts": {
+    "customer": "qa.customer@example.test",
+    "manager": "qa.manager@example.test",
+    "individual": "qa.individual@example.test",
+    "associated": "qa.associated@example.test",
+    "talent": "qa.talent@example.test",
+    "worker": "qa.worker@example.test",
+    "admin": "qa.admin@example.test"
+  },
+  "password": "Qa!7pVn2Lm4x"
+}

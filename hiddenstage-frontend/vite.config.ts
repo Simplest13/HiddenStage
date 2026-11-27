@@ -16,7 +16,7 @@ export default defineConfig({
     setupFiles: ['./src/test/setup.ts'],
     include: ['src/**/*.test.{ts,tsx}'],
     testTimeout: 15000,
-    maxWorkers: 2,
+    maxWorkers: 1,
     restoreMocks: true,
     clearMocks: true,
   },

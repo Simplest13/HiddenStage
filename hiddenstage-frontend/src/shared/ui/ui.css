@@ -73,6 +73,21 @@
 .card { border: 1px solid var(--color-line); border-radius: var(--radius-md); padding: 1.5rem; background: var(--color-paper-bright); }
 .card--flush { padding: 0; overflow: hidden; }
 .card--tint { background: var(--color-tint); border-color: transparent; }
+.card--interactive {
+  width: 100%;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+.card--interactive:hover { border-color: var(--color-orange); box-shadow: var(--shadow-lift); transform: translateY(-2px); }
+.card--interactive:focus-visible { outline: 3px solid var(--color-orange); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) {
+  .card--interactive { transition: none; }
+  .card--interactive:hover { transform: none; }
+}
 .badge {
   display: inline-flex;
   align-items: center;

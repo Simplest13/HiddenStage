@@ -19,7 +19,7 @@ import type {
   AssignmentStatus,
 } from '../../shared/api/backend/types'
 import { isApiError } from '../../shared/api/client'
-import { Avatar, Badge, Button, ButtonLink, Card, EmptyState, ErrorState, Input, Modal, Select, Spinner, Textarea, useToast } from '../../shared/ui'
+import { Avatar, Badge, Button, ButtonLink, Card, CardLink, EmptyState, ErrorState, Input, Modal, Select, Spinner, Textarea, useToast } from '../../shared/ui'
 import { Icon } from '../../shared/ui/Icon'
 import '../customer/customer.css'
 import '../provider/provider.css'
@@ -139,13 +139,13 @@ function NetworkPage() {
     {error && <p className="customer-error" role="alert">{error}</p>}
 
     <div className="stat-grid network-stats">
-      <Card className="dashboard-stat"><span className="dashboard-stat__label">Connected Customers</span><strong>{customerConnections.length}</strong><p>Clients who added you to their network.</p></Card>
-      <Card className="dashboard-stat"><span className="dashboard-stat__label">{profile?.kind === 'WORKER' ? 'Active Managers' : 'Active Workers'}</span><strong>{active.length}</strong><p>Team network relationships.</p></Card>
-      <Card className="dashboard-stat"><span className="dashboard-stat__label">{profile?.kind === 'WORKER' ? 'Invitations to review' : 'Invitations sent'}</span><strong>{pending.length}</strong><p>{profile?.kind === 'WORKER' ? 'Managers waiting for your answer.' : 'Workers who have not answered yet.'}</p></Card>
-      <Card className="dashboard-stat"><span className="dashboard-stat__label">Past associations</span><strong>{ended.length}</strong><p>History is retained when a relationship ends.</p></Card>
+      <CardLink className="dashboard-stat" to={routes.provider.customerNetwork}><span className="dashboard-stat__label">Connected Customers</span><strong>{customerConnections.length}</strong><p>Clients who added you to their network.</p></CardLink>
+      <CardLink className="dashboard-stat" to={`${routes.provider.network}#network-active`}><span className="dashboard-stat__label">{profile?.kind === 'WORKER' ? 'Active Managers' : 'Active Workers'}</span><strong>{active.length}</strong><p>Team network relationships.</p></CardLink>
+      <CardLink className="dashboard-stat" to={`${routes.provider.network}#network-invitations`}><span className="dashboard-stat__label">{profile?.kind === 'WORKER' ? 'Invitations to review' : 'Invitations sent'}</span><strong>{pending.length}</strong><p>{profile?.kind === 'WORKER' ? 'Managers waiting for your answer.' : 'Workers who have not answered yet.'}</p></CardLink>
+      <CardLink className="dashboard-stat" to={`${routes.provider.network}#network-previous`}><span className="dashboard-stat__label">Past associations</span><strong>{ended.length}</strong><p>History is retained when a relationship ends.</p></CardLink>
     </div>
 
-    <section className="network-section">
+    <section className="network-section" id="network-connected-customers">
       <div className="section-toolbar">
         <div>
           <h2>Connected Customers</h2>
@@ -202,7 +202,9 @@ function NetworkPage() {
       )}
     </section>
 
-    {profile?.kind === 'MANAGER' && pending.length > 0 && <section className="network-section">
+    {(profile?.kind === 'MANAGER' || profile?.kind === 'WORKER') && <section className="network-section" id="network-invitations">
+      {pending.length > 0 ? <>
+      {profile.kind === 'MANAGER' && <>
       <div className="section-toolbar"><div><h2>Pending invitations</h2><p>Workers who have not answered your invitation yet. Invitations expire automatically.</p></div><Badge>{pending.length}</Badge></div>
       <div className="network-list">{pending.map((invitation) => <Card className="network-card" key={invitation.id}>
         <div className="network-card__head">
@@ -213,9 +215,9 @@ function NetworkPage() {
         <p className="network-meta">Sent {formatShortDate(invitation.created_at)} · expires {formatShortDate(invitation.expires_at)}</p>
         <div className="network-actions"><Button type="button" size="sm" variant="quiet" disabled={busy === invitation.id} onClick={() => void cancel(invitation)}>Cancel invitation</Button></div>
       </Card>)}</div>
-    </section>}
+      </>}
 
-    {profile?.kind === 'WORKER' && pending.length > 0 && <section className="network-section">
+      {profile.kind === 'WORKER' && <>
       <div className="section-toolbar"><div><h2>Network invitations</h2><p>Review the Manager and decide whether to join their network.</p></div><Badge>{pending.length}</Badge></div>
       <div className="network-list">{pending.map((invitation) => <Card className="network-card" key={invitation.id}>
         <div className="network-card__head">
@@ -233,9 +235,11 @@ function NetworkPage() {
           <Button type="button" variant="secondary" disabled={busy === invitation.id} onClick={() => void respond(invitation, false)}>Decline</Button>
         </div>
       </Card>)}</div>
+      </>}
+      </> : <EmptyState title="No pending invitations" description="New network invitations will appear here when someone invites you or your team." />}
     </section>}
 
-    <section className="network-section">
+    <section className="network-section" id="network-active">
       <div className="section-toolbar"><div><h2>{profile?.kind === 'WORKER' ? 'Your Managers' : 'Active Workers'}</h2><p>{profile?.kind === 'WORKER' ? 'Associations do not give a Manager ownership of your account or independent work.' : 'Workers remain independent and may also work with other Managers.'}</p></div><Badge>{active.length}</Badge></div>
       {active.length === 0
         ? <EmptyState title={profile?.kind === 'WORKER' ? 'No active Manager associations' : 'Your network is empty'} description={profile?.kind === 'WORKER' ? 'When you accept a Manager invitation, the association appears here.' : 'Discover independent Workers and invite them to join your network.'} action={profile?.kind === 'MANAGER' ? <ButtonLink to={routes.provider.networkDiscover}>Discover Workers</ButtonLink> : undefined} />
@@ -258,13 +262,13 @@ function NetworkPage() {
         </Card>)}</div>}
     </section>
 
-    {ended.length > 0 && <section className="network-section">
+    <section className="network-section" id="network-previous">
       <div className="section-toolbar"><div><h2>Previous associations</h2><p>Ending a relationship does not erase assignment history.</p></div><Badge>{ended.length}</Badge></div>
-      <div className="network-list">{ended.map((association) => <Card className="network-card network-card--ended" key={association.id}>
+      {ended.length > 0 ? <div className="network-list">{ended.map((association) => <Card className="network-card network-card--ended" key={association.id}>
         <div className="network-card__head"><div className="network-card__identity"><Avatar name={association.counterpart_profile?.display_name ?? 'HiddenStage'} /><div><h3>{association.counterpart_profile?.display_name ?? 'Professional'}</h3><p>{association.ended_reason || 'Association ended'}</p></div></div><Badge>Ended</Badge></div>
         <p className="network-meta">Connected {formatShortDate(association.associated_at)} · ended {formatShortDate(association.ended_at)}</p>
-      </Card>)}</div>
-    </section>}
+      </Card>)}</div> : <EmptyState title="No previous associations" description="Ended network relationships will stay available here." />}
+    </section>
 
     <Modal open={Boolean(ending)} title={profile?.kind === 'WORKER' ? 'Leave this network?' : 'Remove this Worker?'} onClose={() => setEnding(null)}>
       <p>{profile?.kind === 'WORKER'
