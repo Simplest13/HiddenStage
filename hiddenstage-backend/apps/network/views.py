@@ -56,6 +56,7 @@ from apps.network.serializers import (
     NetworkInvitationSerializer,
     WorkerAssignmentSerializer,
     WorkerDiscoverySerializer,
+    network_avatar_url,
 )
 from apps.network.services import (
     cancel_assignment,
@@ -599,7 +600,7 @@ class CustomerNetworkSearchView(APIView):
                     "id": str(u.id),
                     "name": u.full_name,
                     "username": u.username,
-                    "avatar": getattr(u, "avatar_url", None),
+                    "avatar": network_avatar_url(u),
                     "business_name": prof.display_name
                     if prof and prof.display_name
                     else u.full_name,
@@ -703,7 +704,7 @@ class ConversationDetailView(APIView):
             is_read=True, read_at=timezone.now()
         )
 
-        messages = conv.messages.all().select_related("sender")
+        messages = conv.messages.all().select_related("sender__provider_profile")
         msg_serializer = ChatMessageSerializer(
             messages, many=True, context={"request": request}
         )

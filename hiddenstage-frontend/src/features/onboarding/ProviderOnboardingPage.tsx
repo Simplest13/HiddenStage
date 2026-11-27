@@ -6,9 +6,10 @@ import { Icon } from '../../shared/ui/Icon'
 import { eventsApi } from '../../shared/api/backend/events'
 import { networkApi } from '../../shared/api/backend/network'
 import { profilesApi } from '../../shared/api/backend/profiles'
+import { sessionApi } from '../../shared/api/backend/session'
 import type { ApiCategory, ApiManagerSearchResult, ProviderKind } from '../../shared/api/backend/types'
-import { isApiError } from '../../shared/api/client'
-import { Button, Input, Select, Textarea } from '../../shared/ui'
+import { isApiError, resolveMediaUrl } from '../../shared/api/client'
+import { Avatar, Badge, Button, Input, Select, Textarea } from '../../shared/ui'
 import { Brand } from '../../layouts/PublicLayout'
 import '../customer/customer.css'
 
@@ -40,6 +41,9 @@ export default function ProviderOnboardingPage() {
   const [step, setStep] = useState(0)
   const [kind, setKind] = useState<ProviderKind>('MANAGER')
   const [displayName, setDisplayName] = useState('')
+  const [logo, setLogo] = useState('')
+  const [uploadingPhoto, setUploadingPhoto] = useState(false)
+  const [photoError, setPhotoError] = useState('')
   const [description, setDescription] = useState('')
   const [contact, setContact] = useState('')
   const [website, setWebsite] = useState('')
@@ -92,6 +96,7 @@ export default function ProviderOnboardingPage() {
         if (!saved) return
         setKind(saved.kind)
         setDisplayName(saved.display_name || '')
+        setLogo(saved.logo || '')
         setDescription(saved.description || '')
         setContact(saved.contact || '')
         setWebsite(saved.website || '')
@@ -178,6 +183,30 @@ export default function ProviderOnboardingPage() {
       : item))
   }
 
+  async function uploadBusinessPhoto(file: File) {
+    const extension = file.name.split('.').pop()?.toLowerCase()
+    if (file.size > 5 * 1024 * 1024) {
+      setPhotoError('Image size must be 5 MB or less.')
+      return
+    }
+    if (!['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(extension || '')) {
+      setPhotoError('Choose a JPG, PNG, WebP, or GIF image.')
+      return
+    }
+
+    setUploadingPhoto(true)
+    setPhotoError('')
+    try {
+      const uploadedPhoto = await sessionApi.uploadBusinessPhoto(file)
+      if (!uploadedPhoto.logo) throw new Error('The upload did not return a photo URL.')
+      setLogo(uploadedPhoto.logo)
+    } catch (caught) {
+      setPhotoError(caught instanceof Error ? caught.message : 'Could not upload your business photo.')
+    } finally {
+      setUploadingPhoto(false)
+    }
+  }
+
   async function searchManagers(queryOverride?: string) {
     const q = (queryOverride ?? managerQuery).trim()
     if (!q) return
@@ -199,6 +228,7 @@ export default function ProviderOnboardingPage() {
       website: website.trim() || undefined,
       languages: languages.trim() || undefined,
       experience_summary: experience.trim() || undefined,
+      logo: logo.trim() || undefined,
       onboarding_step: step,
       role_data: roleData,
     }
@@ -219,6 +249,11 @@ export default function ProviderOnboardingPage() {
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (step === 4 && !logo.trim()) {
+      setError('Upload a business profile photo before completing onboarding.')
+      setStep(4)
+      return
+    }
     if (!displayName.trim() || !description.trim() || !contact.trim()) {
       setError('Complete your professional name, introduction, and contact details.')
       setStep(1)
@@ -585,6 +620,36 @@ export default function ProviderOnboardingPage() {
           {step === 4 && (
             <div className="onboarding-review">
               <h2>Review and submit</h2>
+              <div className="provider-profile-photo">
+                <div className="provider-profile-photo__preview">
+                  {resolveMediaUrl(logo)
+                    ? <img src={resolveMediaUrl(logo) ?? undefined} alt={`${displayName || 'Business'} profile`} />
+                    : <Avatar name={displayName || 'Your business'} size="lg" />}
+                </div>
+                <div className="provider-profile-photo__copy">
+                  <div className="provider-profile-photo__title">
+                    <strong>Business profile photo</strong>
+                    <Badge tone={logo ? 'success' : 'warning'}>{logo ? 'Ready' : 'Required'}</Badge>
+                  </div>
+                  <p>Required to complete onboarding. It will be visible on your public profile and network cards.</p>
+                  <label className="button button--secondary button--sm provider-profile-photo__upload">
+                    {uploadingPhoto ? 'Uploading…' : logo ? 'Replace photo' : 'Upload business photo'}
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/gif"
+                      aria-label="Upload business profile photo"
+                      disabled={uploadingPhoto}
+                      onChange={(event) => {
+                        const file = event.currentTarget.files?.[0]
+                        event.currentTarget.value = ''
+                        if (file) void uploadBusinessPhoto(file)
+                      }}
+                    />
+                  </label>
+                  <small>JPG, PNG, WebP, or GIF. Maximum 5 MB.</small>
+                  {photoError && <p className="provider-profile-photo__error" role="alert">{photoError}</p>}
+                </div>
+              </div>
               <dl>
                 <div><dt>Professional type</dt><dd>{roles.find((role) => role.kind === kind)?.name}</dd></div>
                 <div><dt>Name</dt><dd>{displayName || 'Not entered'}</dd></div>
@@ -610,7 +675,7 @@ export default function ProviderOnboardingPage() {
             {step > 0 && <Button type="button" variant="secondary" onClick={() => setStep((current) => current - 1)}>Back</Button>}
             {step < 4
               ? <><Button type="button" variant="quiet" disabled={saving} onClick={() => void saveProgress(step)}>Save and continue later</Button><Button type="button" disabled={saving} onClick={() => setStep((current) => current + 1)}>Continue</Button></>
-              : <Button type="submit" disabled={saving}>{saving ? 'Saving…' : 'Complete onboarding'}</Button>}
+              : <Button type="submit" disabled={saving || uploadingPhoto}>{saving ? 'Saving…' : 'Complete onboarding'}</Button>}
           </div>
         </form>
       </div>

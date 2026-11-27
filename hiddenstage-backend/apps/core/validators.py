@@ -88,6 +88,33 @@ DANGEROUS_EXTENSIONS = {
 }
 
 
+def validate_profile_image_upload(upload) -> str | None:
+    """Validate an account avatar or public business profile image."""
+    if upload.size <= 0:
+        return "The image file is empty."
+
+    if upload.size > 5 * 1024 * 1024:
+        return "Image size must not exceed 5MB."
+
+    name_lower = upload.name.lower()
+    if not any(name_lower.endswith(ext) for ext in (".jpg", ".jpeg", ".png", ".webp", ".gif")):
+        return "Only JPG, PNG, WebP, and GIF images are supported."
+
+    # The extension alone is not proof of an image: verify its file signature.
+    head = upload.read(16)
+    upload.seek(0)
+    is_image = (
+        head.startswith(b"\xff\xd8\xff")
+        or head.startswith(b"\x89PNG\r\n\x1a\n")
+        or head.startswith((b"GIF87a", b"GIF89a"))
+        or (head.startswith(b"RIFF") and head[8:12] == b"WEBP")
+    )
+    if not is_image:
+        return "The file is not a valid JPG, PNG, WebP, or GIF image."
+
+    return None
+
+
 def validate_portfolio_upload(upload) -> str:
     """Validate uploaded portfolio media size and format.
 

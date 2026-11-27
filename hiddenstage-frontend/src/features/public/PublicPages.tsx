@@ -13,6 +13,7 @@ import { marketplaceApi } from '../../shared/api/backend/marketplace'
 import { useApiData } from '../../shared/api/backend/useApiData'
 import type { ApiPublicDirectoryProvider, ApiPublicFeedEvent } from '../../shared/api/backend/types'
 import { formatShortDate } from '../../shared/api/backend/format'
+import { resolveMediaUrl } from '../../shared/api/client'
 import spacesImg from '../../assets/hero/spaces.jpg'
 import foodImg from '../../assets/hero/food.jpg'
 import photoImg from '../../assets/hero/photography.jpg'
@@ -117,9 +118,11 @@ function ProviderPreview({
   const targetId = ('username' in provider && provider.username) ? provider.username : provider.id
   const detailUrl = providerDetailPath(targetId)
   const isDemo = !('display_name' in provider && provider.display_name)
-  const imgUrl =
+  const profileImage =
     ('cover_image' in provider && provider.cover_image) ||
     ('logo' in provider && provider.logo) ||
+    null
+  const imgUrl = (profileImage ? resolveMediaUrl(profileImage) : null) ||
     demoProviderImages[provider.id] ||
     fallbacks[index % fallbacks.length]
   const cats: string[] = provider.categories || []

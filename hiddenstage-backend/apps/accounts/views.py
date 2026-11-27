@@ -39,7 +39,11 @@ from apps.accounts.serializers import (
     UserSerializer,
 )
 from apps.accounts.tokens import InvalidOrExpiredToken
-from apps.core.validators import normalize_username, validate_username
+from apps.core.validators import (
+    normalize_username,
+    validate_profile_image_upload,
+    validate_username,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -321,38 +325,10 @@ class AvatarUploadView(APIView):
                 {"detail": "No image file provided."}, status=status.HTTP_400_BAD_REQUEST
             )
 
-        if file_obj.size <= 0:
+        validation_error = validate_profile_image_upload(file_obj)
+        if validation_error:
             return Response(
-                {"detail": "The image file is empty."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        if file_obj.size > 5 * 1024 * 1024:
-            return Response(
-                {"detail": "Image size must not exceed 5MB."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        name_lower = file_obj.name.lower()
-        if not any(name_lower.endswith(ext) for ext in [".jpg", ".jpeg", ".png", ".webp", ".gif"]):
-            return Response(
-                {"detail": "Only JPG, PNG, WebP, and GIF images are supported."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        # The extension alone is not proof of an image: verify the file signature
-        # so a script renamed to .png cannot be stored and served as an avatar.
-        head = file_obj.read(16)
-        file_obj.seek(0)
-        is_image = (
-            head.startswith(b"\xff\xd8\xff")
-            or head.startswith(b"\x89PNG\r\n\x1a\n")
-            or head.startswith((b"GIF87a", b"GIF89a"))
-            or (head.startswith(b"RIFF") and head[8:12] == b"WEBP")
-        )
-        if not is_image:
-            return Response(
-                {"detail": "The file is not a valid JPG, PNG, WebP, or GIF image."},
+                {"detail": validation_error},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 

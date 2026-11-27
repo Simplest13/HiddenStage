@@ -23,6 +23,11 @@ urlpatterns = [
         name="provider-profile",
     ),
     path(
+        "me/provider-profile/photo/",
+        views.ProviderBusinessPhotoUploadView.as_view(),
+        name="provider-business-photo",
+    ),
+    path(
         "me/provider-services/",
         views.ProviderServiceListCreateView.as_view(),
         name="provider-services",

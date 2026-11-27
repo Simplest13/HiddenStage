@@ -130,6 +130,11 @@
 .provider-page blockquote { margin: 0.5rem 0; padding: 0.75rem 1rem; border: 1px solid var(--color-orange-light); border-radius: var(--radius-sm); color: var(--color-ink); background: var(--color-orange-soft); font-size: 0.85rem; }
 .provider-page details { margin-top: 0.5rem; }
 .provider-page details summary { color: var(--color-orange); font-size: 0.84rem; font-weight: 600; cursor: pointer; }
+.provider-profile-checklist { margin-top: 0.9rem; padding-top: 0.8rem; border-top: 1px solid var(--color-line); }
+.provider-profile-checklist summary { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.5rem; color: var(--color-ink); font-size: 0.85rem; font-weight: 700; cursor: pointer; }
+.provider-profile-checklist summary span:last-child { color: var(--color-muted); font-size: 0.78rem; font-weight: 500; }
+.provider-profile-checklist ul { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem 1rem; margin: 0.75rem 0 0; padding: 0; list-style: none; }
+.provider-profile-checklist li { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; color: var(--color-ink); font-size: 0.8rem; }
 .opportunity-list { display: grid; gap: 1rem; margin-top: 1.25rem; }
 .opportunity-card { display: grid; gap: 1rem; padding: 1.3rem 1.4rem; }
 .opportunity-card__head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 0.75rem; }
@@ -167,6 +172,9 @@
 
 @media (max-width: 700px) {
   .network-dashboard__metrics { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  .provider-profile-checklist ul { grid-template-columns: 1fr; }
   .provider-stat-grid, .provider-quicklinks { grid-template-columns: 1fr; }
   .provider-heading, .provider-welcome, .provider-list-card { flex-direction: column; align-items: flex-start; }
   .provider-welcome .button, .provider-list-card .button { width: 100%; }

@@ -4,11 +4,12 @@ import { Award, CircleCheck, FileText, Mail, ShieldCheck, Sparkles } from 'kubai
 import { Icon } from '../../shared/ui/Icon'
 import { providerQuotePath, routes } from '../../app/routes/routePaths'
 import { useAuth } from '../../app/auth/useAuth'
-import { Badge, Button, ButtonLink, Card, CardLink, EmptyState, ErrorState, Input, Modal, Select, Spinner, Textarea, useToast } from '../../shared/ui'
+import { Avatar, Badge, Button, ButtonLink, Card, CardLink, EmptyState, ErrorState, Input, Modal, Select, Spinner, Textarea, useToast } from '../../shared/ui'
 import { eventsApi } from '../../shared/api/backend/events'
 import { marketplaceApi } from '../../shared/api/backend/marketplace'
 import { networkApi } from '../../shared/api/backend/network'
 import { profilesApi } from '../../shared/api/backend/profiles'
+import { sessionApi } from '../../shared/api/backend/session'
 import { useApiData } from '../../shared/api/backend/useApiData'
 import {
   formatDate,
@@ -33,7 +34,7 @@ import type {
   ProfileTeamPermission,
   ProviderKind,
 } from '../../shared/api/backend/types'
-import { isApiError } from '../../shared/api/client'
+import { isApiError, resolveMediaUrl } from '../../shared/api/client'
 import { CommitmentStatusBadge, InvitationStatusBadge, QuoteBreakdown, RevisionStatusBadge } from '../marketplace/MarketplaceUI'
 import { getProviderDashboardPresentation } from './providerDashboardConfig'
 import { latestRevision } from '../../shared/api/backend/quoteSelection'
@@ -361,42 +362,35 @@ function DashboardPage({ workspaceProfile }: { workspaceProfile?: ApiProviderPro
   </section>
 }
 
-function calculateProfileScore(profile?: ApiProviderProfile | null, portfolioCount = 0): { score: number; missing: string[] } {
-  if (!profile) return { score: 0, missing: [] }
+type ProfileChecklistItem = { label: string; complete: boolean; points: number; required?: boolean }
+
+function calculateProfileScore(profile?: ApiProviderProfile | null, portfolioCount = 0): {
+  score: number
+  missing: string[]
+  checklist: ProfileChecklistItem[]
+} {
+  if (!profile) return { score: 0, missing: [], checklist: [] }
   let score = 0
   const missing: string[] = []
+  const checklist: ProfileChecklistItem[] = []
+  const addItem = (label: string, complete: boolean, points: number, required = false) => {
+    checklist.push({ label, complete, points, required })
+    if (complete) score += points
+    else if (points > 0) missing.push(label)
+  }
 
-  if (profile.display_name?.trim()) score += 10
-  else missing.push('Business Name')
+  addItem('Business profile photo', Boolean(profile.logo?.trim()), 10, true)
+  addItem('Business name', Boolean(profile.display_name?.trim()), 10)
+  addItem('Professional headline', Boolean(profile.headline?.trim()), 10)
+  addItem('Detailed description', Boolean(profile.description?.trim().length >= 20), 10)
+  addItem('Experience & background', Boolean(profile.experience_summary?.trim()), 10)
+  addItem('Service categories', Boolean(profile.categories?.length), 10)
+  addItem('Coverage locations', Boolean(profile.coverage?.length), 10)
+  addItem('Contact information', Boolean(profile.contact?.trim()), 10)
+  addItem('Social / web links', Boolean(profile.instagram?.trim() || profile.website?.trim() || profile.youtube?.trim()), 5)
+  addItem('Showcase & portfolio items', portfolioCount > 0, 15)
 
-  if (profile.headline?.trim()) score += 10
-  else missing.push('Professional Headline')
-
-  if (profile.description?.trim().length >= 20) score += 10
-  else missing.push('Detailed Description')
-
-  if (profile.experience_summary?.trim()) score += 10
-  else missing.push('Experience & Background')
-
-  if (profile.categories && profile.categories.length > 0) score += 10
-  else missing.push('Service Categories')
-
-  if (profile.coverage && profile.coverage.length > 0) score += 10
-  else missing.push('Coverage Locations')
-
-  if (profile.contact?.trim()) score += 10
-  else missing.push('Contact Information')
-
-  if (profile.instagram?.trim() || profile.website?.trim() || profile.youtube?.trim()) score += 5
-  else missing.push('Social / Web Links')
-
-  if (profile.cover_image?.trim() || profile.logo?.trim()) score += 10
-  else missing.push('Cover / Logo Media')
-
-  if (portfolioCount > 0) score += 15
-  else missing.push('Showcase & Portfolio Items')
-
-  return { score: Math.min(score, 100), missing }
+  return { score: Math.min(score, 100), missing, checklist }
 }
 
 function ProfilePage() {
@@ -432,6 +426,8 @@ function ProfilePage() {
   const [selected, setSelected] = useState<string[]>([])
   const [coverage, setCoverage] = useState<ApiProviderProfile['coverage']>([])
   const [saving, setSaving] = useState(false)
+  const [uploadingPhoto, setUploadingPhoto] = useState(false)
+  const [photoError, setPhotoError] = useState('')
   const [error, setError] = useState('')
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
 
@@ -489,9 +485,40 @@ function ProfilePage() {
     setSelected((items) => (items.includes(code) ? items.filter((item) => item !== code) : [...items, code]))
   }
 
+  async function uploadBusinessPhoto(file: File) {
+    const extension = file.name.split('.').pop()?.toLowerCase()
+    if (file.size > 5 * 1024 * 1024) {
+      setPhotoError('Image size must be 5 MB or less.')
+      return
+    }
+    if (!['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(extension || '')) {
+      setPhotoError('Choose a JPG, PNG, WebP, or GIF image.')
+      return
+    }
+
+    setUploadingPhoto(true)
+    setPhotoError('')
+    try {
+      const uploadedPhoto = await sessionApi.uploadBusinessPhoto(file)
+      const photoUrl = uploadedPhoto.logo
+      if (!photoUrl) throw new Error('The upload did not return a photo URL.')
+      setValues((current) => ({ ...current, logo: photoUrl }))
+      await data.reload()
+      showToast('Business profile photo updated.', 'success')
+    } catch (caught) {
+      setPhotoError(caught instanceof Error ? caught.message : 'Could not upload your business photo.')
+    } finally {
+      setUploadingPhoto(false)
+    }
+  }
+
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!event.currentTarget.reportValidity()) return
+    if (!values.logo.trim()) {
+      setError('Upload a business profile photo before saving your professional profile.')
+      return
+    }
     if (!selected.length) {
       setError('Choose at least one service category.')
       return
@@ -544,8 +571,8 @@ function ProfilePage() {
 
   const profile = data.data
   const scoreInfo = useMemo(
-    () => calculateProfileScore(profile, portfolioData.data?.length ?? 0),
-    [profile, portfolioData.data],
+    () => calculateProfileScore(profile ? { ...profile, logo: values.logo } : profile, portfolioData.data?.length ?? 0),
+    [profile, portfolioData.data, values.logo],
   )
 
   return (
@@ -609,6 +636,24 @@ function ProfilePage() {
               }}
             />
           </div>
+          <details className="provider-profile-checklist" open={scoreInfo.missing.length > 0}>
+            <summary>
+              <span>Profile update checklist</span>
+              <span>{scoreInfo.checklist.filter((item) => item.complete).length} of {scoreInfo.checklist.length} complete</span>
+            </summary>
+            <ul>
+              {scoreInfo.checklist.map((item) => (
+                <li key={item.label}>
+                  <span>{item.label}</span>
+                  {item.complete
+                    ? <Badge tone="success">Complete</Badge>
+                    : item.required
+                      ? <Badge tone="warning">Required</Badge>
+                      : <Badge>Recommended</Badge>}
+                </li>
+              ))}
+            </ul>
+          </details>
         </div>
       )}
 
@@ -896,13 +941,36 @@ function ProfilePage() {
               value={values.coverImage}
               onChange={(event) => setValues((current) => ({ ...current, coverImage: event.target.value }))}
             />
-            <Input
-              label="Logo or avatar URL"
-              name="logo"
-              placeholder="https://... square logo or brand image"
-              value={values.logo}
-              onChange={(event) => setValues((current) => ({ ...current, logo: event.target.value }))}
-            />
+          </div>
+          <div className="provider-profile-photo">
+            <div className="provider-profile-photo__preview">
+              {resolveMediaUrl(values.logo)
+                ? <img src={resolveMediaUrl(values.logo) ?? undefined} alt={`${values.displayName || 'Business'} profile`} />
+                : <Avatar name={values.displayName || 'Your business'} size="lg" />}
+            </div>
+            <div className="provider-profile-photo__copy">
+              <div className="provider-profile-photo__title">
+                <strong>Business profile photo</strong>
+                <Badge tone={values.logo ? 'success' : 'warning'}>{values.logo ? 'Uploaded' : 'Required'}</Badge>
+              </div>
+              <p>This photo appears on your public directory listing, professional profile, and network cards.</p>
+              <label className="button button--secondary button--sm provider-profile-photo__upload">
+                {uploadingPhoto ? 'Uploading…' : values.logo ? 'Replace photo' : 'Upload business photo'}
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  aria-label="Upload business profile photo"
+                  disabled={uploadingPhoto}
+                  onChange={(event) => {
+                    const file = event.currentTarget.files?.[0]
+                    event.currentTarget.value = ''
+                    if (file) void uploadBusinessPhoto(file)
+                  }}
+                />
+              </label>
+              <small>JPG, PNG, WebP, or GIF. Maximum 5 MB.</small>
+              {photoError && <p className="provider-profile-photo__error" role="alert">{photoError}</p>}
+            </div>
           </div>
 
           <div style={{ background: 'var(--color-surface-subtle, #f9fafb)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--color-border)', margin: '1rem 0' }}>

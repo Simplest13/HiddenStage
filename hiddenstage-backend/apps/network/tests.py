@@ -22,6 +22,7 @@ from apps.network.models import (
     NetworkInvitation,
     NetworkInvitationStatus,
     WorkerAssignment,
+    CustomerConnection,
 )
 from apps.network.services import (
     assignment_conflicts,
@@ -100,6 +101,23 @@ class RealtimeStreamTests(TestCase):
             "/api/v1/network/stream/", HTTP_ACCEPT="text/event-stream"
         )
         self.assertIn(response.status_code, (401, 403))
+
+
+class NetworkBusinessPhotoTests(TestCase):
+    def test_customer_network_uses_provider_business_photo(self):
+        customer = make_customer("network-photo-customer@example.com")
+        provider = make_provider("network-photo-provider@example.com")
+        profile = ProviderProfile.objects.get(user=provider)
+        profile.logo = "/api/v1/auth/avatars/provider-business.png"
+        profile.save(update_fields=["logo"])
+        CustomerConnection.objects.create(customer=customer, provider=provider)
+
+        client = APIClient()
+        client.force_authenticate(customer)
+        response = client.get("/api/v1/network/connections/")
+
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(response.data[0]["provider_avatar"], profile.logo)
 
 
 class NetworkInvitationTests(TestCase):

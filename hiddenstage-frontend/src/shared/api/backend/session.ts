@@ -89,6 +89,15 @@ export const sessionApi = {
       body: formData,
     })
   },
+  async uploadBusinessPhoto(file: File) {
+    await ensureCsrfToken()
+    const formData = new FormData()
+    formData.append('photo', file)
+    return apiRequest<{ logo: string }>('/me/provider-profile/photo/', {
+      method: 'POST',
+      body: formData,
+    })
+  },
   removeAvatar() {
     return apiRequest<ApiUser>('/auth/avatar/', {
       method: 'POST',

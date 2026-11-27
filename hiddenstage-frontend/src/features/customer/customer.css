@@ -49,10 +49,48 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.9rem;
 }
+.provider-profile-photo {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: var(--color-paper-bright);
+}
+.provider-profile-photo__preview {
+  display: grid;
+  flex: 0 0 4.5rem;
+  width: 4.5rem;
+  height: 4.5rem;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  background: var(--color-tint);
+}
+.provider-profile-photo__preview img { width: 100%; height: 100%; object-fit: cover; }
+.provider-profile-photo__copy { display: grid; min-width: 0; gap: 0.4rem; }
+.provider-profile-photo__copy > p { margin: 0; color: var(--color-muted); font-size: 0.82rem; line-height: 1.5; }
+.provider-profile-photo__copy > small { color: var(--color-muted); font-size: 0.75rem; }
+.provider-profile-photo__title { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+.provider-profile-photo__title > strong { color: var(--color-ink); font-size: 0.92rem; }
+.provider-profile-photo__upload { position: relative; width: fit-content; overflow: hidden; cursor: pointer; }
+.provider-profile-photo__upload:focus-within { outline: 3px solid var(--color-orange); outline-offset: 3px; }
+.provider-profile-photo__upload input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+.provider-profile-photo__error { margin: 0; color: var(--color-danger); font-size: 0.8rem; line-height: 1.45; }
 @media (max-width: 640px) {
   .event-form-grid {
     grid-template-columns: 1fr;
   }
+  .provider-profile-photo { align-items: flex-start; }
 }
 
 /* Atmospheric Welcome Hero */

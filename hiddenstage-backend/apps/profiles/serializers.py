@@ -326,7 +326,7 @@ class ProviderProfileSerializer(serializers.ModelSerializer):
         if coverage_rows:
             self._sync_coverage(profile, coverage_rows)
         profile.refresh_completion()
-        if profile.onboarding_step >= 4 and profile.is_complete() and profile.onboarding_completed_at is None:
+        if profile.onboarding_step >= 4 and profile.logo and profile.is_complete() and profile.onboarding_completed_at is None:
             profile.onboarding_completed_at = timezone.now()
             profile.save(update_fields=["onboarding_completed_at"])
         return profile
@@ -346,7 +346,7 @@ class ProviderProfileSerializer(serializers.ModelSerializer):
         if coverage_rows is not None:
             self._sync_coverage(instance, coverage_rows)
         instance.refresh_completion()
-        if instance.onboarding_step >= 4 and instance.is_complete() and instance.onboarding_completed_at is None:
+        if instance.onboarding_step >= 4 and instance.logo and instance.is_complete() and instance.onboarding_completed_at is None:
             instance.onboarding_completed_at = timezone.now()
             instance.save(update_fields=["onboarding_completed_at"])
         return instance

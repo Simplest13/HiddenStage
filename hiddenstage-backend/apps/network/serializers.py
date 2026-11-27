@@ -13,6 +13,13 @@ from apps.network.models import (
 from apps.profiles.serializers import ProviderCoverageSerializer
 
 
+def network_avatar_url(user) -> str | None:
+    profile = getattr(user, "provider_profile", None) if user.is_provider else None
+    if profile and profile.logo:
+        return profile.logo
+    return getattr(user, "avatar_url", None)
+
+
 def provider_summary(profile) -> dict | None:
     if profile is None:
         return None
@@ -368,7 +375,7 @@ class CustomerConnectionSerializer(serializers.ModelSerializer):
 
     def get_provider_avatar(self, obj) -> str | None:
         target = obj.customer if self._is_provider_view(obj) else obj.provider
-        return getattr(target, "avatar_url", None)
+        return network_avatar_url(target)
 
     def get_business_name(self, obj) -> str:
         if self._is_provider_view(obj):
@@ -458,8 +465,7 @@ class ChatMessageSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "conversation", "sender", "is_read", "read_at", "created_at"]
 
     def get_sender_avatar(self, obj) -> str | None:
-        u = obj.sender
-        return getattr(u, "avatar_url", None)
+        return network_avatar_url(obj.sender)
 
     def get_is_me(self, obj) -> bool:
         request = self.context.get("request")
@@ -495,7 +501,7 @@ class ConversationSerializer(serializers.ModelSerializer):
             "id": str(target.id),
             "name": target.full_name,
             "username": target.username,
-            "avatar": getattr(target, "avatar_url", None),
+            "avatar": network_avatar_url(target),
             "business_name": prof.display_name if prof and prof.display_name else target.full_name,
         }
 

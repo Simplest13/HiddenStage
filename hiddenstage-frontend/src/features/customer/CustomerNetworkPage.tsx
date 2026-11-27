@@ -4,7 +4,7 @@ import { providerDetailPath } from '../../app/routes/routePaths'
 import { networkApi } from '../../shared/api/backend/ecosystem'
 import { subscribeToRealtime } from '../../shared/api/realtime'
 import type { ApiChatMessage, ApiConversation, ApiCustomerConnection } from '../../shared/api/backend/types'
-import { Avatar, Button, ButtonLink, Card, Spinner, useToast } from '../../shared/ui'
+import { AvatarImage, Button, ButtonLink, Card, Spinner, useToast } from '../../shared/ui'
 import { Icon } from '../../shared/ui/Icon'
 import { useAuth } from '../../app/auth/useAuth'
 import '../network/network.css'
@@ -456,15 +456,7 @@ export function CustomerNetworkPage() {
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', minWidth: 0, flex: 1 }}>
-            {conn.provider_avatar ? (
-              <img
-                src={conn.provider_avatar}
-                alt={conn.provider_name}
-                style={{ width: '2.5rem', height: '2.5rem', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
-              />
-            ) : (
-              <Avatar name={conn.provider_name} size="md" />
-            )}
+            <AvatarImage name={conn.provider_name} src={conn.provider_avatar} />
             <div style={{ minWidth: 0, flex: 1 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                 <strong
@@ -732,15 +724,7 @@ export function CustomerNetworkPage() {
                             }}
                           >
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', minWidth: 0, flex: 1 }}>
-                              {p.avatar ? (
-                                <img
-                                  src={p.avatar}
-                                  alt={p.name}
-                                  style={{ width: '2.5rem', height: '2.5rem', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
-                                />
-                              ) : (
-                                <Avatar name={p.name} size="md" />
-                              )}
+                              <AvatarImage name={p.name} src={p.avatar} />
                               <div style={{ minWidth: 0 }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
                                   <strong
@@ -849,24 +833,10 @@ export function CustomerNetworkPage() {
                       style={{ display: 'inline-flex', flexShrink: 0, textDecoration: 'none' }}
                       title={`View ${activeConv.other_user.name}'s portfolio`}
                     >
-                      {activeConv.other_user.avatar ? (
-                        <img
-                          src={activeConv.other_user.avatar}
-                          alt={activeConv.other_user.name}
-                          style={{ width: '2.5rem', height: '2.5rem', borderRadius: '50%', objectFit: 'cover' }}
-                        />
-                      ) : (
-                        <Avatar name={activeConv.other_user.name} size="md" />
-                      )}
+                      <AvatarImage name={activeConv.other_user.name} src={activeConv.other_user.avatar} />
                     </Link>
-                  ) : activeConv.other_user.avatar ? (
-                    <img
-                      src={activeConv.other_user.avatar}
-                      alt={activeConv.other_user.name}
-                      style={{ width: '2.5rem', height: '2.5rem', borderRadius: '50%', objectFit: 'cover' }}
-                    />
                   ) : (
-                    <Avatar name={activeConv.other_user.name} size="md" />
+                    <AvatarImage name={activeConv.other_user.name} src={activeConv.other_user.avatar} />
                   )}
                   <div>
                     {activeConv.other_user.username || activeConv.other_user.id ? (
@@ -1171,11 +1141,7 @@ export function CustomerNetworkPage() {
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                      {p.avatar ? (
-                        <img src={p.avatar} alt={p.name} style={{ width: '2.6rem', height: '2.6rem', borderRadius: '50%', objectFit: 'cover' }} />
-                      ) : (
-                        <Avatar name={p.name} size="md" />
-                      )}
+                      <AvatarImage name={p.name} src={p.avatar} />
                       <div>
                         <strong style={{ fontSize: '0.92rem', color: 'var(--color-ink)' }}>{p.business_name || p.name}</strong>
                         <span style={{ fontSize: '0.75rem', color: 'var(--color-muted)', display: 'block' }}>

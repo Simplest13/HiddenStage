@@ -14,7 +14,10 @@ from rest_framework.views import APIView
 
 from apps.accounts.models import User
 from apps.core.permissions import IsCustomer, IsProvider
-from apps.core.validators import validate_portfolio_upload
+from apps.core.validators import (
+    validate_portfolio_upload,
+    validate_profile_image_upload,
+)
 from apps.profiles.models import (
     CustomerProfile,
     PortfolioItem,
@@ -194,6 +197,39 @@ class ProviderProfileView(APIView):
             )
         )
         return Response(ProviderProfileSerializer(profile).data)
+
+
+class ProviderBusinessPhotoUploadView(APIView):
+    permission_classes = [IsProvider]
+
+    def post(self, request):
+        photo = request.FILES.get("photo")
+        if not photo:
+            return Response(
+                {"detail": "No image file provided."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        validation_error = validate_profile_image_upload(photo)
+        if validation_error:
+            return Response(
+                {"detail": validation_error},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        extension = os.path.splitext(photo.name.lower())[1]
+        stored_path = default_storage.save(
+            f"avatars/provider-{uuid.uuid4().hex}{extension}", photo
+        )
+        logo_url = f"/api/v1/auth/avatars/{os.path.basename(stored_path)}"
+
+        profile = ProviderProfile.objects.filter(user=request.user).first()
+        if profile:
+            profile.logo = logo_url
+            profile.save(update_fields=["logo"])
+            profile.refresh_completion()
+
+        return Response({"logo": logo_url}, status=status.HTTP_201_CREATED)
 
 
 class ProviderServiceListCreateView(generics.ListCreateAPIView):

@@ -1,5 +1,6 @@
-import { forwardRef, useId, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react'
+import { forwardRef, useId, useState, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react'
 import { Link, type LinkProps } from 'react-router-dom'
+import { resolveMediaUrl } from '../api/client'
 import './ui.css'
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -83,4 +84,18 @@ export function Badge({ children, tone = 'neutral' }: { children: ReactNode; ton
 export function Avatar({ name, size = 'md' }: { name: string; size?: 'sm' | 'md' | 'lg' }) {
   const initials = name.trim().split(/\s+/).slice(0, 2).map((part) => part[0]?.toUpperCase()).join('') || 'H'
   return <span className={`avatar avatar--${size}`} aria-label={name} role="img">{initials}</span>
+}
+
+export function AvatarImage({ name, src, size = 'md' }: { name: string; src?: string | null; size?: 'sm' | 'md' | 'lg' }) {
+  const [failedUrl, setFailedUrl] = useState<string | null>(null)
+  const resolvedUrl = resolveMediaUrl(src)
+  if (!resolvedUrl || failedUrl === resolvedUrl) return <Avatar name={name} size={size} />
+  return (
+    <img
+      className={`avatar avatar--${size} avatar-image`}
+      src={resolvedUrl}
+      alt={name}
+      onError={() => setFailedUrl(resolvedUrl)}
+    />
+  )
 }

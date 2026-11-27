@@ -16,6 +16,7 @@ import { useApiData } from '../../shared/api/backend/useApiData'
 import { formatPaise } from '../../shared/api/backend/format'
 import { useAuth } from '../../app/auth/useAuth'
 import { useToast } from '../../shared/ui/useToast'
+import { resolveMediaUrl } from '../../shared/api/client'
 import type {
   ApiPortfolioItem,
   ApiProviderDetail,
@@ -173,12 +174,15 @@ function PublicProviderCard({
   const navigate = useNavigate()
   const [connecting, setConnecting] = useState(false)
   const [connected, setConnected] = useState(Boolean(isInitiallyConnected))
+  const [failedLogoUrl, setFailedLogoUrl] = useState<string | null>(null)
 
   useEffect(() => {
     if (isInitiallyConnected) setConnected(true)
   }, [isInitiallyConnected])
 
   const locationStr = [provider.locality, provider.city, provider.pin_code].filter(Boolean).join(', ')
+  const logoUrl = resolveMediaUrl(provider.logo)
+  const coverImageUrl = resolveMediaUrl(provider.cover_image)
 
   const coverageList: string[] = useMemo(() => {
     if (provider.coverage_locations && provider.coverage_locations.length > 0) {
@@ -224,9 +228,9 @@ function PublicProviderCard({
 
   return (
     <article className="directory-card">
-      <div className="directory-card__media" style={{ background: provider.cover_image ? `url(${provider.cover_image}) center/cover` : undefined }}>
-        {provider.logo ? (
-          <img src={provider.logo} alt={provider.display_name} style={{ width: '80px', height: '80px', borderRadius: '12px', objectFit: 'cover' }} />
+      <div className="directory-card__media" style={{ backgroundImage: coverImageUrl ? `url("${coverImageUrl}")` : undefined }}>
+        {logoUrl && failedLogoUrl !== logoUrl ? (
+          <img src={logoUrl} alt={provider.display_name} style={{ width: '80px', height: '80px', borderRadius: '12px', objectFit: 'cover' }} onError={() => setFailedLogoUrl(logoUrl)} />
         ) : (
           <span className="directory-card__monogram">{providerInitials(provider.display_name)}</span>
         )}
@@ -636,6 +640,7 @@ export function ProviderProfilePage() {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
   const [showContactModal, setShowContactModal] = useState(false)
   const [connectingNetwork, setConnectingNetwork] = useState(false)
+  const [failedProviderLogo, setFailedProviderLogo] = useState<string | null>(null)
   const [inNetwork, setInNetwork] = useState(false)
   const [messagingLoading, setMessagingLoading] = useState(false)
 
@@ -883,15 +888,19 @@ export function ProviderProfilePage() {
       {/* Hero Cover Banner */}
       <div className="wmg-hero">
         <div className="wmg-hero__cover">
-          {p.cover_image && <img src={p.cover_image} alt={`${p.display_name} cover`} />}
+          {p.cover_image && <img src={resolveMediaUrl(p.cover_image) ?? undefined} alt={`${p.display_name} cover`} />}
           <div className="wmg-hero__cover-overlay" />
         </div>
 
         <div className="wmg-hero__body">
           <div className="wmg-identity-row">
             <div className="wmg-avatar">
-              {p.logo ? (
-                <img src={p.logo} alt={p.display_name} />
+              {p.logo && failedProviderLogo !== resolveMediaUrl(p.logo) ? (
+                <img
+                  src={resolveMediaUrl(p.logo) ?? undefined}
+                  alt={p.display_name}
+                  onError={() => setFailedProviderLogo(resolveMediaUrl(p.logo))}
+                />
               ) : (
                 <span className="wmg-avatar__fallback">{providerInitials(p.display_name)}</span>
               )}
