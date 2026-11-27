@@ -1,7 +1,10 @@
+import { Capacitor } from '@capacitor/core'
+
 export const DEFAULT_PRODUCTION_API_BASE_URL = 'https://hiddenstage-j2j3.onrender.com/api/v1'
 
 export function resolveApiBaseUrl(configuredUrl: string | undefined, isProduction: boolean): string {
-  const fallback = isProduction ? DEFAULT_PRODUCTION_API_BASE_URL : '/api/v1'
+  const isNative = typeof Capacitor !== 'undefined' && Capacitor.isNativePlatform()
+  const fallback = isProduction || isNative ? DEFAULT_PRODUCTION_API_BASE_URL : '/api/v1'
   return (configuredUrl || fallback).replace(/\/+$/, '')
 }
 

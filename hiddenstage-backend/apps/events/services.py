@@ -36,11 +36,11 @@ def can_access_event_attachments(*, actor, event: Event) -> bool:
             return True
         from apps.quotations.models import Quotation
 
-        if Quotation.objects.filter(event=event, provider__user=actor).exists():
+        if Quotation.objects.filter(event=event, provider=actor).exists():
             return True
         from apps.commitments.models import Commitment
 
-        if Commitment.objects.filter(event=event, provider__user=actor).exists():
+        if Commitment.objects.filter(event=event, provider=actor).exists():
             return True
         from apps.network.models import WorkerAssignment
 

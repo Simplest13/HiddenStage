@@ -1,6 +1,7 @@
 """Customer event, requirement and attachment endpoints."""
 
 import mimetypes
+import os
 
 from django.db import transaction
 from django.db.models import Count, Exists, OuterRef, Prefetch, Q
@@ -268,6 +269,11 @@ class EventAttachmentListCreateView(generics.ListCreateAPIView):
         return attachment
 
 
+def _safe_filename(name: str) -> str:
+    clean = os.path.basename(name).replace('"', '')
+    return clean or "attachment"
+
+
 class EventAttachmentDownloadView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -290,23 +296,33 @@ class EventAttachmentDownloadView(APIView):
         if attachment is None:
             return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
         if not attachment.file:
-            return Response({"detail": "File not found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"detail": "File not found."}, status=status.HTTP_410_GONE)
         try:
+            if not attachment.file.storage.exists(attachment.file.name):
+                return Response(
+                    {"detail": "Attachment file was not found on storage."},
+                    status=status.HTTP_410_GONE,
+                )
             file_handle = attachment.file.open("rb")
         except (FileNotFoundError, OSError, ValueError):
             return Response(
                 {"detail": "Attachment file was not found on storage."},
-                status=status.HTTP_404_NOT_FOUND,
+                status=status.HTTP_410_GONE,
             )
+
+        disposition = request.query_params.get("disposition", "attachment").lower()
+        as_attachment = disposition != "inline"
+        safe_name = _safe_filename(attachment.original_name)
         response = FileResponse(
             file_handle,
-            as_attachment=True,
-            filename=attachment.original_name,
+            as_attachment=as_attachment,
+            filename=safe_name,
             content_type=attachment.content_type
-            or mimetypes.guess_type(attachment.original_name)[0]
+            or mimetypes.guess_type(safe_name)[0]
             or "application/octet-stream",
         )
         response["Cache-Control"] = "private, no-store"
+        response["X-Content-Type-Options"] = "nosniff"
         return response
 
 

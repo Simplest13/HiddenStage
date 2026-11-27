@@ -39,6 +39,11 @@ urlpatterns = [
         views.NetworkAssociationEndView.as_view(),
         name="network-association-end",
     ),
+    path(
+        "network/managers/request/",
+        views.ManagerAssociationRequestView.as_view(),
+        name="manager-association-request",
+    ),
     path("assignments/availability/", views.AvailabilityView.as_view(), name="availability"),
     path("assignments/", views.AssignmentListCreateView.as_view(), name="assignments"),
     path("assignments/<uuid:pk>/", views.AssignmentDetailView.as_view(), name="assignment-detail"),

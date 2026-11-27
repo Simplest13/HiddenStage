@@ -131,6 +131,13 @@ class ProviderProfileSerializer(serializers.ModelSerializer):
     categories = serializers.ListField(
         child=serializers.SlugField(), write_only=True, required=False, allow_empty=True
     )
+    primary_category = serializers.SlugRelatedField(
+        slug_field="code",
+        queryset=ServiceCategory.objects.all(),
+        required=False,
+        allow_null=True,
+    )
+    kind_label = serializers.CharField(source="get_kind_display", read_only=True)
     coverage = ProviderCoverageSerializer(many=True, required=False)
     services = ProviderServiceSerializer(many=True, read_only=True)
     verification_status = serializers.CharField(read_only=True)
@@ -144,6 +151,7 @@ class ProviderProfileSerializer(serializers.ModelSerializer):
             "username",
             "headline",
             "kind",
+            "kind_label",
             "primary_category",
             "talent_category",
             "specializations",

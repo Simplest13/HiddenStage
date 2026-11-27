@@ -298,6 +298,7 @@ class ProviderDetailView(APIView):
             "is_public": provider.is_public if provider.is_public is not None else True,
             "completed_at": provider.completed_at,
             "services": [s for s in provider.services.all() if s.is_active],
+            "portfolio": portfolio_items,
             "portfolio_items": portfolio_items,
             "team_members": team_members_data,
             "rating": None,

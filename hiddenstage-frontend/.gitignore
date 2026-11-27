@@ -30,4 +30,16 @@ e2e-artifacts/
 test-results/
 playwright-report/
 
+# Mobile build outputs
+*.apk
+*.aab
+*.keystore
+*.jks
+android/local.properties
+android/app/build/
+android/.gradle/
+android/build/
+ios/App/Pods/
+ios/App/build/
+
 .agents/*

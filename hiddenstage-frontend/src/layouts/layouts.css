@@ -157,6 +157,7 @@
   border-bottom: 1px solid var(--color-line);
   background: var(--color-paper-bright);
   box-shadow: var(--shadow-header);
+  padding-top: env(safe-area-inset-top, 0px);
 }
 
 .site-header__inner {
@@ -1453,12 +1454,8 @@
 }
 
 @media (max-width: 860px) {
-  .topbar__note {
+  .topbar {
     display: none;
-  }
-
-  .topbar__inner {
-    justify-content: flex-end;
   }
 
   .mobile-menu-button {

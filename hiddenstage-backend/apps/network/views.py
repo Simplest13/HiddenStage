@@ -56,6 +56,7 @@ from apps.network.services import (
     respond_to_assignment,
     respond_to_network_invitation,
     send_network_invitation,
+    request_network_association,
     start_assignment,
 )
 from apps.profiles.models import ProviderKind, ProviderProfile
@@ -801,3 +802,20 @@ class RealtimeStreamView(APIView):
         response["Cache-Control"] = "no-cache, no-transform"
         response["X-Accel-Buffering"] = "no"
         return response
+
+
+class ManagerAssociationRequestView(APIView):
+    permission_classes = [IsProvider]
+
+    def post(self, request):
+        manager_id = request.data.get("manager_id")
+        message = request.data.get("message", "")
+        invitation = request_network_association(
+            professional=request.user,
+            manager_id=manager_id,
+            message=message,
+        )
+        return Response(
+            NetworkInvitationSerializer(invitation).data,
+            status=status.HTTP_201_CREATED,
+        )

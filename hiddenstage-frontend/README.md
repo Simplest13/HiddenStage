@@ -27,6 +27,19 @@ npm run build
 npm run test:e2e
 ```
 
+## Mobile application (Capacitor)
+
+HiddenStage uses Capacitor 8 to package the web frontend into native Android and iOS mobile applications:
+
+```powershell
+npm run cap:build      # Compile web bundle and sync native assets
+npm run cap:sync       # Sync web bundle to android/ and ios/
+npm run cap:android    # Launch Android Studio for building APK/AAB
+npm run cap:ios        # Launch Xcode for building iOS Archive (macOS)
+```
+
+Refer to [MOBILE_APP_GUIDE.md](file:///c:/Users/User/Desktop/HiddenStage/hiddenstage-frontend/docs/MOBILE_APP_GUIDE.md) for full production build, code-signing, and App Store / Play Store submission instructions.
+
 Playwright is configured for Chromium. Install a browser once with `npx playwright install chromium` before running the end-to-end suite.
 
 ## Project map

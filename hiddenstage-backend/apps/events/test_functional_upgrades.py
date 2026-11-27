@@ -17,7 +17,7 @@ from apps.core.testutils import (
     make_event,
     make_provider,
 )
-from apps.events.models import CustomRequirementReview, Event
+from apps.events.models import CustomReviewStatus, Event
 from apps.profiles.models import ServiceCategory
 
 EVENTS = "/api/v1/events/"
@@ -153,7 +153,7 @@ class CustomServiceTests(TestCase):
         self.assertEqual(requirement.custom_service_name, "Drone mapping")
         self.assertTrue(requirement.is_custom)
         self.assertEqual(requirement.display_category_name, "Drone mapping")
-        self.assertEqual(requirement.custom_review_status, CustomRequirementReview.PENDING)
+        self.assertEqual(requirement.custom_review_status, CustomReviewStatus.PENDING)
         # No new global category was created.
         self.assertEqual(ServiceCategory.objects.count(), before)
         self.assertEqual(response.data["requirements"][0]["custom_service_name"], "Drone mapping")

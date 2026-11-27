@@ -2,6 +2,7 @@ import os
 import uuid
 from django.core.cache import cache
 from django.core.files.storage import default_storage
+from django.db import transaction
 from django.db.models import Q
 from django.http import FileResponse, Http404, HttpResponseRedirect
 from drf_spectacular.utils import extend_schema
@@ -158,7 +159,27 @@ class ProviderProfileView(APIView):
         return self._upsert(request, partial=True)
 
     def _upsert(self, request, partial: bool):
-        profile = ProviderProfile.objects.filter(user=request.user).first()
+        profile_id = request.query_params.get("profile_id")
+        if profile_id:
+            profile = ProviderProfile.objects.filter(id=profile_id).first()
+            if profile is None:
+                return Response({"detail": "Profile not found."}, status=status.HTTP_404_NOT_FOUND)
+            if profile.user != request.user:
+                membership = ProfileTeamMember.objects.filter(
+                    owner=profile.user, member=request.user, is_active=True
+                ).first()
+                if not membership or "MANAGE_BUSINESS_PROFILE" not in (membership.permissions or []):
+                    return Response(
+                        {"detail": "You do not have permission to edit this profile."},
+                        status=status.HTTP_403_FORBIDDEN,
+                    )
+                target_user = profile.user
+            else:
+                target_user = request.user
+        else:
+            profile = ProviderProfile.objects.filter(user=request.user).first()
+            target_user = request.user
+
         if profile is None and partial:
             # A patch cannot create a profile: display_name and contact are required.
             partial = False
@@ -166,7 +187,7 @@ class ProviderProfileView(APIView):
             instance=profile, data=request.data, partial=partial
         )
         serializer.is_valid(raise_exception=True)
-        profile = serializer.save(user=request.user)
+        profile = serializer.save(user=target_user)
         profile = (
             ProviderProfile.objects.prefetch_related("services__category", "coverage").get(
                 pk=profile.pk
@@ -277,6 +298,11 @@ class ManagerSearchView(APIView):
         return Response(ManagerSearchSerializer(queryset[:20], many=True).data)
 
 
+def _managed_portfolio_owners(user):
+    memberships = ProfileTeamMember.objects.filter(member=user, is_active=True).only("owner_id", "permissions")
+    return [m.owner_id for m in memberships if "MANAGE_PORTFOLIO" in (m.permissions or [])]
+
+
 class PortfolioItemListCreateView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = PortfolioItemSerializer
@@ -294,9 +320,7 @@ class PortfolioItemListCreateView(generics.ListCreateAPIView):
             return PortfolioItem.objects.filter(q).order_by("position", "-created_at")
 
         user = self.request.user
-        managed_owners = ProfileTeamMember.objects.filter(
-            member=user, is_active=True, permissions__contains=["MANAGE_PORTFOLIO"]
-        ).values_list("owner_id", flat=True)
+        managed_owners = _managed_portfolio_owners(user)
         return PortfolioItem.objects.filter(
             Q(owner=user) | Q(owner_id__in=managed_owners)
         ).order_by("position", "-created_at")
@@ -306,12 +330,7 @@ class PortfolioItemListCreateView(generics.ListCreateAPIView):
         owner = user
         owner_id = self.request.data.get("owner_id")
         if owner_id and str(owner_id) != str(user.id):
-            if not ProfileTeamMember.objects.filter(
-                owner_id=owner_id,
-                member=user,
-                is_active=True,
-                permissions__contains=["MANAGE_PORTFOLIO"],
-            ).exists():
+            if owner_id not in _managed_portfolio_owners(user) and str(owner_id) not in [str(x) for x in _managed_portfolio_owners(user)]:
                 raise PermissionDenied("You do not have permission to manage this portfolio.")
             owner = User.objects.get(id=owner_id)
 
@@ -345,9 +364,7 @@ class PortfolioItemDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        managed_owners = ProfileTeamMember.objects.filter(
-            member=user, is_active=True, permissions__contains=["MANAGE_PORTFOLIO"]
-        ).values_list("owner_id", flat=True)
+        managed_owners = _managed_portfolio_owners(user)
         return PortfolioItem.objects.filter(
             Q(owner=user) | Q(owner_id__in=managed_owners)
         )
@@ -398,6 +415,31 @@ class PortfolioMediaView(APIView):
         return FileResponse(file_obj, content_type=content_type)
 
 
+class PortfolioReorderView(APIView):
+    permission_classes = [IsProvider]
+
+    def post(self, request):
+        order = request.data.get("order", [])
+        user = request.user
+        managed_owners = _managed_portfolio_owners(user)
+        items = {
+            str(item.id): item
+            for item in PortfolioItem.objects.filter(
+                Q(owner=user) | Q(owner_id__in=managed_owners)
+            )
+        }
+        with transaction.atomic():
+            for position, item_id in enumerate(order):
+                if str(item_id) in items:
+                    item = items[str(item_id)]
+                    item.position = position
+                    item.save(update_fields=["position"])
+        ordered = PortfolioItem.objects.filter(
+            Q(owner=user) | Q(owner_id__in=managed_owners)
+        ).order_by("position", "-created_at")
+        return Response(PortfolioItemSerializer(ordered, many=True).data)
+
+
 class ProfileTeamMemberListCreateView(generics.ListCreateAPIView):
     permission_classes = [IsProvider]
     serializer_class = ProfileTeamMemberSerializer
@@ -411,7 +453,7 @@ class ProfileTeamMemberListCreateView(generics.ListCreateAPIView):
         profile = getattr(user, "provider_profile", None)
         if not profile or profile.kind != ProviderKind.MANAGER:
             raise PermissionDenied("Only Managers can add assistant team members.")
-        email = (self.request.data.get("email") or "").strip().lower()
+        email = (self.request.data.get("email") or self.request.data.get("invite_email") or "").strip().lower()
         if not email:
             raise ValidationError({"email": "Assistant email is required."})
         target_member = User.objects.filter(email=email, is_active=True).first()
@@ -429,4 +471,9 @@ class ProfileTeamMemberDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def get_queryset(self):
         return ProfileTeamMember.objects.filter(owner=self.request.user)
+
+    def perform_destroy(self, instance):
+        instance.is_active = False
+        instance.permissions = []
+        instance.save(update_fields=["is_active", "permissions"])
 

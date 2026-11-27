@@ -188,6 +188,8 @@ def _database_from_url(url: str) -> dict[str, object]:
     options.setdefault("keepalives_idle", "30")
     options.setdefault("keepalives_interval", "10")
     options.setdefault("keepalives_count", "5")
+    if "neon.tech" in (parsed.hostname or ""):
+        options.setdefault("sslmode", "require")
     is_pooled = "-pooler." in (parsed.hostname or "")
     config: dict[str, object] = {
         "ENGINE": "django.db.backends.postgresql",
@@ -213,8 +215,32 @@ _is_migration_command = any(
 # Automated tests must remain isolated from shared cloud database (D-006 / Neon policy).
 if _is_test:
     _test_db_url = os.environ.get("TEST_DATABASE_URL", "").strip()
+    if not _test_db_url and os.environ.get("PROBE_AS_TEST_RUN"):
+        _test_db_url = os.environ.get("DATABASE_URL", "").strip()
+
     if _test_db_url:
-        DATABASES = {"default": _database_from_url(_test_db_url)}
+        candidate = _database_from_url(_test_db_url)
+        host = str(candidate.get("HOST", ""))
+        is_remote = host and host not in ("localhost", "127.0.0.1", "::1")
+        if is_remote and os.environ.get("ALLOW_REMOTE_TEST_DB") != "1":
+            raise ImproperlyConfigured(
+                "Refusing to run the test suite against a remote database without ALLOW_REMOTE_TEST_DB=1."
+            )
+        DATABASES = {"default": candidate}
+    elif os.environ.get("PROBE_AS_TEST_RUN") and os.environ.get("POSTGRES_DB"):
+        DATABASES = {
+            "default": {
+                "ENGINE": "django.db.backends.postgresql",
+                "NAME": os.environ.get("POSTGRES_DB", "hiddenstage"),
+                "USER": os.environ.get("POSTGRES_USER", "hiddenstage"),
+                "PASSWORD": os.environ.get("POSTGRES_PASSWORD", "hiddenstage"),
+                "HOST": os.environ.get("POSTGRES_HOST", "127.0.0.1"),
+                "PORT": os.environ.get("POSTGRES_PORT", "5432"),
+                "CONN_MAX_AGE": env_int("POSTGRES_CONN_MAX_AGE", 600),
+                "CONN_HEALTH_CHECKS": env_bool("POSTGRES_CONN_HEALTH_CHECKS", False),
+                "OPTIONS": {},
+            }
+        }
     else:
         # Fall back to sqlite in-memory for isolated local test runs when no TEST_DATABASE_URL is provided. Never target shared Neon.
         DATABASES = {
@@ -412,6 +438,8 @@ for _render_origin in [
     "https://hiddenstage.in",
     "https://www.hiddenstage.in",
     "https://*.hiddenstage.in",
+    "https://localhost",
+    "capacitor://localhost",
 ]:
     if _render_origin not in CSRF_TRUSTED_ORIGINS:
         CSRF_TRUSTED_ORIGINS.append(_render_origin)
@@ -423,6 +451,8 @@ for _cors_origin in [
     "https://hiddenstage-j2j3.onrender.com",
     "https://hiddenstage.in",
     "https://www.hiddenstage.in",
+    "https://localhost",
+    "capacitor://localhost",
 ]:
     if _cors_origin not in CORS_ALLOWED_ORIGINS:
         CORS_ALLOWED_ORIGINS.append(_cors_origin)

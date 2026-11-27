@@ -1,5 +1,6 @@
 from django.urls import path
 
+from apps.matching.views import ProviderDetailView
 from apps.profiles import views
 
 app_name = "profiles"
@@ -47,14 +48,39 @@ urlpatterns = [
         name="manager-search",
     ),
     path(
+        "network/managers/",
+        views.ManagerSearchView.as_view(),
+        name="network-managers",
+    ),
+    path(
         "profiles/portfolio/",
         views.PortfolioItemListCreateView.as_view(),
         name="portfolio-list",
     ),
     path(
+        "profiles/portfolio/reorder/",
+        views.PortfolioReorderView.as_view(),
+        name="portfolio-reorder",
+    ),
+    path(
         "profiles/portfolio/<uuid:pk>/",
         views.PortfolioItemDetailView.as_view(),
         name="portfolio-detail",
+    ),
+    path(
+        "me/portfolio/",
+        views.PortfolioItemListCreateView.as_view(),
+        name="me-portfolio-list",
+    ),
+    path(
+        "me/portfolio/reorder/",
+        views.PortfolioReorderView.as_view(),
+        name="me-portfolio-reorder",
+    ),
+    path(
+        "me/portfolio/<uuid:pk>/",
+        views.PortfolioItemDetailView.as_view(),
+        name="me-portfolio-detail",
     ),
     path(
         "media/portfolio/<str:filename>",
@@ -70,5 +96,20 @@ urlpatterns = [
         "profiles/team/<uuid:pk>/",
         views.ProfileTeamMemberDetailView.as_view(),
         name="team-detail",
+    ),
+    path(
+        "me/team/",
+        views.ProfileTeamMemberListCreateView.as_view(),
+        name="me-team-list",
+    ),
+    path(
+        "me/team/<uuid:pk>/",
+        views.ProfileTeamMemberDetailView.as_view(),
+        name="me-team-detail",
+    ),
+    path(
+        "profiles/<str:pk>/",
+        ProviderDetailView.as_view(),
+        name="public-profile-detail",
     ),
 ]

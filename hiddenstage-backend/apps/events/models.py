@@ -113,6 +113,16 @@ class Event(UUIDModel, TimeStampedModel):
     def is_open_for_invitations(self) -> bool:
         return self.status == EventStatus.SUBMITTED
 
+    @property
+    def duration_days(self) -> int:
+        if not self.end_date or self.end_date == self.event_date:
+            return 1
+        return max(1, (self.end_date - self.event_date).days + 1)
+
+    @property
+    def is_multi_day(self) -> bool:
+        return self.duration_days > 1
+
     def __str__(self):
         return f"{self.name} ({self.event_date})"
 
@@ -168,11 +178,24 @@ class ServiceRequirement(UUIDModel):
 
     def save(self, *args, **kwargs):
         self.title = normalize_text(self.title)
+        if self.custom_service_name and (not self.custom_review_status or self.custom_review_status == CustomReviewStatus.NOT_REQUIRED):
+            self.custom_review_status = CustomReviewStatus.PENDING
         super().save(*args, **kwargs)
 
     @property
     def is_open(self) -> bool:
         return self.status == RequirementStatus.OPEN
+
+    @property
+    def is_custom(self) -> bool:
+        cat_code = getattr(self.category, "code", "")
+        return cat_code == "other" or bool(self.custom_service_name)
+
+    @property
+    def display_category_name(self) -> str:
+        if self.custom_service_name:
+            return self.custom_service_name
+        return self.category.name if self.category else ""
 
     def __str__(self):
         return f"{self.title} ({self.category_id})"

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">HiddenStage</string>
+    <string name="title_activity_main">HiddenStage</string>
+    <string name="package_name">in.hiddenstage.app</string>
+    <string name="custom_url_scheme">in.hiddenstage.app</string>
+</resources>

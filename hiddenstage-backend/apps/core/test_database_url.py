@@ -27,10 +27,10 @@ try:
     db = settings.DATABASES["default"]
     print(json.dumps({
         "ok": True,
-        "name": db["NAME"],
-        "user": db["USER"],
-        "host": db["HOST"],
-        "port": db["PORT"],
+        "name": db.get("NAME"),
+        "user": db.get("USER"),
+        "host": db.get("HOST"),
+        "port": db.get("PORT"),
         "sslmode": db.get("OPTIONS", {}).get("sslmode"),
     }))
 except Exception as exc:  # noqa: BLE001 - surfaced to the assertion

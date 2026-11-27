@@ -50,6 +50,22 @@ class ServiceRequirementSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Enter a requirement title.")
         return title
 
+    def validate(self, attrs):
+        category = attrs.get("category")
+        code = (category.code if hasattr(category, "code") else str(category or "")).lower()
+        custom_name = (attrs.get("custom_service_name") or "").strip()
+        if code == "other":
+            if not custom_name:
+                raise serializers.ValidationError(
+                    {"custom_service_name": "Custom service name is required when category is other."}
+                )
+        else:
+            if custom_name:
+                raise serializers.ValidationError(
+                    {"custom_service_name": "Custom service name is only allowed when category is other."}
+                )
+        return attrs
+
 
 class EventAttachmentSerializer(serializers.ModelSerializer):
     download_url = serializers.SerializerMethodField()
@@ -89,6 +105,8 @@ class EventSerializer(serializers.ModelSerializer):
 
     requirements = ServiceRequirementSerializer(many=True, read_only=True)
     attachments = EventAttachmentSerializer(many=True, read_only=True)
+    duration_days = serializers.IntegerField(read_only=True)
+    is_multi_day = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Event
@@ -99,6 +117,8 @@ class EventSerializer(serializers.ModelSerializer):
             "description",
             "event_date",
             "end_date",
+            "duration_days",
+            "is_multi_day",
             "start_time",
             "end_time",
             "guest_count",
@@ -364,6 +384,21 @@ class EventRequirementInputSerializer(serializers.Serializer):
         if not ServiceCategory.objects.filter(code=code, is_active=True).exists():
             raise serializers.ValidationError(f"Unknown service category: {code}.")
         return code
+
+    def validate(self, attrs):
+        category = attrs.get("category", "").lower()
+        custom_name = (attrs.get("custom_service_name") or "").strip()
+        if category == "other":
+            if not custom_name:
+                raise serializers.ValidationError(
+                    {"custom_service_name": "Custom service name is required when category is other."}
+                )
+        else:
+            if custom_name:
+                raise serializers.ValidationError(
+                    {"custom_service_name": "Custom service name is only allowed when category is other."}
+                )
+        return attrs
 
 
 class EventWriteSerializer(serializers.ModelSerializer):
